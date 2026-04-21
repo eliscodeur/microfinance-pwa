@@ -194,6 +194,14 @@ class PwaController extends Controller
         // L'écran de synchro reste accessible pour les envois manuels.
         return view('pwa.sync'); 
     }
+    public function cyclesList()
+    { 
+        return view('pwa.cycles-list'); 
+    }
+    public function collectesList()
+    { 
+        return view('pwa.collectes-list'); 
+    }
 
     public function checkSyncPermission() 
     {

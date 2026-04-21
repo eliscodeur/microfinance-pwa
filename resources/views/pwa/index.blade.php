@@ -1,9 +1,5 @@
 @extends('pwa.layouts.app')
 
-@section('header_left')
-    <i class="bi bi-list fs-3 me-3"></i>
-@endsection
-
 @section('content')
 <div id="offline-alert" class="alert alert-warning py-2 shadow-sm rounded-0 border-0 mb-0 d-none text-center">
     <i class="bi bi-wifi-off me-2"></i> Mode hors-ligne : Données locales utilisées.

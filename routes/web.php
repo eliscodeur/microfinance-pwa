@@ -75,7 +75,8 @@ Route::middleware(['auth', 'role:Agent'])->prefix('pwa')->name('pwa.')->group(fu
     Route::get('/dashboard', [PwaController::class, 'index'])->name('index');
     Route::get('/carnet', [PwaController::class, 'showCarnets'])->name('carnets');
     Route::get('/clients', [PwaController::class, 'clients'])->name('clients');
-    
+    Route::get('/cycles-liste', [PwaController::class, 'cyclesList'])->name('cycles-list');
+    Route::get('/collectes-liste', [PwaController::class, 'collectesList'])->name('collectes-list');
     Route::get('/get-initial-data', [PwaController::class, 'getInitialData'])->name('initial-data');
     Route::get('/sync', [PwaController::class, 'showSyncPage'])->name('sync');
     Route::get('/check-sync-permission', [PwaController::class, 'checkPermission'])->name('check-sync-permission');

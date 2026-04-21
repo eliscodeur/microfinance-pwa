@@ -110,13 +110,17 @@
     </style>
 </head>
 <body>
-
+    @include('pwa.partials.sidebar')
     <header class="pwa-header shadow-sm">
         <div class="d-flex justify-content-between align-items-center w-100">
             <div class="d-flex align-items-center">
-                @if(View::hasSection('header_left'))
+                <!-- @if(View::hasSection('header_left'))
                     <div class="me-2">@yield('header_left')</div>
-                @endif
+                @endif -->
+                <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
+                    <i class="bi bi-list fs-3 me-3"></i>
+                </button>
+                <!-- <div class="me-2"><i class="bi bi-list fs-3 me-3"></i></div> -->
                 <div class="logo-container">
                     <img src="{{ asset('icons/icon-192x192.png') }}" class="logo-img" alt="Logo">
                 </div>
@@ -129,13 +133,13 @@
                     <i id="offline-icon" class="bi bi-wifi-off animate-pulse" style="color: #dc3545; font-size: 1.4rem; display: none;"></i>
                 </div>
 
-                <button onclick="deconnexion()" class="btn btn-link text-danger p-0 border-0">
+                <!-- <button onclick="deconnexion()" class="btn btn-link text-danger p-0 border-0">
                     <i class="bi bi-box-arrow-right fs-4"></i> 
-                </button>
+                </button> -->
 
-                <div class="agent-avatar-circle">
+                <!-- <div class="agent-avatar-circle">
                     <img id="agent-photo" src="/images/default-avatar.png">
-                </div>
+                </div> -->
             </div>
         </div>
     </header>
@@ -146,7 +150,7 @@
 
     @include('pwa.partials.bottom-nav')
 
-    <script>
+<script>
     // --- GESTION DE LA SESSION ET PHOTOS ---
     (function() {
         const sessionActive = localStorage.getItem('session_active');
@@ -204,6 +208,7 @@
         });
     @endif
 </script>
+
 <script>
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
@@ -211,6 +216,20 @@
         .catch(err => console.log("Erreur SW :", err));
     }
 </script>
-
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('pwa-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        
+        // Si le menu est caché, on l'affiche, sinon on le cache
+        if (sidebar.style.left === '0px') {
+            sidebar.style.left = '-280px';
+            overlay.style.display = 'none';
+        } else {
+            sidebar.style.left = '0px';
+            overlay.style.display = 'block';
+        }
+    }
+</script>   
 </body>
 </html>

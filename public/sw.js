@@ -6,6 +6,8 @@ const ASSETS_TO_CACHE = [
     '/pwa/clients',
     '/pwa/carnet',
     '/pwa/pointage-shell',
+    '/pwa/cycles-liste',
+    '/pwa/collectes-liste',
     '/pwa/sync',
     // Bibliothèques  
     '/js/dexie.js',

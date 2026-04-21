@@ -74,7 +74,7 @@
                         <tr>
                             <td>
                                 <strong>#{{ $cycle->id }}</strong><br>
-                                <small class="text-muted">{{ $cycle->cycle_uid ?? '---' }}</small>
+                                <!-- <small class="text-muted">{{ $cycle->cycle_uid ?? '---' }}</small> -->
                             </td>
                             <td>
                                 {{ $cycle->carnet->client->nom ?? '---' }}<br>
@@ -113,18 +113,16 @@
                             </td>
                             <td class="text-end">
                                 @if($cycle->statut === 'termine' && !$cycle->retire_at)
-                                    <button
-                                        type="button"
-                                        class="btn btn-sm btn-success"
-                                        onclick="ouvrirModalRetrait(
-                                            '{{ route('admin.cycles.mark-withdrawn', $cycle) }}',
-                                            '{{ addslashes($cycle->carnet->client->nom ?? 'Client') }}',
-                                            '{{ $cycle->id }}',
-                                            '{{ number_format((float)($cycle->collectes_sum_montant ?? 0), 0, ',', ' ') }} F',
-                                            '{{ number_format(max(0, (float)($cycle->collectes_sum_montant ?? 0) - (float)$cycle->montant_journalier), 0, ',', ' ') }} F'
-                                        )">
-                                        Retire
-                                    </button>
+                                    <button type="button" 
+                                        class="btn btn-sm btn-success" 
+                                        onclick="preparerRetrait(this)"
+                                        data-action="{{ route('admin.cycles.mark-withdrawn', $cycle) }}"
+                                        data-client="{{ $cycle->carnet->client->nom ?? 'Client' }}"
+                                        data-id="{{ $cycle->id }}"
+                                        data-total="{{ number_format((float)($cycle->collectes_sum_montant ?? 0), 0, ',', ' ') }} F"
+                                        data-net="{{ number_format(max(0, (float)($cycle->collectes_sum_montant ?? 0) - (float)$cycle->montant_journalier), 0, ',', ' ') }} F">
+                                    Retire
+                                </button>
                                 @elseif($cycle->statut === 'en_cours')
                                     <span class="text-muted small">Non terminé</span>
                                 @else
@@ -181,19 +179,37 @@
 </div>
 
 <script>
-function ouvrirModalRetrait(action, client, cycleId, total, net) {
-    
-    console.log("Ouvrir modal retrait avec:", { action, client, cycleId, total, net });
-    document.getElementById('withdrawForm').action = action;
-    document.getElementById('withdrawClient').innerText = client;
-    document.getElementById('withdrawCycle').innerText = cycleId;
-    document.getElementById('withdrawTotal').innerText = total;
-    document.getElementById('withdrawNet').innerText = net;
+    function preparerRetrait(btn) {
+        // 1. On récupère les données stockées dans le bouton
+        btn.disabled = true;
+        setTimeout(() => btn.disabled = false, 1000);
+        const action = btn.getAttribute('data-action');
+        const client = btn.getAttribute('data-client');
+        const cycleId = btn.getAttribute('data-id');
+        const total = btn.getAttribute('data-total');
+        const net = btn.getAttribute('data-net');
 
-    const dateField = document.getElementById('withdrawDate');
-    dateField.value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        // 2. On appelle la fonction qui remplit la modal
+        ouvrirModalRetrait(action, client, cycleId, total, net);
+    }
 
-    new bootstrap.Modal(document.getElementById('withdrawModal')).show();
-}
+    function ouvrirModalRetrait(action, client, cycleId, total, net) {
+        // Remplissage du formulaire et du texte
+        document.getElementById('withdrawForm').action = action;
+        document.getElementById('withdrawClient').innerText = client;
+        document.getElementById('withdrawCycle').innerText = cycleId;
+        document.getElementById('withdrawTotal').innerText = total;
+        document.getElementById('withdrawNet').innerText = net;
+
+        // Réglage de la date locale (ton code actuel qui fonctionne bien)
+        const dateField = document.getElementById('withdrawDate');
+        if(dateField) {
+            dateField.value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        }
+
+        // Affichage de la modal Bootstrap
+        const maModal = new bootstrap.Modal(document.getElementById('withdrawModal'));
+        maModal.show();
+    }
 </script>
 @endsection

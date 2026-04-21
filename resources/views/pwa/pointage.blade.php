@@ -1,9 +1,5 @@
 @extends('pwa.layouts.app')
 
-@section('header_left')
-    <a href="/pwa/dashboard" class="text-white me-3"><i class="bi bi-chevron-left fs-4"></i></a>
-@endsection
-
 @section('content')
 <div class="container py-3">
     <div id="loader" class="text-center py-5">
@@ -344,6 +340,22 @@
     window.creerCycle = async (cid) => {
         const mise = parseInt(document.getElementById('input_mise').value) || 300;
         const carnet = await db.carnets.get(Number(cid));
+        
+        // --- Calcul de la date de fin (31 jours hors dimanches) ---
+        let dateDebut = new Date();
+        let dateFin = new Date(dateDebut);
+        let joursAjoutes = 0;
+        const objectifJours = 31;
+
+        while (joursAjoutes < objectifJours) {
+            dateFin.setDate(dateFin.getDate() + 1); // On avance d'un jour
+            if (dateFin.getDay() !== 0) { // 0 correspond au Dimanche
+                joursAjoutes++;
+            }
+        }
+        // -------------------------------------------------------
+        console.log(dateFin.toISOString())
+        
         await db.cycles.add({
             cycle_uid: generateUUID(),
             carnet_id: carnet.id,
@@ -351,9 +363,11 @@
             agent_id: Number(agentId),
             montant_journalier: mise,
             statut: 'en_cours',
-            date_debut: new Date().toISOString(),
+            date_debut: dateDebut.toISOString(),
+            date_fin_prevue: dateFin.toISOString(), 
             synced: 0
         });
+
         location.reload();
     };
 
