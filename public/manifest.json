@@ -1,0 +1,38 @@
+{
+    "name": "Nana Eco Consulting",
+    "short_name": "Tontine",
+    "id": "/agent/login",
+    "start_url": "/agent/login",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#1a56a6",
+    "description": "Application de collecte de tontine",
+    "icons": [
+        {
+            "src": "/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/images/screenshot-desktop.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide"
+        },
+        {
+            "src": "/images/screenshot-mobile.png",
+            "sizes": "720x1280",
+            "type": "image/png",
+            "form_factor": "narrow"
+        }
+    ]
+}
