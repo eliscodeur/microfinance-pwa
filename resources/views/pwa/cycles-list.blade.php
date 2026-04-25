@@ -1,16 +1,32 @@
 @extends('pwa.layouts.app')
 
 @section('content')
-<div class="container mt-3">
-    <h4 class="fw-bold mb-3 text-dark">Cycles par Client</h4>
-    
-    <div class="input-group mb-4 shadow-sm" style="border-radius: 15px; overflow: hidden;">
-        <span class="input-group-text border-0 bg-white"><i class="bi bi-search"></i></span>
-        <input type="text" id="inputSearch" class="form-control border-0 p-3" 
-           placeholder="Rechercher client ou n° carnet..." onkeyup="afficherCyclesRegroupes()">
+<div class="container-fluid px-0 mt-2">
+    <div class="sticky-top bg-white pt-3 pb-2 shadow-sm mb-3" style="z-index: 1020;">
+        <div class="container">
+            <h4 class="fw-bold mb-3 text-dark small">Cycles par Client</h4>
+            
+            <div class="position-relative shadow-sm" style="border-radius: 15px; overflow: hidden;">
+                <span class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="inputSearch" class="form-control border-0 p-3 ps-5 bg-light" 
+                       placeholder="Rechercher client ou n° carnet..." 
+                       onkeyup="gererCroixCycles(); afficherCyclesRegroupes()"
+                       style="border-radius: 15px; font-size: 0.95rem;">
+                
+                <button id="btnViderCycles" onclick="viderRechercheCycles()" 
+                        class="btn position-absolute end-0 top-50 translate-middle-y border-0 text-muted d-none" 
+                        style="z-index: 10; padding-right: 15px;">
+                    <i class="bi bi-x-circle-fill"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div id="cycles-master-container" class="pb-5">
+    <div class="container">
+        <div id="cycles-master-container" class="pb-5">
+            </div>
     </div>
 </div>
 <div class="modal fade" id="modalModifCycle" tabindex="-1" aria-hidden="true">
@@ -126,122 +142,156 @@
 </style>
 <script type="module">
      import { db } from '/js/db-manager.js'; 
+    window.gererCroixCycles = function() {
+        const input = document.getElementById('inputSearch');
+        const btnX = document.getElementById('btnViderCycles');
+        input.value.length > 0 ? btnX.classList.remove('d-none') : btnX.classList.add('d-none');
+    };
+
+    window.viderRechercheCycles = function() {
+        const input = document.getElementById('inputSearch');
+        input.value = '';
+        window.gererCroixCycles();
+        window.afficherCyclesRegroupes(); // Recharge la liste complète
+        window.scrollTo(0, 0);
+    };
+
+    // Ta fonction existante à laquelle on ajoute juste le reset scroll
+    
 </script>
 <script>
-    async function afficherCyclesRegroupes() {
-        const container = document.getElementById('cycles-master-container');
-        const search = document.getElementById('inputSearch').value.toLowerCase();
-        container.innerHTML = '';
+async function afficherCyclesRegroupes() {
+    window.scrollTo(0, 0); 
+    const container = document.getElementById('cycles-master-container');
+    const search = document.getElementById('inputSearch').value.toLowerCase();
+    container.innerHTML = '';
 
-        // 1. Récupération des données Dexie
-        const [clients, carnets, cycles, collectes] = await Promise.all([
-            db.clients.toArray(),
-            db.carnets.toArray(),
-            db.cycles.toArray(),
-            db.collectes.toArray()
-        ]);
+    const [clients, carnets, cycles, collectes] = await Promise.all([
+        db.clients.toArray(),
+        db.carnets.toArray(),
+        db.cycles.toArray(),
+        db.collectes.toArray()
+    ]);
 
-        // 2. Tri par date (les plus récents en haut)
-        const cyclesTries = cycles.sort((a, b) => new Date(b.date_debut) - new Date(a.date_debut));
+    const cyclesTries = cycles.sort((a, b) => new Date(b.date_debut) - new Date(a.date_debut));
 
-        clients.forEach(client => {
-            const matchClient = client.nom.toLowerCase().includes(search);
-            const clientCarnets = carnets.filter(car => car.client_id === client.id);
-            
-            if (cycles.some(cy => cy.client_id === client.id)) {
-                let clientHtml = '';
-                let clientAffiche = false;
+    clients.forEach(client => {
+        const matchClient = client.nom.toLowerCase().includes(search);
+        const clientCarnets = carnets.filter(car => car.client_id === client.id);
+        
+        if (cycles.some(cy => cy.client_id === client.id)) {
+            let clientHtml = '';
+            let clientAffiche = false;
 
-                clientCarnets.forEach(carnet => {
-                    const numCarnet = carnet.numero;
-                    const matchCarnet = numCarnet.toLowerCase().includes(search);
-                    const carnetCycles = cyclesTries.filter(cy => cy.carnet_id === carnet.id);
+            clientCarnets.forEach(carnet => {
+                const numCarnet = carnet.numero;
+                const matchCarnet = numCarnet.toLowerCase().includes(search);
+                const carnetCycles = cyclesTries.filter(cy => cy.carnet_id === carnet.id);
 
-                    if (carnetCycles.length > 0 && (matchClient || matchCarnet)) {
-                        clientAffiche = true;
+                if (carnetCycles.length > 0 && (matchClient || matchCarnet)) {
+                    clientAffiche = true;
+                    clientHtml += `
+                        <div class="card border-0 shadow-sm mb-3" style="border-radius: 15px; overflow: hidden;">
+                            <div class="card-header border-0 py-2 px-3 d-flex justify-content-between align-items-center" style="background: #f1f3f5;">
+                                <span class="fw-bold" style="font-size: 0.7rem; color: #495057;">
+                                    <i class="bi bi-journal-bookmark-fill me-1"></i> CARNET: ${numCarnet}
+                                </span>
+                            </div>
+                            <div class="card-body p-0">
+                    `;
+
+                    carnetCycles.forEach(cycle => {
+                        const collectesCycle = collectes.filter(col => col.cycle_id === cycle.id);
+                        
+                        // --- NOUVELLE LOGIQUE : SOMME DES POINTAGES ---
+                        const nbrPointages = collectesCycle.reduce((sum, col) => sum + parseInt(col.pointage || 0), 0);
+                        
+                        const progression = Math.min(Math.round((nbrPointages / 31) * 100), 100);
+                        const brut = collectesCycle.reduce((sum, col) => sum + parseFloat(col.montant || 0), 0);
+                        const mise = parseFloat(cycle.montant_journalier || 0);
+                        const net = brut > mise ? brut - mise : brut; 
+
+                        const estTermine = cycle.statut === 'termine' || nbrPointages >= 31;
+                        const estSynchro = cycle.synced === 1;
+                        const afficherSomme = estTermine && (!cycle.retire_at || cycle.retire_at === "null");
+                        
+                        const peutAgir = (nbrPointages === 0 && !estSynchro);
+
                         clientHtml += `
-                            <div class="card border-0 shadow-sm mb-2" style="border-radius: 12px; background: #fff;">
-                                <div class="card-header border-0 py-1 px-3 d-flex justify-content-between align-items-center" style="background: #f8f9fa; border-radius: 12px 12px 0 0;">
-                                    <span class="fw-bold" style="font-size: 0.65rem; color: #888; letter-spacing: 0.3px;">
-                                        <i class="bi bi-journal-text me-1"></i>${numCarnet}
-                                    </span>
-                                </div>
-                                <div class="card-body p-0">
-                        `;
-
-                        carnetCycles.forEach(cycle => {
-                            // --- CALCUL FINANCIER ---
-                            const collectesCycle = collectes.filter(col => col.cycle_id === cycle.id);
-                            const brut = collectesCycle.reduce((sum, col) => sum + parseFloat(col.montant || 0), 0);
-                            const mise = parseFloat(cycle.montant_journalier || 0);
-                            const net = brut > mise ? brut - mise : brut; 
-                            
-                            const estTermine = cycle.statut === 'termine' || cycle.statut === 'vrai';
-                            const afficherSomme = estTermine && (!cycle.retire_at || cycle.retire_at === "null" || cycle.retire_at === null);
-                            const nbrCol = collectesCycle.length;
-                            const peutAgir = (nbrCol === 0 && cycle.synced === 0);
-
-                            clientHtml += `
-                                <div class="px-3 py-2 ${carnetCycles.indexOf(cycle) !== carnetCycles.length - 1 ? 'border-bottom' : ''}">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        
-                                        <a href="/pwa/pointage-shell?carnet_id=${carnet.id}" class="text-decoration-none d-flex flex-column" style="flex: 1;">
-                                            <div class="d-flex align-items-center gap-2 mb-1">
-                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;">${cycle.montant_journalier} F</span>
-                                                ${estTermine 
-                                                    ? '<span class="badge rounded-pill bg-light text-secondary border" style="font-size: 0.55rem;">Terminé <i class="bi bi-eye ms-1"></i></span>' 
-                                                    : '<span class="badge rounded-pill bg-soft-green text-success" style="font-size: 0.55rem; border: 1px solid #c3e6cb;">En cours <i class="bi bi-chevron-right ms-1"></i></span>'
-                                                }
-                                            </div>
-                                            <div class="text-muted" style="font-size: 0.65rem;">
-                                                <i class="bi bi-calendar3 me-1"></i>${new Date(cycle.date_debut).toLocaleDateString()}
-                                            </div>
-                                        </a>
-
-                                        <div class="text-end" style="min-width: 80px;">
-                                            ${peutAgir && !estTermine ? `
-                                                <div class="d-flex gap-1 mb-1 justify-content-end">
-                                                    <button onclick="event.preventDefault(); ouvrirModif(${cycle.id})" class="btn btn-sm p-1 text-primary bg-light border-0" style="border-radius: 6px;"><i class="bi bi-pencil-square"></i></button>
-                                                    <button onclick="event.preventDefault(); supprimerCycle(${cycle.id})" class="btn btn-sm p-1 text-danger bg-light border-0" style="border-radius: 6px;"><i class="bi bi-trash3"></i></button>
-                                                </div>
-                                            ` : ''}
-                                            
-                                            ${afficherSomme ? `
-                                                <div class="d-flex flex-column align-items-end">
-                                                    <div class="badge bg-soft-primary text-primary" style="font-size: 0.75rem; font-weight: 800; border: 1px solid #b3d1ff;">
-                                                        Net: ${net} F
-                                                    </div>
-                                                    <small class="text-danger" style="font-size: 0.5rem; font-style: italic;">(-${mise} F comm.)</small>
-                                                </div>
-                                            ` : (estTermine ? '<i class="bi bi-check2-all text-success" title="Retrait effectué"></i>' : '')}
+                            <div class="px-3 py-3 ${carnetCycles.indexOf(cycle) !== carnetCycles.length - 1 ? 'border-bottom' : ''}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div style="flex: 1;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <a href="/pwa/pointage-shell?carnet_id=${carnet.id}" class="text-decoration-none fw-bolder text-dark" style="font-size: 1.1rem;">
+                                                ${cycle.montant_journalier} F
+                                            </a>
+                                            ${estTermine 
+                                                ? '<span class="badge bg-success" style="font-size: 0.55rem;">Terminé (31/31)</span>' 
+                                                : `<span class="badge bg-light text-primary border" style="font-size: 0.55rem;">${nbrPointages} / 31 pts</span>`
+                                            }
+                                            ${estSynchro 
+                                                ? '<i class="bi bi-cloud-check-fill text-info" style="font-size: 0.8rem;"></i>' 
+                                                : '<i class="bi bi-cloud-arrow-up text-warning" style="font-size: 0.8rem;"></i>'
+                                            }
+                                        </div>
+                                        <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-cash-stack me-1"></i>Cumul: <strong>${brut} F</strong>
                                         </div>
                                     </div>
+
+                                    <div class="text-end">
+                                        ${afficherSomme ? `
+                                            <div class="bg-primary text-white px-2 py-1 rounded-3 mb-1" style="font-size: 0.8rem; font-weight: 700;">Net: ${net} F</div>
+                                            <div style="font-size: 0.55rem; color: #dc3545;">Com: -${mise} F</div>
+                                        ` : `
+                                            <div class="d-flex gap-1 justify-content-end">
+                                                ${peutAgir ? `
+                                                    <button onclick="event.preventDefault(); ouvrirModif(${cycle.id})" class="btn btn-outline-secondary btn-sm border-0 p-1"><i class="bi bi-pencil-square"></i></button>
+                                                    <button onclick="event.preventDefault(); supprimerCycle(${cycle.id})" class="btn btn-outline-danger btn-sm border-0 p-1"><i class="bi bi-trash3"></i></button>
+                                                ` : '<span class="text-muted small" style="font-size:0.55rem;"><i class="bi bi-lock-fill"></i> Actif</span>'}
+                                            </div>
+                                        `}
+                                    </div>
                                 </div>
-                            `;
-                        });
-                        clientHtml += `</div></div>`;
-                    }
-                });
 
-                if (clientAffiche) {
-                    container.innerHTML += `
-                        <div class="client-group mb-3 px-1">
-                            <div class="ps-1 mb-1">
-                                <small class="fw-bold text-muted text-uppercase" style="font-size: 0.6rem; letter-spacing: 0.5px;">
-                                    <i class="bi bi-person me-1"></i>${client.nom}
-                                </small>
+                                <div class="progress" style="height: 6px; background-color: #eee; border-radius: 10px;">
+                                    <div class="progress-bar ${progression >= 100 ? 'bg-success' : 'bg-primary'}" 
+                                         role="progressbar" style="width: ${progression}%;"></div>
+                                </div>
+
+                                <div class="mt-2 d-flex justify-content-between align-items-center">
+                                    <small class="text-muted" style="font-size: 0.6rem;">
+                                        <i class="bi bi-calendar3 me-1"></i>Lancé le ${new Date(cycle.date_debut).toLocaleDateString()}
+                                    </small>
+                                    <a href="/pwa/pointage-shell?carnet_id=${carnet.id}" class="btn btn-link p-0 text-decoration-none shadow-none" style="font-size: 0.65rem;">Ouvrir <i class="bi bi-arrow-right"></i></a>
+                                </div>
                             </div>
-                            ${clientHtml}
-                        </div>
-                    `;
+                        `;
+                    });
+                    clientHtml += `</div></div>`;
                 }
-            }
-        });
+            });
 
-        if (container.innerHTML === '') {
-            container.innerHTML = `<div class="text-center py-5 text-muted small">Aucun cycle trouvé pour "${search}"</div>`;
+            if (clientAffiche) {
+                container.innerHTML += `
+                    <div class="client-group mb-4 px-1">
+                        <div class="d-flex align-items-center mb-2 mt-3">
+                            <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center text-white me-2 shadow-sm" style="width: 35px; height: 35px; font-weight: 800; font-size: 0.9rem;">
+                                ${client.nom.charAt(0).toUpperCase()}
+                            </div>
+                            <h6 class="mb-0 fw-black text-dark" style="font-size: 1.1rem; letter-spacing: -0.5px;">${client.nom.toUpperCase()}</h6>
+                        </div>
+                        ${clientHtml}
+                    </div>
+                `;
+            }
         }
+    });
+
+    if (container.innerHTML === '') {
+        container.innerHTML = `<div class="text-center py-5 text-muted small">Aucun cycle trouvé</div>`;
     }
+}
 
     // Appeler la fonction au chargement
     document.addEventListener('DOMContentLoaded', afficherCyclesRegroupes);

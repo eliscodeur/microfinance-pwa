@@ -165,8 +165,7 @@
         
         const elPhoto = document.getElementById('agent-photo');
         elPhoto.src = '/storage/' + photoUrl; // Construction du chemin complet 
-        console.log("Chargement de la photo depuis:", elPhoto.src);
-
+        
         // Si l'image n'est ni sur le réseau ni en cache, on bascule sur l'avatar par défaut
         elPhoto.onerror = function() {
             this.src = window.location.origin + '/images/default-avatar.png';
@@ -212,8 +211,8 @@
 <script>
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
-        .then(() => console.log("Service Worker enregistré !"))
-        .catch(err => console.log("Erreur SW :", err));
+        // .then(() => console.log("Service Worker enregistré !"))
+        // .catch(err => console.log("Erreur SW :", err));
     }
 </script>
 <script>

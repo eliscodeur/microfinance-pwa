@@ -45,7 +45,7 @@
         <div class="mt-5">
     <h6 class="text-uppercase text-muted fw-bold mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">Derniers envois</h6>
     
-    @forelse(auth()->user()->agent->syncBatches()->latest()->take(3)->get() as $batch)
+    @forelse(auth()->user()->agent->syncBatches()->latest()->take(5)->get() as $batch)
         <div class="d-flex align-items-center bg-white p-3 rounded-3 shadow-sm mb-2">
             
             @if($batch->status === 'approved')
@@ -368,7 +368,10 @@
 
     async function lancerProcessus(cycles, collectes) {
         window.syncRequestInFlight = true;
-        
+        const btnSync = document.getElementById('btn-sync');
+            if(btnSync) {
+                btnSync.disabled = true;
+            }
         // ÉTAPE 1 : OVERLAY ACTIF (Envoi des données)
         afficherOverlayProgress(true); 
         document.getElementById('sync-progress-container').classList.add('d-none');
@@ -470,10 +473,29 @@
                     break;
                 } 
                 else if (statut === 'rejected') {
-                    clearPendingSyncJob();
-                    if (typeof afficherOverlayProgress === 'function') afficherOverlayProgress(false);
-                    window.showAlertModal('Refusé', 'L\'administrateur a rejeté la demande.', 'error');
-                    break;
+                    // 1. ARRÊT IMMÉDIAT des processus
+                    clearPendingSyncJob(); 
+                    
+                    // 2. VERROUILLAGE du bouton (pour éviter le double-clic avant reload)
+                    // const btnSync = document.getElementById('btn-sync');
+                    // if (btnSync) {
+                    //     btnSync.disabled = true;
+                    // }
+                    updateProgressUI(0, "Demande rejetée...");
+
+                    // 3. ON CACHE L'OVERLAY pour laisser voir le message d'erreur
+                    afficherOverlayProgress(false);
+
+                    // 4. ALERTE
+                    window.showAlertModal('Refusé', 'L\'administrateur a rejeté la demande. La page va s\'actualiser.', 'error');
+
+                    // 5. RELOAD FORCÉ
+                    // On utilise un délai légèrement plus long pour être sûr qu'il ne puisse pas relancer
+                    setTimeout(() => {
+                        window.location.reload(); 
+                    }, 2000);
+
+                    break; 
                 }
 
                 // Attendre avant la prochaine vérification (par défaut 3s)
@@ -536,8 +558,8 @@
 
     // Fonction pour gérer les deux types d'affichage
     function updateProgressUI(val, text, mode = 'both') {
-        const barBottom = document.getElementById('sync-bar-bottom'); // Renomme l'ID dans le HTML
-        const barOverlay = document.getElementById('sync-bar-overlay'); // Renomme l'ID dans le HTML
+        const barBottom = document.getElementById('sync-bar-bottom'); 
+        const barOverlay = document.getElementById('sync-bar-overlay'); 
         const pctOverlay = document.getElementById('sync-percent');
         const pctBottom = document.getElementById('progress-percent');
         const stOverlay = document.getElementById('sync-status');

@@ -25,7 +25,6 @@
         try {
             if (!db.isOpen()) await db.open();
 
-            // 1. Récupération optimisée
             const [client, carnets] = await Promise.all([
                 db.clients.get(Number(clientId)),
                 db.carnets.where('client_id').equals(Number(clientId)).toArray()
@@ -42,20 +41,15 @@
             let html = `<p class="text-muted small mb-3 text-uppercase fw-bold" style="letter-spacing: 1px;">Mes Livrets d'Épargne</p>`;
 
             for (const carnet of carnets) {
-                // Récupérer uniquement les cycles de ce carnet
-                
                 const cyclesDuCarnet = await db.cycles.where('carnet_id').equals(carnet.id).toArray() || [];
-               
-                const cycleActif = cyclesDuCarnet.find(cy => cy.statut === 'en_cours');
                 
+                const cycleActif = cyclesDuCarnet.find(cy => cy.statut === 'en_cours');
                 const cyclesAencaisser = cyclesDuCarnet.filter(cy => cy.statut === 'termine' && !cy.retire_at);
                 
                 // --- CALCUL DU SOLDE DISPONIBLE ---
-                let soldeRetirable = 0
+                let soldeRetirable = 0;
                 for (const cy of cyclesAencaisser) {
-                    // Utilisation de l'index cycle_uid pour la performance
                     const collectesDuCycle = await db.collectes.where('cycle_uid').equals(String(cy.cycle_uid)).toArray();
-                    
                     const totalCollectes = collectesDuCycle.reduce((sum, c) => sum + (Number(c.montant) || 0), 0);
                     const commission = Number(cy.montant_journalier || 0);
                     
@@ -70,17 +64,20 @@
                 
                 if (cycleActif) {
                     const collectesActives = await db.collectes.where('cycle_uid').equals(String(cycleActif.cycle_uid)).toArray();
-                    console.log(cycleActif, collectesActives);  
                     epargneEnCours = collectesActives.reduce((sum, item) => sum + (Number(item.montant) || 0), 0);
                     
-                    const objectifTotal = Number(cycleActif.montant_journalier) * 31;
-                    pourcentage = objectifTotal > 0 ? Math.min(100, (epargneEnCours / objectifTotal) * 100) : 0;
+                    // Utilisation de la somme des pointages pour la barre de progression (plus précis)
+                    const nbrPointages = collectesActives.reduce((sum, item) => sum + (Number(item.pointage) || 0), 0);
+                    pourcentage = Math.min(100, (nbrPointages / 31) * 100);
                 }
                 
-                
-                // Stats
-                const terminauxPayes = cyclesDuCarnet.filter(cy => cy.statut === 'termine' && cy.retire_at).length;
+                // --- LOGIQUE DEMANDÉE : CALCUL DES STATS ---
+                // On prend le total historique du carnet (serveur)
+                const totalHistorique = Number(carnet.total_cycles_termines || 0);
                 const terminauxEnAttente = cyclesAencaisser.length;
+                
+                // Les payés = Total historique - ceux qui attendent encore d'être payés
+                const terminauxPayes = Math.max(0, totalHistorique - terminauxEnAttente);
 
                 html += `
                 <div class="card mb-4 shadow-sm border-0" 
@@ -116,7 +113,7 @@
                                     <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" style="width: ${pourcentage}%"></div>
                                 </div>
                                 <div class="d-flex justify-content-between mt-2">
-                                    <small class="text-muted" style="font-size: 0.7rem;">Objectif : ${(cycleActif.montant_journalier * 31).toLocaleString()} F</small>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Objectif : 31 jours</small>
                                     <small class="fw-bold text-primary" style="font-size: 0.7rem;">${Math.round(pourcentage)}%</small>
                                 </div>
                             </div>

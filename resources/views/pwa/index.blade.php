@@ -6,7 +6,7 @@
 </div>
 
 <div class="container mt-n3">
-    <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 cursor-pointer" onclick="afficherCollectesDuJour()" style="cursor: pointer;">
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 cursor-pointer" style="cursor: pointer;">
         <div class="row text-center">
             <div class="col-6 border-end">
                 <small class="text-muted d-block">Collectes Jour</small>
@@ -17,9 +17,9 @@
                 <span class="fw-bold fs-5 text-dark" id="total-clients-vus">0</span>
             </div>
         </div>
-        <div class="text-center mt-2">
+        <!-- <div class="text-center mt-2">
             <small class="text-muted"><i class="bi bi-pencil me-1"></i> Cliquez pour éditer</small>
-        </div>
+        </div> -->
     </div>
 </div>
 

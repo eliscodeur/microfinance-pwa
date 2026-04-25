@@ -164,7 +164,7 @@ class SyncController extends Controller
             $uidAchercher = $bCol->cycle_uid; 
 
             // 2. Chercher l'ID interne MySQL
-            $cycleId = \App\Models\Cycle::where('cycle_uid', $uidAchercher)->value('id');
+            $cycleId = Cycle::where('cycle_uid', $uidAchercher)->value('id');
 
             // 3. LOG DE SÉCURITÉ (si ça ne marche toujours pas, tu verras pourquoi)
             if (!$cycleId) {
@@ -173,7 +173,7 @@ class SyncController extends Controller
             }
 
             // 4. INSERTION FINALE
-            \App\Models\Collecte::updateOrCreate(
+            Collecte::updateOrCreate(
                 ['collecte_uid' => $bCol->collecte_uid],
                 [
                     'cycle_id'    => $cycleId, 
@@ -211,7 +211,7 @@ class SyncController extends Controller
     private function buildSyncPayload($agent): array
     {
         // 1. Récupérer les clients de l'agent
-        $clients = \App\Models\Client::where('agent_id', $agent->id)
+        $clients = Client::where('agent_id', $agent->id)
             ->whereHas('carnets', function($query) {
                 $query->where('statut', 'actif');
             })
@@ -220,12 +220,18 @@ class SyncController extends Controller
         $clientIds = $clients->pluck('id');
 
         // 2. Récupérer les carnets actifs (sans calcul de solde ici, Dexie s'en chargera)
-        $carnets = \App\Models\Carnet::whereIn('client_id', $clientIds)
+        // $carnets = \App\Models\Carnet::whereIn('client_id', $clientIds)
+        //     ->where('statut', 'actif')
+        //     ->get();
+        $carnets = Carnet::whereIn('client_id', $clientIds)
             ->where('statut', 'actif')
+            ->withCount(['cycles as total_cycles_termines' => function($query) {
+                $query->where('statut', 'termine');
+            }])
             ->get();
 
         // 3. Récupération des cycles : "En cours" OU "Terminé sans retrait"
-        $cycles = \App\Models\Cycle::whereIn('carnet_id', $carnets->pluck('id'))
+        $cycles = Cycle::whereIn('carnet_id', $carnets->pluck('id'))
             ->where(function($query) {
                 $query->where('statut', 'en_cours')
                     ->orWhere(function($q) {
@@ -272,7 +278,7 @@ class SyncController extends Controller
 
     public function batchStatus($syncUuid)
     {
-        $batch = \App\Models\SyncBatch::query()
+        $batch = SyncBatch::query()
             ->where('sync_uuid', $syncUuid)
             ->first();
 
