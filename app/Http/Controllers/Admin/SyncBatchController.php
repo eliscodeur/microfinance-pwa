@@ -19,7 +19,7 @@ class SyncBatchController extends Controller
                 $query->where('status', $status);
             })
             ->latest()
-            ->paginate(15)
+            ->paginate(10)
             ->withQueryString();
 
         $totals = [

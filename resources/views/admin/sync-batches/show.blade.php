@@ -3,7 +3,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="mb-1">Batch de synchro</h2>
+        <h2 class="mb-1">Lot de synchro</h2>
         <div class="text-muted small">{{ $syncBatch->sync_uuid }}</div>
     </div>
     <a href="{{ route('admin.sync-batches.index') }}" class="btn btn-outline-secondary btn-sm">Retour liste</a>
@@ -19,7 +19,7 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Etat du batch</h5>
+            <h5 class="mb-0">Etat du lot</h5>
             <span class="badge bg-{{ $syncBatch->status === 'pending_review' ? 'warning text-dark' : ($syncBatch->status === 'approved' ? 'success' : ($syncBatch->status === 'rejected' ? 'danger' : 'secondary')) }}">
                 {{ $syncBatch->status }}
             </span>

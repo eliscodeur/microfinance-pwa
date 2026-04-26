@@ -151,83 +151,140 @@
     }
 
     async function chargerDonneesClient() {
-            const input = document.getElementById('inputSearchClient');
-            const container = document.getElementById('collectes-master-container');
-            const val = input?.value;
+        const input = document.getElementById('inputSearchClient');
+        const container = document.getElementById('collectes-master-container');
+        const val = input?.value;
 
-            const client = await db.clients.where('nom').equals(val).first();
-            if (!client) return;
+        const client = await db.clients.where('nom').equals(val).first();
+        if (!client) {
+            container.innerHTML = `<div class="text-center py-5 text-muted">Client non trouvé.</div>`;
+            return;
+        }
 
-            window.scrollTo(0, 0);
+        window.scrollTo(0, 0);
 
-            try {
-                const toutesLesCollectes = await db.collectes.toArray();
+        try {
+            const toutesLesCollectes = await db.collectes.toArray();
+            let collectesClient = toutesLesCollectes.filter(col => col.client_id == client.id);
+
+            if (collectesClient.length === 0) {
+                container.innerHTML = `<div class="text-center py-5 text-muted small">Aucun pointage trouvé.</div>`;
+                return;
+            }
+
+            const collectesParCycle = {};
+            collectesClient.forEach(col => {
+                const cyId = col.cycle_id || 'sans-cycle';
+                if (!collectesParCycle[cyId]) collectesParCycle[cyId] = [];
+                collectesParCycle[cyId].push(col);
+            });
+
+            // --- ZONE CLIENT COMPACTE ---
+            let html = `
+                <div class="px-2 mb-3">
+                    <div class="d-flex align-items-center bg-white p-2 border shadow-sm" style="border-radius: 12px;">
+                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div class="fw-bold text-dark" style="font-size: 0.9rem;">${client.nom}</div>
+                        <div class="ms-auto">
+                            <span class="badge bg-light text-muted border fw-normal" style="font-size: 0.65rem;">ID: ${client.id}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const cycleIds = Object.keys(collectesParCycle);
+            
+            for (const cyId of cycleIds) {
+                const listeCols = collectesParCycle[cyId];
                 
-                // FILTRAGE ET TRI PAR DATE RÉCENTE (Du plus récent au plus ancien)
-                // 1. Filtrer
-        let collectesClient = toutesLesCollectes.filter(col => col.client_id == client.id);
-
-                // 2. Trier (Logique Robuste)
-                    collectesClient.sort((a, b) => {
-                    // On récupère une valeur temporelle (timestamp)
-                    // Si la date est absente, on utilise l'ID (le plus grand ID est souvent le plus récent)
+                listeCols.sort((a, b) => {
                     const timeA = a.date_collecte ? new Date(a.date_collecte).getTime() : (a.id || 0);
                     const timeB = b.date_collecte ? new Date(b.date_collecte).getTime() : (b.id || 0);
-                    
-                    return timeB - timeA; // Plus grand (récent) en haut
+                    return timeB - timeA;
                 });
-                    if (collectesClient.length === 0) {
-                    container.innerHTML = `<div class="text-center py-5 small text-muted">Aucun pointage.</div>`;
-                    return;
+
+                let numeroAffiche = "N° Inconnu";
+                const firstCol = listeCols[0];
+                if (firstCol) {
+                    const cycleData = await db.cycles.get(parseInt(firstCol.cycle_id));
+                    if (cycleData) {
+                        const carnetData = await db.carnets.get(parseInt(cycleData.carnet_id));
+                        if (carnetData) numeroAffiche = carnetData.numero;
+                    }
                 }
 
-                const totalEncaisse = collectesClient.reduce((sum, col) => sum + parseFloat(col.montant || 0), 0);
+                const totalCycle = listeCols.reduce((sum, col) => sum + parseFloat(col.montant || 0), 0);
+                const ptsCycle = listeCols.reduce((sum, col) => sum + parseInt(col.pointage || 1), 0);
+                const percent = Math.min((ptsCycle / 31) * 100, 100);
 
-                let html = `
-                    <div class="d-flex justify-content-between align-items-center bg-white p-3 mb-3 shadow-sm border border-light" style="border-radius: 15px;">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                <i class="bi bi-calendar-check"></i>
-                            </div>
-                            <div>
-                                <div class="text-muted fw-bold" style="font-size: 0.6rem; text-transform: uppercase;">Total</div>
-                                <div class="fw-bold text-dark" style="font-size: 1rem;">${totalEncaisse.toLocaleString()} F</div>
+                // --- BLOC CYCLE OPTIMISÉ ---
+                html += `
+                    <div class="cycle-block mb-3 mx-2 shadow-sm border bg-white" style="border-radius: 15px; overflow: hidden;">
+                        <div class="p-2 px-3 bg-light-subtle" style="border-bottom: 1px dashed #dee2e6;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="text-muted" style="font-size: 0.65rem; text-transform: uppercase;">Carnet</span>
+                                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">${numeroAffiche}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="fw-bold text-success" style="font-size: 0.95rem;">${totalCycle.toLocaleString()} F</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold ${ptsCycle > 31 ? 'text-danger' : 'text-primary'}" style="font-size: 0.8rem;">
+                                        ${ptsCycle}/31 <i class="bi bi-calendar2-check"></i>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 4px; width: 50px; background-color: #e9ecef; margin-left: auto;">
+                                        <div class="progress-bar ${ptsCycle >= 31 ? 'bg-success' : ''}" style="width: ${percent}%"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <span class="badge bg-light text-primary border">${collectesClient.length} vers</span>
-                    </div>
-                    <div class="card border-0 shadow-sm mb-5" style="border-radius: 15px; overflow: hidden;">
+
                         <div class="list-group list-group-flush">
                 `;
 
-                collectesClient.forEach(col => {
-                    const d = new Date(col.date_collecte || col.created_at);
-                    const dateStr = isNaN(d.getTime()) ? "Aujourd'hui" : d.toLocaleDateString('fr-FR', {day:'2-digit', month:'short'});
+                listeCols.forEach(col => {
+                    // 1. On essaie de récupérer une date valide
+                    const bruteDate = col.date_collecte || col.created_at;
+                    const d = new Date(bruteDate);
+                    
+                    // 2. Si la date est invalide (N/A), on affiche un tiret ou "---"
+                    let dateStr = "Auj"; 
+                    if (!isNaN(d.getTime())) {
+                        dateStr = d.toLocaleDateString('fr-FR', {day:'2-digit', month:'short'});
+                    }
                     
                     html += `
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0" style="border-bottom: 1px solid #f8f9fa !important;">
+                        <div class="list-group-item d-flex justify-content-between align-items-center py-2 border-0" style="border-bottom: 1px solid #f8f9fa !important;">
                             <div class="d-flex align-items-center">
-                                <div class="rounded-circle bg-light text-center me-3" style="width: 32px; height: 32px; line-height: 32px;">
-                                    <span class="fw-bold text-primary" style="font-size: 0.75rem;">${col.pointage || 1}</span>
+                                <div class="rounded bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px; font-size: 0.7rem;">
+                                    ${col.pointage || 1}
                                 </div>
                                 <div>
-                                    <div class="fw-bold" style="font-size: 0.9rem;">${parseFloat(col.montant).toLocaleString()} F</div>
-                                    <div class="text-muted" style="font-size: 0.65rem;">${dateStr}</div>
+                                    <div class="fw-bold" style="font-size: 0.8rem;">${parseFloat(col.montant).toLocaleString()} F</div>
+                                    <div class="text-muted" style="font-size: 0.6rem;">${dateStr}</div>
                                 </div>
                             </div>
-                            <div class="d-flex gap-1">
+                            <div class="d-flex gap-2">
                                 ${col.synced == 0 ? `
-                                    <button onclick="ouvrirModifCollecte(${col.id})" class="btn btn-sm btn-light border-0"><i class="bi bi-pencil-square text-muted"></i></button>
-                                    <button onclick="supprimerCollecte(${col.id})" class="btn btn-sm btn-light border-0 text-danger"><i class="bi bi-trash3"></i></button>
-                                ` : '<i class="bi bi-cloud-check-fill text-success fs-5 px-2"></i>'}
+                                    <i onclick="ouvrirModifCollecte(${col.id})" class="bi bi-pencil-square text-muted fs-6"></i>
+                                    <i onclick="supprimerCollecte(${col.id})" class="bi bi-trash3 text-danger fs-6"></i>
+                                ` : '<i class="bi bi-cloud-check-fill text-success fs-5"></i>'}
                             </div>
                         </div>`;
                 });
 
                 html += `</div></div>`;
-                container.innerHTML = html;
+            }
 
-            } catch (e) { console.error(e); }
+            container.innerHTML = html;
+
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = `<div class="alert alert-danger mx-2 py-2 small">Erreur de lecture.</div>`;
+        }
     }
     // --- FONCTIONS POUR LE MODAL DE MODIFICATION ---
 
@@ -301,11 +358,9 @@
 
             // 4. Mise à jour automatique du statut du cycle
             if (cumulPointage < 31) {
-                await db.cycles.update(cycleId, { statut: 'ouvert' });
-                console.log(`Cycle ${cycleId} maintenu/réouvert (Total: ${cumulPointage})`);
+                await db.cycles.update(cycleId, { statut: 'en_cours' });
             } else {
-                await db.cycles.update(cycleId, { statut: 'fermé' });
-                console.log(`Cycle ${cycleId} clôturé (Total: ${cumulPointage})`);
+                await db.cycles.update(cycleId, { statut: 'termine' });
             }
 
             // 5. Fermer le modal et rafraîchir la vue

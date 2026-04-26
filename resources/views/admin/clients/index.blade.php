@@ -8,7 +8,7 @@
             <p class="text-muted mb-0">Suivi des clients, de leurs affectations et de leurs carnets.</p>
         </div>
         <div class="d-flex gap-2">
-            @can('GÃ©rer Clients')
+            @can('Gérer Clients')
             <a href="{{ route('admin.clients.create') }}" class="btn btn-primary">Ajouter client</a>
             @endcan
             <a href="{{ route('admin.clients.export', 'csv') }}" class="btn btn-outline-secondary">Exporter CSV</a>

@@ -15,9 +15,9 @@
 
 <div class="mb-3 d-flex gap-2 flex-wrap">
     <a href="{{ route('admin.sync-batches.index', ['status' => 'pending_review']) }}" class="btn btn-sm {{ $status === 'pending_review' ? 'btn-warning' : 'btn-outline-warning' }}">En attente</a>
-    <a href="{{ route('admin.sync-batches.index', ['status' => 'approved']) }}" class="btn btn-sm {{ $status === 'approved' ? 'btn-success' : 'btn-outline-success' }}">Validees</a>
-    <a href="{{ route('admin.sync-batches.index', ['status' => 'rejected']) }}" class="btn btn-sm {{ $status === 'rejected' ? 'btn-danger' : 'btn-outline-danger' }}">Refusees</a>
-    <a href="{{ route('admin.sync-batches.index', ['status' => 'cancelled']) }}" class="btn btn-sm {{ $status === 'cancelled' ? 'btn-secondary' : 'btn-outline-secondary' }}">Annulees</a>
+    <a href="{{ route('admin.sync-batches.index', ['status' => 'approved']) }}" class="btn btn-sm {{ $status === 'approved' ? 'btn-success' : 'btn-outline-success' }}">Validées</a>
+    <a href="{{ route('admin.sync-batches.index', ['status' => 'rejected']) }}" class="btn btn-sm {{ $status === 'rejected' ? 'btn-danger' : 'btn-outline-danger' }}">Refusées</a>
+    <a href="{{ route('admin.sync-batches.index', ['status' => 'cancelled']) }}" class="btn btn-sm {{ $status === 'cancelled' ? 'btn-secondary' : 'btn-outline-secondary' }}">Annulées</a>
     <a href="{{ route('admin.sync-batches.index', ['status' => 'all']) }}" class="btn btn-sm {{ $status === 'all' ? 'btn-dark' : 'btn-outline-dark' }}">Toutes</a>
 </div>
 
@@ -48,8 +48,18 @@
                         <td>{{ $batch->nb_collectes }}</td>
                         <td>{{ number_format((float) $batch->total_montant, 0, ',', ' ') }} FCFA</td>
                         <td>
+                           @php
+                                $title = "en attente"; // Valeur par défaut
+                                if($batch->status === "approved") {
+                                    $title = "Approuvée";
+                                } elseif($batch->status === "rejected") {
+                                    $title = "rejetée";
+                                } elseif($batch->status ==="cancelled") {
+                                    $title = "Annulée";
+                                }
+                            @endphp
                             <span class="badge bg-{{ $batch->status === 'pending_review' ? 'warning text-dark' : ($batch->status === 'approved' ? 'success' : ($batch->status === 'rejected' ? 'danger' : 'secondary')) }}">
-                                {{ $batch->status }}
+                                {{ $title }}
                             </span>
                         </td>
                         <td class="small">{{ $batch->created_at?->format('d/m/Y H:i') }}</td>
@@ -59,7 +69,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-5">Aucun batch de synchronisation pour ce filtre.</td>
+                        <td colspan="8" class="text-center text-muted py-5">Aucun lot de synchronisation pour ce filtre.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -68,6 +78,6 @@
 </div>
 
 <div class="mt-3">
-    {{ $batches->links() }}
+    {{ $batches->links('pagination::bootstrap-5') }}
 </div>
 @endsection
