@@ -11,8 +11,10 @@ class Carnet extends Model
 
     protected $fillable = [
         'client_id',
+        'type', 
+        'category_tontine_id',
+        'parent_id',
         'numero',
-        'reference_physique', 
         'statut',
         'date_debut',
     ];
@@ -28,8 +30,28 @@ class Carnet extends Model
         static::creating(function ($carnet) {
             if (empty($carnet->numero)) {
                 $latest = self::latest('id')->first();
-                $number = $latest ? ((int) str_replace('NNC-', '', $latest->numero)) + 1 : 1;
-                $carnet->numero = "NNC-" . str_pad($number, 3, '0', STR_PAD_LEFT);
+                $nextId = $latest ? $latest->id + 1 : 1;
+
+                if ($carnet->type === 'tontine') {
+                    $carnet->numero = 1000 + $nextId;
+                } 
+                else if ($carnet->type === 'compte') {
+                    // SÉCURITÉ : On récupère manuellement le client si la relation est vide
+                    $client = $carnet->client ?? \App\Models\Client::find($carnet->client_id); 
+                    
+                    if ($client) {
+                        $initialeNom = strtoupper(substr($client->nom, 0, 1));
+                        // Gestion du prénom vide ou null
+                        $prenom = $client->prenom ?? 'X';
+                        $initialePrenom = strtoupper(substr($prenom, 0, 1));
+                        
+                        $idPart = 1000 + $nextId;
+                        $carnet->numero = "{$initialeNom}{$idPart}{$initialePrenom}";
+                    } else {
+                        // Fallback au cas où le client n'existe vraiment pas
+                        $carnet->numero = "C" . (1000 + $nextId);
+                    }
+                }
             }
         });
     }
@@ -44,5 +66,21 @@ class Carnet extends Model
 
     public function retraits() {
         return $this->hasMany(Retrait::class); // Ou la table où tu stockes les sorties d'argent
+    }
+    // app/Models/Carnet.php
+
+    public function categoryTontine()
+    {
+        return $this->belongsTo(CategoryTontine::class, 'category_tontine_id');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Carnet::class, 'parent_id');
+    }
+
+    public function enfants() // Pour voir les comptes liés à une tontine
+    {
+        return $this->hasMany(Carnet::class, 'parent_id');
     }
 }

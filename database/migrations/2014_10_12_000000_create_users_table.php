@@ -17,19 +17,12 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('username')->unique()->nullable()->after('email');
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('username')->unique()->nullable();
             $table->string('password');
-            $table->rememberToken();
-            $table->timestamps();
             $table->foreignId('role_id')->nullable()->constrained()->onDelete('set null');
             $table->boolean('is_active')->default(true);
-        });
-        Schema::table('agents', function (Blueprint $table) {
-    // Lien vers le compte utilisateur
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            // Le code de l'agent
-            $table->string('code_agent')->unique(); 
+            $table->rememberToken();
+            $table->timestamps();
         });
     }
 

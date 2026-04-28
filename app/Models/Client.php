@@ -10,7 +10,19 @@ class Client extends Model
     use HasFactory;
     
     protected $fillable = [
-        'nom','telephone','adresse','agent_id'
+        'nom', 
+        'date_naissance', 
+        'lieu_naissance', 
+        'genre', 
+        'statut_matrimonial', 
+        'nationalite', 
+        'profession', 
+        'telephone', 
+        'adresse', 
+        'photo', 
+        'reference_nom', 
+        'reference_telephone', 
+        'agent_id'
     ];
 
     public function agent(){

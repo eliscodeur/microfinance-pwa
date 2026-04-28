@@ -47,7 +47,7 @@
                                 <td>
                                     <span class="badge rounded-pill bg-light text-dark border">
                                         <i class="bi bi-shield-lock text-primary me-1"></i>
-                                        {{ $user->role->nom }}
+                                        {{ $user->role->name ?: "---" }}
                                     </span>
                                 </td>
                                 <td class="text-end">
