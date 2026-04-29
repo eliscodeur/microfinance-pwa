@@ -51,6 +51,7 @@ class ClientController extends Controller
     {
         $request->validate([
             'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
             'telephone' => 'required|string',
             'agent_id' => 'required|exists:agents,id',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -99,6 +100,7 @@ class ClientController extends Controller
     $request->validate([
         // Champs obligatoires
         'nom' => 'required|string|max:255',
+        'prenom' => 'required|string|max:255',
         'telephone' => 'required|string|max:20',
         'agent_id' => 'required|exists:agents,id',
         // Informations personnelles (optionnelles)

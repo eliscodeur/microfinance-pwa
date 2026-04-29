@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Carnet extends Model
 {
     use HasFactory;
-
+    protected $casts = [
+        'date_debut' => 'date',
+    ];
     protected $fillable = [
         'client_id',
         'type', 
@@ -24,34 +26,53 @@ class Carnet extends Model
     {
         return $this->belongsTo(Client::class);
     }
-    // app/Models/Carnet.php
+    public function getIsViergeAttribute()
+    {
+        // 1. Pour la Tontine : aucun cycle commencé
+        if ($this->cycles()->exists()) return false;
+
+        // 2. Pour l'Épargne/Compte : aucun dépôt ni retrait
+        if ($this->depots()->exists()) return false;
+        if ($this->retraits()->exists()) return false;
+
+        // 3. Sécurité supplémentaire : aucune collecte (même orpheline)
+        if ($this->collectes()->exists()) return false;
+
+        return true;
+    }
     protected static function booted()
     {
         static::creating(function ($carnet) {
             if (empty($carnet->numero)) {
-                $latest = self::latest('id')->first();
-                $nextId = $latest ? $latest->id + 1 : 1;
+                // OPTION A : On compte combien il y a de carnets pour définir le rang
+                // Si tu as 0 carnet, le prochain est 1. Si tu en as 5, le prochain est 6.
+                $count = self::count(); 
+                $nextNumber = $count + 1;
+                
+                // On construit la partie numérique (1000 + le rang)
+                // Ainsi, le premier sera toujours 1001, le second 1002, etc.
+                $idPart = 1000 + $nextNumber;
 
                 if ($carnet->type === 'tontine') {
-                    $carnet->numero = 1000 + $nextId;
+                    $carnet->numero = (string)$idPart;
                 } 
                 else if ($carnet->type === 'compte') {
-                    // SÉCURITÉ : On récupère manuellement le client si la relation est vide
-                    $client = $carnet->client ?? \App\Models\Client::find($carnet->client_id); 
+                    $client = \App\Models\Client::find($carnet->client_id);
                     
                     if ($client) {
-                        $initialeNom = strtoupper(substr($client->nom, 0, 1));
-                        // Gestion du prénom vide ou null
-                        $prenom = $client->prenom ?? 'X';
-                        $initialePrenom = strtoupper(substr($prenom, 0, 1));
-                        
-                        $idPart = 1000 + $nextId;
+                        $initialeNom = strtoupper(mb_substr($client->nom, 0, 1));
+                        $initialePrenom = strtoupper(mb_substr($client->prenom ?? 'X', 0, 1));
                         $carnet->numero = "{$initialeNom}{$idPart}{$initialePrenom}";
                     } else {
-                        // Fallback au cas où le client n'existe vraiment pas
-                        $carnet->numero = "C" . (1000 + $nextId);
+                        $carnet->numero = "C" . $idPart;
                     }
                 }
+            }
+        });
+        static::deleting(function ($carnet) {
+            if (!$carnet->is_deletable) {
+                // On lance une exception ou on retourne false pour stopper Laravel
+                throw new \Exception("Action impossible : Ce carnet contient des transactions (cycles, dépôts ou collectes).");
             }
         });
     }

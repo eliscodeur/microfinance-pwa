@@ -11,7 +11,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CategoryTontineController;
 use App\Http\Controllers\Pwa\PwaController; 
-use App\Http\Controllers\CarnetController;
+use App\Http\Controllers\Admin\CarnetController;
 use App\Http\Controllers\Api\SyncController;
 
 /*
@@ -55,19 +55,17 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('clients/export/{format}', [ClientController::class, 'export'])->name('clients.export');
     Route::get('clients/{client}/export-history', [ClientController::class, 'exportHistory'])->name('clients.exportHistory');
 
+    Route::get('/carnets/get-tontines/{clientId}', [CarnetController::class, 'getTontinesByClient'])->name('carnets.get-tontines');
     Route::get('/carnets', [CarnetController::class, 'index'])->name('carnets.index');
     Route::get('/carnets/{carnet}', [CarnetController::class, 'show'])->name('carnets.show');
     Route::post('/carnets/store', [CarnetController::class, 'store'])->name('carnets.store');
     Route::put('/carnets/{carnet}', [CarnetController::class, 'update'])->name('carnets.update');
     Route::delete('/carnets/{carnet}', [CarnetController::class, 'destroy'])->name('carnets.destroy');
-
+    
     Route::resource('roles', RoleController::class);
     Route::resource('users', UserController::class);
-    Route::resource('categories-tontine', CategoryTontineController::class)->names([
-        'index' => 'categories.index',
-        'create' => 'categories.create',
-        'store' => 'categories.store',
-    ]);
+    // Dans routes/web.php
+    Route::resource('categories', CategoryTontineController::class);
 });
 
 

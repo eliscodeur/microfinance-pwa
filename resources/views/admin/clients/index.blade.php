@@ -62,7 +62,7 @@
                     @forelse($clients as $client)
                         <tr>
                             <td>
-                                <strong>{{ $client->nom }}</strong><br>
+                                <strong>{{ $client->nom }} {{ $client->prenom }}</strong><br>
                                 <small class="text-muted">#{{ $client->id }}</small>
                             </td>
                             <td>{{ $client->telephone ?: '---' }}</td>

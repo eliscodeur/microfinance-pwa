@@ -196,7 +196,7 @@
 <main class="content" id="mainContent">
     <div class="p-4">
         @yield('content')
-        
+         
     </div>
 </main>
 

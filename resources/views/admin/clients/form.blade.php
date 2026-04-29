@@ -17,12 +17,16 @@
 @if(isset($client))
 @method('PUT')
 @endif
-
-<div class="mb-3">
-    <label>Nom</label>
-    <input type="text" name="nom" class="form-control" value="{{ isset($client) ? $client->nom : old('nom') }}" required>
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label>Nom</label>
+        <input type="text" name="nom" class="form-control" value="{{ isset($client) ? $client->nom : old('nom') }}" required>
+    </div>
+    <div class="col-md-6 ">
+        <label>Prénom</label>
+        <input type="text" name="prenom" class="form-control" value="{{ isset($client) ? $client->prenom : old('prenom') }}" required>
+    </div>
 </div>
-
 <div class="row">
     <div class="col-md-6 mb-3">
         <label>Date de naissance</label>
