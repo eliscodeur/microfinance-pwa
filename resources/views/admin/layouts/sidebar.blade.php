@@ -115,11 +115,46 @@
 
 <div class="sidebar-overlay" id="overlay"></div>
 
-<header class="admin-topbar">
-    <button class="hamburger-btn" id="hamburgerBtn"><i class="bi bi-list"></i></button>
-    <div>
-        <div class="small text-muted lh-1">Espace administration</div>
-        <div class="fw-bold text-dark">{{ config('app.name') }}</div>
+<header class="admin-topbar d-flex align-items-center justify-content-between px-3 py-2 bg-white border-bottom shadow-sm">
+    <div class="d-flex align-items-center">
+        <button class="hamburger-btn border-0 bg-transparent me-2" id="hamburgerBtn">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+
+        <div class="d-flex align-items-center border-start ps-3 ms-1">
+            <img src="{{ asset('icons/icon-192x192.png') }}" alt="Logo" class="me-2" style="height: 35px; width: auto;">
+            
+            <div class="d-none d-md-block">
+                <div class="small text-muted lh-1" style="font-size: 10px;">Espace administration</div>
+                <div class="fw-bold text-dark text-uppercase small" style="letter-spacing: 0.5px;">NANA ECO CONSULTING</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dropdown">
+        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="text-end me-2 d-none d-sm-block">
+                <div class="fw-bold small text-dark lh-1">{{ Auth::user()->name }}</div>
+                <div class="text-muted" style="font-size: 11px;">Administrateur</div>
+            </div>
+            <div class="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 38px; height: 38px; border: 2px solid #fff;">
+                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+            </div>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="dropdownUser">
+            <li><h6 class="dropdown-header">Mon Compte</h6></li>
+            <li><a class="dropdown-item d-flex align-items-center" href="#"><i class="bi bi-person me-2"></i> Profil</a></li>
+            <li><a class="dropdown-item d-flex align-items-center" href="#"><i class="bi bi-gear me-2"></i> Paramètres</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="dropdown-item d-flex align-items-center text-danger font-weight-bold">
+                        <i class="bi bi-box-arrow-right me-2"></i> Déconnexion
+                    </button>
+                </form>
+            </li>
+        </ul>
     </div>
 </header>
 @php

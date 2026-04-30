@@ -4,7 +4,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="h4 mb-1">Fiche Client : {{ $client->nom }}</h2>
+            <h2 class="h4 mb-1">Fiche Client : {{ $client->nom }} {{ $client->prenom }}</h2>
             <p class="text-muted mb-0">Détails personnels, carnets et historique d'affectation.</p>
         </div>
         <div class="d-flex gap-2">
@@ -30,7 +30,7 @@
                             </div>
                         @endif
                     </div>
-                    <h5 class="fw-bold mb-1">{{ $client->nom }}</h5>
+                    <h5 class="fw-bold mb-1">{{ $client->nom }} {{ $client->prenom }}</h5>
                     <span class="badge bg-primary mb-3">{{ $client->profession ?: 'Profession non définie' }}</span>
                     
                     <hr>
@@ -143,7 +143,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>Numéro</th>
-                            <th>Référence Physique</th>
+                            <!-- <th>Référence Physique</th> -->
                             <th>Statut</th>
                             <th>Nombre de Cycles</th>
                             <th class="text-end">Action</th>
@@ -153,7 +153,7 @@
                         @forelse($client->carnets as $carnet)
                             <tr>
                                 <td><strong>{{ $carnet->numero }}</strong></td>
-                                <td>{{ $carnet->reference_physique ?: '---' }}</td>
+                                <!-- <td>{{ $carnet->reference_physique ?: '---' }}</td> -->
                                 <td>
                                     @php
                                         $color = match($carnet->statut) {

@@ -78,6 +78,16 @@
                 </table>
             </div>
         </div>
+        <div class="card-footer bg-white border-top py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                    Affichage de <strong>{{ $carnets->firstItem() }}</strong> à <strong>{{ $carnets->lastItem() }}</strong> sur <strong>{{ $carnets->total() }}</strong> carnets
+                </div>
+                <div>
+                    {{ $carnets->links('pagination::bootstrap-5') }}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

@@ -4,8 +4,8 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold mb-0">NANA CONSULTING</h2>
-            <p class="text-muted">Tableau de bord de gestion de la collecte</p>
+            <!-- <h2 class="fw-bold mb-0">NANA ECO CONSULTING</h2> -->
+            <p class="text-muted">Tableau de bord</p>
         </div>
         <div class="text-end">
             <span class="badge bg-primary-subtle text-primary p-2 px-3 rounded-pill">
@@ -32,7 +32,7 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100 p-3">
                 <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 bg-success text-white rounded-3 p-3">
+                    <div class="flex-shrink-0 bg-secondary text-white rounded-3 p-3">
                         <i class="bi bi-person-check-fill fs-4"></i>
                     </div>
                     <div class="ms-3">
@@ -44,7 +44,7 @@
         </div>
 
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm h-100 p-3 text-white bg-warning bg-gradient">
+            <div class="card border-0 shadow-sm h-100 p-3 text-white bg-success bg-gradient">
                 <div class="d-flex align-items-center">
                     <div class="ms-2">
                         <h6 class="mb-1 text-uppercase small fw-bold text-dark">Collecte Totale</h6>
@@ -59,7 +59,7 @@
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <h6 class="text-muted mb-1 text-uppercase small fw-bold">Sync. en attente</h6>
-                        <h3 class="mb-0 fw-bold {{ $pendingSyncBatches > 0 ? 'text-danger' : 'text-success' }}">
+                        <h3 class="mb-0 fw-bold {{ $pendingSyncBatches > 0 ? 'text-warning' : 'text-success' }}">
                             {{ $pendingSyncBatches }}
                         </h3>
                     </div>

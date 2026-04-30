@@ -13,30 +13,60 @@ class CarnetController extends Controller
     /**
      * Affiche la liste des carnets et les données pour le formulaire.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            // 1. Récupération des données avec relations pour éviter le problème N+1
-            $carnets = Carnet::with(['client', 'categoryTontine'])->latest()->get();
+            // 1. Initialisation de la requête avec le count des cycles pour le filtre "vierge"
+            $query = Carnet::with(['client', 'categoryTontine', 'parent'])
+                        ->withCount('cycles');
+
+            // --- FILTRE RECHERCHE (Numéro ou Nom Client) ---
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('numero', 'LIKE', "%$search%")
+                    ->orWhereHas('client', function($sq) use ($search) {
+                        $sq->where('nom', 'LIKE', "%$search%")
+                            ->orWhere('prenom', 'LIKE', "%$search%");
+                    });
+                });
+            }
+
+            // --- FILTRE TYPE ---
+            if ($request->filled('type')) {
+                $query->where('type', $request->type);
+            }
+
+            // --- FILTRE ÉTAT (Basé sur les cycles pour l'instant) ---
+            if ($request->filled('filter')) {
+                if ($request->filter == 'vierge') {
+                    $query->has('cycles', '=', 0);
+                } elseif ($request->filter == 'actif') {
+                    $query->has('cycles', '>', 0);
+                }
+            }
+
+            // 2. Exécution avec pagination pour supporter les filtres
+            $carnets = $query->latest()->paginate(20)->withQueryString();
+
+            // 3. Récupération des données pour les formulaires (inchangé)
             $categories = CategoryTontine::all();
             $clients = Client::orderBy('nom')->get();
-
-            // 2. Récupérer les tontines actives pour le champ "parent_id" du formulaire
-            // On suppose que le type est 'tontine' et le statut 'actif'
+            
             $tontinesActives = Carnet::where('type', 'tontine')
-                ->where('statut', 'actif') // Assure-toi que ce champ existe en base
+                ->where('statut', 'actif')
                 ->with('client')
                 ->get();
 
         } catch (\Exception $e) {
-            // Log de l'erreur pour le développeur (toi)
             \Log::error("Erreur base de données Carnets : " . $e->getMessage());
 
-            // Initialisation de collections vides pour éviter les erreurs dans Blade
             $carnets = collect();
             $categories = collect();
             $clients = collect();
             $tontinesActives = collect();
+            
+            return redirect()->back()->with('error', "Erreur : " . $e->getMessage());
         }
 
         return view('admin.carnets.index', compact(
@@ -63,17 +93,18 @@ class CarnetController extends Controller
             'client_id.required' => 'Le client est obligatoire.',
             'category_tontine_id.required_if' => 'Veuillez choisir une catégorie pour la tontine.',
         ]);
-
+        \DB::beginTransaction();
         try {
             // Le statut est forcé ici, le numéro est géré par le modèle
             $validated['statut'] = 'actif';
 
             $carnet = Carnet::create($validated);
-
+                \DB::commit();
             return redirect()->route('admin.carnets.index')
                      ->with('success', "Carnet " . $carnet->numero . " créé avec succès.");
 
         } catch (\Exception $e) {
+            \DB::rollBack();
             return response()->json([
                 'message' => 'Erreur lors de la création : ' . $e->getMessage()
             ], 500);
@@ -98,6 +129,7 @@ class CarnetController extends Controller
             'category_tontine_id.required_if' => 'Veuillez choisir une catégorie pour la tontine.',
         ]);
 
+        \DB::beginTransaction();
         try {
             $data = $request->all();
             // LOGIQUE DE SÉCURITÉ :
@@ -108,6 +140,7 @@ class CarnetController extends Controller
             }
             $carnet->update($data);
 
+            \DB::commit();
             return redirect()->route('admin.carnets.index')->with('success', 'Carnet mis à jour');
         } catch (\Exception $e) {
             return response()->json(['message' => 'Erreur: ' . $e->getMessage()], 500);
@@ -134,5 +167,11 @@ class CarnetController extends Controller
                         ->get(['id', 'numero']);
 
         return response()->json($tontines); 
+    }
+    public function show($id)
+    {
+        $carnet = Carnet::with(['client', 'cycles.collectes', 'cycles.agent', 'cycles.retrait.admin'])->findOrFail($id);
+
+        return view('admin.carnets.show', compact('carnet'));
     }
 }

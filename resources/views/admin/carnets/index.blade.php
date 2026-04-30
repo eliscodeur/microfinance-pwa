@@ -21,73 +21,112 @@
 
     <div class="tab-content mt-3" id="carnetTabsContent">
         <div class="tab-pane fade {{ !$errors->any() ? 'show active' : '' }}" id="list-content" role="tabpanel">
-            <div class="card shadow-sm border-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Numéro</th>
-                                <th>Client</th>
-                                <th>Type</th>
-                                <th>Cycles</th> {{-- Nouvelle colonne --}}
-                                <th>Détails</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($carnets as $carnet)
-                            <tr>
-                                <td><strong class="text-primary">{{ $carnet->numero }}</strong></td>
-                                <td>
-                                    {{ $carnet->client->nom }} {{ $carnet->client->prenom }}<br>
-                                    <small class="text-muted">{{ $carnet->client->telephone }}</small>
-                                </td>
-                                <td>
-                                    <span class="badge {{ $carnet->type === 'tontine' ? 'bg-info-subtle text-info' : 'bg-warning-subtle text-warning' }} border">
-                                        {{ ucfirst($carnet->type) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    {{-- On affiche le nombre de cycles --}}
-                                    <span class="badge rounded-pill bg-light text-dark border">
-                                        {{ $carnet->cycles_count ?? 0 }}
-                                    </span>
-                                </td>
-                                <td>
-                                    @if($carnet->type === 'tontine')
-                                        <small>{{ $carnet->categoryTontine->libelle ?? '-' }}</small>
-                                    @else
-                                        <small class="text-muted">{{ $carnet->parent ? 'Lié au #'.$carnet->parent->numero : 'Indépendant' }}</small>
-                                    @endif
-                                </td>
-                                <td class="text-end">
-                                    <div class="d-flex justify-content-end gap-2">
+            <div class="bg-white p-3 border rounded-3 mb-4 shadow-sm">
+                <form action="{{ route('admin.carnets.index') }}" method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Rechercher</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0 ps-0" 
+                                placeholder="N° de carnet, nom du client..." value="{{ request('search') }}">
+                        </div>
+                    </div>
 
-                                        @if($carnet->is_deletable)
-                                            <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="{{ $carnet->id }}">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Type</label>
+                        <select name="type" class="form-select border-0 bg-light">
+                            <option value="">Tous les types</option>
+                            <option value="tontine" {{ request('type') == 'tontine' ? 'selected' : '' }}>Tontine</option>
+                            <option value="compte" {{ request('type') == 'compte' ? 'selected' : '' }}>Épargne (Compte)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">État des Carnets</label>
+                        <select name="filter" class="form-select border-0 bg-light">
+                            <option value="">Tous les carnets</option>
+                            <option value="vierge" {{ request('filter') == 'vierge' ? 'selected' : '' }}>Vierges (Supprimables)</option>
+                            <option value="actif" {{ request('filter') == 'actif' ? 'selected' : '' }}>Avec transactions (Verrouillés)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">
+                            <i class="bi bi-filter me-2"></i>Filtrer
+                        </button>
+                        <a href="{{ route('admin.carnets.index') }}" class="btn btn-light border w-100 shadow-sm" title="Réinitialiser">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>    
+            <div class="card shadow-sm border-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Numéro</th>
+                                    <th>Client</th>
+                                    <th>Type</th>
+                                    <th>Cycles</th> {{-- Nouvelle colonne --}}
+                                    <th>Détails</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($carnets as $carnet)
+                                <tr>
+                                    <td><strong class="text-primary">{{ $carnet->numero }}</strong></td>
+                                    <td>
+                                        {{ $carnet->client->nom }} {{ $carnet->client->prenom }}<br>
+                                        <small class="text-muted">{{ $carnet->client->telephone }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ $carnet->type === 'tontine' ? 'bg-info-subtle text-info' : 'bg-warning-subtle text-warning' }} border">
+                                            {{ ucfirst($carnet->type) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{-- On affiche le nombre de cycles --}}
+                                        <span class="badge rounded-pill bg-light text-dark border">
+                                            {{ $carnet->cycles_count ?? 0 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if($carnet->type === 'tontine')
+                                            <small>{{ $carnet->categoryTontine->libelle ?? '-' }}</small>
                                         @else
-                                            <span class="text-muted" title="Transactions existantes">
-                                                <i class="bi bi-lock-fill"></i>
-                                            </span>
+                                            <small class="text-muted">{{ $carnet->parent ? 'Lié au #'.$carnet->parent->numero : 'Indépendant' }}</small>
                                         @endif
-                                    </div>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    <i class="bi bi-folder-x display-4 d-block mb-3"></i>
-                                    Aucun carnet trouvé.
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex justify-content-end gap-2">
+
+                                            @if($carnet->is_deletable)
+                                                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="{{ $carnet->id }}">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            @else
+                                                <span class="text-muted" title="Transactions existantes">
+                                                    <i class="bi bi-lock-fill"></i>
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="bi bi-folder-x display-4 d-block mb-3"></i>
+                                        Aucun carnet trouvé.
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
 
         <div class="tab-pane fade {{ $errors->any() ? 'show active' : '' }}" id="add-content" role="tabpanel">
             <div class="card shadow-sm border-0 p-4">

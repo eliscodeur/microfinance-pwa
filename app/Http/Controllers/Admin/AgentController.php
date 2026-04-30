@@ -58,9 +58,9 @@ class AgentController extends Controller
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('agents', 'public');
         }
-        // 2. Génération du code NNC automatique
+        // 2. Génération du code NEC automatique
         $count = Agent::count() + 1;
-        $code = 'NNC-' . str_pad($count, 5, '0', STR_PAD_LEFT);
+        $code = 'NEC-' . str_pad($count, 5, '0', STR_PAD_LEFT);
 
 
        // 3. Création de l'Utilisateur (Authentification)
@@ -70,10 +70,10 @@ class AgentController extends Controller
             $user = User::create([
                 'name'     => $request->nom,
                 'email'    => $request->email,
-                'username' => $code, // Le fameux matricule pour la connexion
+                'username' => $code, 
                 'password' => Hash::make($request->password),
                 'type'     => 'agent',
-                'can_sync' => true, // Par défaut, on autorise la synchronisation
+                'can_sync' => true, 
                 'is_active'=> 1,
             ]);
 

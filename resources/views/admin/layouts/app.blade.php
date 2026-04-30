@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NANA CONSULTING</title>
+    <title>NANA ECO CONSULTING</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -18,7 +18,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3 shadow-sm">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/dashboard">NANA CONSULTING</a>
+        <a class="navbar-brand" href="/dashboard">NANA ECO CONSULTING</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
