@@ -55,7 +55,12 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('clients/export/{format}', [ClientController::class, 'export'])->name('clients.export');
     Route::get('clients/{client}/export-history', [ClientController::class, 'exportHistory'])->name('clients.exportHistory');
 
+    Route::resource('credits', \App\Http\Controllers\Admin\CreditController::class)->only(['index', 'create', 'store', 'show']);
+    Route::post('credits/{credit}/approve', [\App\Http\Controllers\Admin\CreditController::class, 'approve'])->name('credits.approve');
+    Route::patch('credits/{credit}/payments/{payment}', [\App\Http\Controllers\Admin\CreditController::class, 'updatePayment'])->name('credits.payments.update');
+
     Route::get('/carnets/get-tontines/{clientId}', [CarnetController::class, 'getTontinesByClient'])->name('carnets.get-tontines');
+    Route::get('/carnets/get-by-client/{clientId}', [CarnetController::class, 'getCarnetsByClient'])->name('carnets.get-by-client');
     Route::get('/carnets', [CarnetController::class, 'index'])->name('carnets.index');
     Route::get('/carnets/{carnet}', [CarnetController::class, 'show'])->name('carnets.show');
     Route::post('/carnets/store', [CarnetController::class, 'store'])->name('carnets.store');

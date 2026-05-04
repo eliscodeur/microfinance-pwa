@@ -33,9 +33,9 @@
         if (!container) return;
 
         try {
-            // Récupération des données
+            // 1. Récupération des données (Trié par nom via l'index Dexie)
             const [clients, allCarnets, cycles] = await Promise.all([
-                db.clients.toArray(),
+                db.clients.orderBy('nom').toArray(),
                 db.carnets.toArray(),
                 db.cycles.where('statut').equals('en_cours').toArray()
             ]);
@@ -48,19 +48,27 @@
                 carnetCounts[car.client_id] = (carnetCounts[car.client_id] || 0) + 1;
             });
 
-            // Filtrage
+            // 2. Filtrage intelligent (Nom, Prénom et Téléphone)
             let filteredClients = clients;
             if (filter) {
                 const lowFilter = filter.toLowerCase();
-                filteredClients = clients.filter(c => 
-                    c.nom.toLowerCase().includes(lowFilter) || 
-                    (c.telephone && c.telephone.includes(filter))
-                );
+                const terms = lowFilter.split(/\s+/); // Gère les recherches multi-mots comme "Jean Dup"
+
+                filteredClients = clients.filter(c => {
+                    const nomComplet = `${c.nom} ${c.prenom}`.toLowerCase();
+                    const prenomNom = `${c.prenom} ${c.nom}`.toLowerCase();
+                    const tel = c.telephone || "";
+
+                    // Vérifie si le filtre correspond au nom complet, à l'inverse, ou au téléphone
+                    return nomComplet.includes(lowFilter) || 
+                        prenomNom.includes(lowFilter) || 
+                        tel.includes(filter);
+                });
             }
 
-            // Rendu
+            // 3. Rendu HTML
             if (filteredClients.length === 0) {
-                container.innerHTML = `<div class="text-center py-5 text-muted small">Aucun client trouvé.</div>`;
+                container.innerHTML = `<div class="text-center py-5 text-muted small">Aucun client trouvé pour "${filter}".</div>`;
                 return;
             }
 
@@ -68,17 +76,20 @@
                 const hasActiveCycle = allCarnets.some(car => car.client_id === client.id && activeCycles[car.id]); 
                 const nbCarnets = carnetCounts[client.id] || 0;
                 
+                // Sécurité pour les initiales de l'avatar
+                const initiales = `${(client.nom || "?").charAt(0)}${(client.prenom || "?").charAt(0)}`.toUpperCase();
+
                 return `
                 <div class="col-12">
                     <div class="card border-0 shadow-sm rounded-4 mb-2 p-2 client-card ${hasActiveCycle ? 'border-start border-primary border-4' : ''}" 
                         onclick="openCarnet(${client.id})">
                         <div class="d-flex align-items-center">
-                            <div class="avatar-circle ${hasActiveCycle ? 'bg-primary' : 'bg-light text-muted'}">
-                                ${client.nom.charAt(0).toUpperCase()}
+                            <div class="avatar-circle ${hasActiveCycle ? 'bg-primary text-white' : 'bg-light text-muted'}">
+                                ${initiales}
                             </div>
                             <div class="flex-grow-1 ms-3">
                                 <div class="d-flex justify-content-between align-items-start">
-                                    <h6 class="mb-0 fw-bold text-dark">${client.nom}</h6>
+                                    <h6 class="mb-0 fw-bold text-dark">${client.nom} ${client.prenom}</h6>
                                     <span class="badge ${nbCarnets > 1 ? 'bg-warning text-dark' : 'bg-light text-muted'} border small">
                                         ${nbCarnets} carnet${nbCarnets > 1 ? 's' : ''}
                                     </span>
@@ -98,9 +109,10 @@
                     </div>
                 </div>`;
             }).join('');
+
         } catch (err) {
-            console.error("Erreur Dexie:", err);
-            container.innerHTML = `<div class="alert alert-danger">Erreur de chargement.</div>`;
+            console.error("Erreur d'affichage des clients:", err);
+            container.innerHTML = `<div class="alert alert-danger">Erreur de chargement des données.</div>`;
         }
     }
 

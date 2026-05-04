@@ -1,8 +1,8 @@
 
 
 const db = new Dexie('TontineAppDB');
-db.version(71).stores({
-    clients: 'id, nom, telephone',
+db.version(72).stores({
+    clients: 'id, nom, prenom, telephone',
     carnets: 'id, client_id, numero',
     cycles: '++id, &cycle_uid, carnet_id, statut, synced',
     collectes: '++id, &collecte_uid, cycle_uid, cycle_id, synced'

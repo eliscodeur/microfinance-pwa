@@ -44,4 +44,9 @@ class Client extends Model
     {
         return $this->hasOne(Carnet::class)->where('statut', 'actif');
     }
+
+    public function credits()
+    {
+        return $this->hasMany(Credit::class);
+    }
 }

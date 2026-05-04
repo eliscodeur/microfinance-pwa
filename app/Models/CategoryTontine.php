@@ -24,4 +24,23 @@ class CategoryTontine extends Model
     {
         return $this->hasMany(Carnet::class, 'category_tontine_id');
     }
+
+    public function minimumPointagesRequired(): int
+    {
+        if (!$this->nombre_cycles) {
+            return 15;
+        }
+
+        $label = strtolower($this->libelle ?? '');
+
+        if (str_contains($label, 'quinzaine')) {
+            return max(15, (int) $this->nombre_cycles);
+        }
+
+        if ((int) $this->nombre_cycles >= 15) {
+            return (int) $this->nombre_cycles;
+        }
+
+        return 15 * (int) $this->nombre_cycles;
+    }
 }

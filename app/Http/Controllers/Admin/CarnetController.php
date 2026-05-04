@@ -163,11 +163,47 @@ class CarnetController extends Controller
         $id = (int) $clientId;
         $tontines = Carnet::where('client_id', $id)
                         ->where('type', 'tontine')
-                        ->where('statut', 'actif') // Vérifie bien si c'est 'statut' ou 'status'
+                        ->where('statut', 'actif')
                         ->get(['id', 'numero']);
 
         return response()->json($tontines); 
     }
+
+    public function getCarnetsByClient($clientId)
+    {
+        $id = (int) $clientId;
+        $carnets = Carnet::with(['categoryTontine', 'parent', 'enfants'])
+                        ->where('client_id', $id)
+                        ->where('statut', 'actif')
+                        ->get(['id', 'numero', 'type', 'category_tontine_id', 'parent_id']);
+
+        $carnets = $carnets->map(function (Carnet $carnet) {
+            $category = $carnet->categoryTontine;
+            $requiredPointages = $category ? $category->minimumPointagesRequired() : null;
+            $totalPointages = $carnet->totalPointages();
+            $availableSavings = $carnet->availableSavings();
+            $guaranteeBase = $carnet->guaranteeBase();
+
+            return [
+                'id' => $carnet->id,
+                'numero' => $carnet->numero,
+                'type' => $carnet->type,
+                'category' => $category ? $category->libelle : null,
+                'nombre_cycles' => $category ? $category->nombre_cycles : null,
+                'required_pointages' => $requiredPointages,
+                'total_pointages' => $totalPointages,
+                'available_savings' => $availableSavings,
+                'guarantee_base' => $guaranteeBase,
+                'linked_tontine' => $carnet->parent ? [
+                    'id' => $carnet->parent->id,
+                    'numero' => $carnet->parent->numero,
+                ] : null,
+            ];
+        });
+
+        return response()->json($carnets);
+    }
+
     public function show($id)
     {
         $carnet = Carnet::with(['client', 'cycles.collectes', 'cycles.agent', 'cycles.retrait.admin'])->findOrFail($id);

@@ -85,10 +85,14 @@ class Carnet extends Model
         return $this->hasManyThrough(Collecte::class, Cycle::class);
     }
 
+    public function totalPointages(): int
+    {
+        return (int) $this->collectes()->sum('pointage');
+    }
+
     public function retraits() {
         return $this->hasMany(Retrait::class); // Ou la table où tu stockes les sorties d'argent
     }
-    // app/Models/Carnet.php
 
     public function categoryTontine()
     {
@@ -103,5 +107,64 @@ class Carnet extends Model
     public function enfants() // Pour voir les comptes liés à une tontine
     {
         return $this->hasMany(Carnet::class, 'parent_id');
+    }
+
+    public function activeCycleSavings(): float
+    {
+        $cycle = $this->cycles()->where('statut', 'en_cours')->first();
+
+        if (!$cycle) {
+            return 0.0;
+        }
+
+        return (float) $cycle->collectes()->sum('montant');
+    }
+
+    public function terminalWithdrawableSavings(): float
+    {
+        $cycles = $this->cycles()
+            ->where('statut', 'termine')
+            ->whereNull('retire_at')
+            ->get();
+
+        return round($cycles->reduce(function ($carry, $cycle) {
+            $totalCollectes = (float) $cycle->collectes()->sum('montant');
+            $commission = (float) ($cycle->montant_journalier ?? 0);
+            return $carry + max(0, $totalCollectes - $commission);
+        }, 0.0), 2);
+    }
+
+    public function availableSavings(): float
+    {
+        return round($this->activeCycleSavings() + $this->terminalWithdrawableSavings(), 2);
+    }
+
+    public function allLinkedCarnets()
+    {
+        $collection = collect([$this]);
+
+        if ($this->parent) {
+            $collection->push($this->parent);
+        }
+
+        if ($this->type === 'tontine') {
+            $collection = $collection->merge($this->enfants);
+        }
+
+        return $collection->unique('id');
+    }
+
+    public function guaranteeBase(): float
+    {
+        return round($this->allLinkedCarnets()->sum(function (Carnet $carnet) {
+            return $carnet->availableSavings();
+        }), 2);
+    }
+
+    public function withdrawableGuarantee(): float
+    {
+        return round($this->allLinkedCarnets()->sum(function (Carnet $carnet) {
+            return $carnet->terminalWithdrawableSavings();
+        }), 2);
     }
 }

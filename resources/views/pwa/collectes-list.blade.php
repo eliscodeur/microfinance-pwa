@@ -19,6 +19,20 @@
                 <i class="bi bi-x-circle-fill"></i>
             </button>
         </div>
+        <!-- Filtres de statut -->
+        <div class="container-fluid px-3 mb-2 mt-3">
+            <div class="d-flex gap-2" id="filter-group">
+                <button onclick="setFiltre('non_synchro')" id="btn-filter-non-synchro" class="btn btn-sm rounded-pill btn-primary shadow-sm flex-fill">
+                    <i class="bi bi-cloud-arrow-up"></i> À envoyer
+                </button>
+                <button onclick="setFiltre('synchro')" id="btn-filter-synchro" class="btn btn-sm rounded-pill btn-outline-secondary flex-fill">
+                    <i class="bi bi-cloud-check"></i> Synchro
+                </button>
+                <button onclick="setFiltre('tous')" id="btn-filter-tous" class="btn btn-sm rounded-pill btn-outline-secondary flex-fill">
+                    Toutes
+                </button>
+            </div>
+        </div>
         <datalist id="datalistClients"></datalist>
     </div>
 </div>
@@ -67,7 +81,11 @@
                     </div>
                     <h3 class="text-primary fw-bold mb-0"><span id="edit-total-txt">0</span> FCFA</h3>
                 </div>
-
+                <div id="edit-error-msg" class="text-danger small fw-bold mb-3 d-none" 
+                    style="background-color: #fff5f5; padding: 10px; border-radius: 10px; border: 1px solid #feb2b2;">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i>
+                    <span>Limite atteinte</span>
+                </div>
                 <div class="d-grid gap-2">
                     <button type="button" onclick="enregistrerModifCollecte()" class="btn btn-primary py-3 fw-bold shadow-sm" style="border-radius: 15px;">Mettre à jour</button>
                     <button type="button" class="btn btn-link text-muted" data-bs-dismiss="modal">Annuler</button>
@@ -79,298 +97,343 @@
 <script type="module">
     import { db } from '/js/db-manager.js';
 
-    // Exposition des fonctions
+    // --- 1. ÉTAT GLOBAL ---
+    let filtreActuel = 'tous'; 
+
+    // --- 2. EXPOSITION SYSTÉMATIQUE ---
+    // Indispensable pour que tes boutons HTML (onclick) fonctionnent
     window.initialiserRecherche = initialiserRecherche;
     window.chargerDonneesClient = chargerDonneesClient;
     window.viderRecherche = viderRecherche;
     window.gererAffichageCroix = gererAffichageCroix;
     window.supprimerCollecte = supprimerCollecte;
     window.confirmerSuppression = confirmerSuppression;
+    window.setFiltre = setFiltre;
+    window.ouvrirModifCollecte = ouvrirModifCollecte;
+    window.changePointageModif = changePointageModif;
+    window.enregistrerModifCollecte = enregistrerModifCollecte;
 
-    /**
-     * Ouvre le modal et prépare l'ID
-     */
-    function supprimerCollecte(id) {
-        // On stocke l'ID dans l'input caché du modal
-        document.getElementById('idCollecteASupprimer').value = id;
+    // --- 3. GESTION DES FILTRES ---
+    async function setFiltre(nouveauFiltre) {
         
-        // On affiche le modal
-        const myModal = new bootstrap.Modal(document.getElementById('modalSupprCollecte'));
-        myModal.show();
+        filtreActuel = nouveauFiltre;
+
+        // 1. Liste des IDs de tes boutons
+        const boutons = {
+            'non_synchro': 'btn-filter-non-synchro',
+            'synchro': 'btn-filter-synchro',
+            'tous': 'btn-filter-tous'
+        };
+
+        // 2. Mise à jour visuelle des boutons
+        Object.keys(boutons).forEach(cle => {
+            const btn = document.getElementById(boutons[cle]);
+            if (btn) {
+                if (cle === nouveauFiltre) {
+                    // Style bouton actif (Bleu)
+                    btn.classList.replace('btn-outline-secondary', 'btn-primary');
+                    btn.classList.add('shadow-sm');
+                } else {
+                    // Style bouton inactif (Gris)
+                    btn.classList.replace('btn-primary', 'btn-outline-secondary');
+                    btn.classList.remove('shadow-sm');
+                }
+            }
+        });
+
+        // 3. Recharger les données avec le nouveau filtre
+        await chargerDonneesClient();
     }
 
-    /**
-     * Action finale après clic sur le bouton rouge du modal
-     */
-    async function confirmerSuppression() {
-        const id = parseInt(document.getElementById('idCollecteASupprimer').value);
-        
-        try {
-            // 1. Suppression dans Dexie
-            await db.collectes.delete(id);
-            
-            // 2. Fermer le modal
-            const modalEl = document.getElementById('modalSupprCollecte');
-            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-            modalInstance.hide();
-            
-            // 3. Notification rapide (optionnel)
-            console.log(`Collecte ${id} supprimée`);
-            
-            // 4. Rafraîchir la liste immédiatement
-            chargerDonneesClient();
-            
-        } catch (error) {
-            alert("Erreur lors de la suppression");
-            console.error(error);
-        }
-    }
-
-    function gererAffichageCroix() {
-        const input = document.getElementById('inputSearchClient');
-        const btnX = document.getElementById('btnViderRecherche');
-        input.value.length > 0 ? btnX.classList.remove('d-none') : btnX.classList.add('d-none');
-    }
-
-    function viderRecherche() {
-        document.getElementById('inputSearchClient').value = '';
-        gererAffichageCroix();
-        document.getElementById('collectes-master-container').innerHTML = `
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-search" style="font-size: 2rem; opacity: 0.2;"></i>
-                <p class="mt-2 small">Sélectionnez un client</p>
-            </div>`;
-    }
-
-    async function initialiserRecherche() {
-        const clients = await db.clients.toArray();
-        const datalist = document.getElementById('datalistClients');
-        if (datalist) {
-            datalist.innerHTML = clients.map(c => `<option value="${c.nom}">`).join('');
-        }
-    }
-
+    // --- 4. CŒUR DU SYSTÈME : CHARGEMENT & GROUPEMENT ---
     async function chargerDonneesClient() {
         const input = document.getElementById('inputSearchClient');
         const container = document.getElementById('collectes-master-container');
-        const val = input?.value;
-
-        const client = await db.clients.where('nom').equals(val).first();
-        if (!client) {
-            container.innerHTML = `<div class="text-center py-5 text-muted">Client non trouvé.</div>`;
-            return;
-        }
-
-        window.scrollTo(0, 0);
+        const val = input?.value.trim();
 
         try {
-            const toutesLesCollectes = await db.collectes.toArray();
-            let collectesClient = toutesLesCollectes.filter(col => col.client_id == client.id);
+            const toutesLesCols = await db.collectes.toArray();
+            const allClients = await db.clients.toArray();
+            const allCycles = await db.cycles.toArray();
+            const allCarnets = await db.carnets.toArray();
 
-            if (collectesClient.length === 0) {
-                container.innerHTML = `<div class="text-center py-5 text-muted small">Aucun pointage trouvé.</div>`;
+            let collectesAffichees = [];
+            let titreMode = "";
+
+            if (val) {
+                const client = allClients.find(c => `${c.nom} ${c.prenom}` === val || c.nom === val);
+                if (!client) {
+                    container.innerHTML = `<div class="text-center py-5 text-muted small">Client non trouvé.</div>`;
+                    return;
+                }
+                collectesAffichees = toutesLesCols.filter(col => col.client_id == client.id);
+                titreMode = `${client.nom} ${client.prenom}`;
+            } else {
+                collectesAffichees = toutesLesCols;
+                titreMode = "VUE GLOBALE";
+            }
+
+            if (filtreActuel === 'non_synchro') collectesAffichees = collectesAffichees.filter(c => c.synced == 0);
+            else if (filtreActuel === 'synchro') collectesAffichees = collectesAffichees.filter(c => c.synced == 1);
+
+            // En-tête simple sans le compteur global (on le met par carnet maintenant)
+            let html = `<div class="px-2 mb-2 text-muted small fw-bold text-uppercase" style="font-size:0.6rem;">${titreMode}</div>`;
+
+            if (collectesAffichees.length === 0) {
+                container.innerHTML = html + `<div class="text-center py-5 text-muted small">Aucun résultat.</div>`;
                 return;
             }
 
-            const collectesParCycle = {};
-            collectesClient.forEach(col => {
-                const cyId = col.cycle_id || 'sans-cycle';
-                if (!collectesParCycle[cyId]) collectesParCycle[cyId] = [];
-                collectesParCycle[cyId].push(col);
+            const groupement = {};
+            collectesAffichees.forEach(col => {
+                if (!groupement[col.client_id]) groupement[col.client_id] = [];
+                groupement[col.client_id].push(col);
             });
 
-            // --- ZONE CLIENT COMPACTE ---
-            let html = `
-                <div class="px-2 mb-3">
-                    <div class="d-flex align-items-center bg-white p-2 border shadow-sm" style="border-radius: 12px;">
-                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
-                            <i class="bi bi-person-fill"></i>
-                        </div>
-                        <div class="fw-bold text-dark" style="font-size: 0.9rem;">${client.nom}</div>
-                        <div class="ms-auto">
-                            <span class="badge bg-light text-muted border fw-normal" style="font-size: 0.65rem;">ID: ${client.id}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            const cycleIds = Object.keys(collectesParCycle);
-            
-            for (const cyId of cycleIds) {
-                const listeCols = collectesParCycle[cyId];
+            for (const clientId in groupement) {
+                const clientInfo = allClients.find(c => c.id == clientId);
+                const nomClient = clientInfo ? `${clientInfo.nom} ${clientInfo.prenom}` : `Client ID: ${clientId}`;
                 
-                listeCols.sort((a, b) => {
-                    const timeA = a.date_collecte ? new Date(a.date_collecte).getTime() : (a.id || 0);
-                    const timeB = b.date_collecte ? new Date(b.date_collecte).getTime() : (b.id || 0);
-                    return timeB - timeA;
-                });
-
-                let numeroAffiche = "N° Inconnu";
-                const firstCol = listeCols[0];
-                if (firstCol) {
-                    const cycleData = await db.cycles.get(parseInt(firstCol.cycle_id));
-                    if (cycleData) {
-                        const carnetData = await db.carnets.get(parseInt(cycleData.carnet_id));
-                        if (carnetData) numeroAffiche = carnetData.numero;
-                    }
-                }
-
-                const totalCycle = listeCols.reduce((sum, col) => sum + parseFloat(col.montant || 0), 0);
-                const ptsCycle = listeCols.reduce((sum, col) => sum + parseInt(col.pointage || 1), 0);
-                const percent = Math.min((ptsCycle / 31) * 100, 100);
-
-                // --- BLOC CYCLE OPTIMISÉ ---
                 html += `
-                    <div class="cycle-block mb-3 mx-2 shadow-sm border bg-white" style="border-radius: 15px; overflow: hidden;">
-                        <div class="p-2 px-3 bg-light-subtle" style="border-bottom: 1px dashed #dee2e6;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span class="text-muted" style="font-size: 0.65rem; text-transform: uppercase;">Carnet</span>
-                                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">${numeroAffiche}</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="fw-bold text-success" style="font-size: 0.95rem;">${totalCycle.toLocaleString()} F</div>
-                                </div>
-                                <div class="text-end">
-                                    <div class="fw-bold ${ptsCycle > 31 ? 'text-danger' : 'text-primary'}" style="font-size: 0.8rem;">
-                                        ${ptsCycle}/31 <i class="bi bi-calendar2-check"></i>
-                                    </div>
-                                    <div class="progress mt-1" style="height: 4px; width: 50px; background-color: #e9ecef; margin-left: auto;">
-                                        <div class="progress-bar ${ptsCycle >= 31 ? 'bg-success' : ''}" style="width: ${percent}%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="client-header px-2 mt-3 mb-1">
+                        <span class="badge bg-secondary-subtle text-secondary" style="font-size:0.7rem; text-transform: uppercase;">${nomClient}</span>
+                    </div>`;
 
-                        <div class="list-group list-group-flush">
-                `;
-
-                listeCols.forEach(col => {
-                    // 1. On essaie de récupérer une date valide
-                    const bruteDate = col.date_collecte || col.created_at;
-                    const d = new Date(bruteDate);
-                    
-                    // 2. Si la date est invalide (N/A), on affiche un tiret ou "---"
-                    let dateStr = "Auj"; 
-                    if (!isNaN(d.getTime())) {
-                        dateStr = d.toLocaleDateString('fr-FR', {day:'2-digit', month:'short'});
-                    }
-                    
-                    html += `
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-2 border-0" style="border-bottom: 1px solid #f8f9fa !important;">
-                            <div class="d-flex align-items-center">
-                                <div class="rounded bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px; font-size: 0.7rem;">
-                                    ${col.pointage || 1}
-                                </div>
-                                <div>
-                                    <div class="fw-bold" style="font-size: 0.8rem;">${parseFloat(col.montant).toLocaleString()} F</div>
-                                    <div class="text-muted" style="font-size: 0.6rem;">${dateStr}</div>
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2">
-                                ${col.synced == 0 ? `
-                                    <i onclick="ouvrirModifCollecte(${col.id})" class="bi bi-pencil-square text-muted fs-6"></i>
-                                    <i onclick="supprimerCollecte(${col.id})" class="bi bi-trash3 text-danger fs-6"></i>
-                                ` : '<i class="bi bi-cloud-check-fill text-success fs-5"></i>'}
-                            </div>
-                        </div>`;
+                const cycles = {};
+                groupement[clientId].forEach(col => {
+                    const cyId = col.cycle_id || 'sans-cycle';
+                    if (!cycles[cyId]) cycles[cyId] = [];
+                    cycles[cyId].push(col);
                 });
 
-                html += `</div></div>`;
+                for (const cyId in cycles) {
+                    const listeCols = cycles[cyId];
+                    listeCols.sort((a, b) => new Date(b.date_collecte || b.created_at) - new Date(a.date_collecte || a.created_at));
+                    
+                    let numCarnet = "N/A";
+                    const cycleData = allCycles.find(cy => cy.id == cyId);
+                    if (cycleData) {
+                        const carnetData = allCarnets.find(car => car.id == cycleData.carnet_id);
+                        if (carnetData) numCarnet = carnetData.numero;
+                    }
+
+                    const totalMnt = listeCols.reduce((s, c) => s + parseFloat(c.montant || 0), 0);
+
+                    html += `
+                        <div class="card mx-2 mb-2 shadow-sm border-0" style="border-radius:12px;">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center border-0 py-2">
+                                <div class="d-flex flex-column">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="small fw-bold text-dark">Carnet: ${numCarnet}</span>
+                                        <span class="badge rounded-pill bg-dark" style="font-size:0.55rem;">${listeCols.length}</span>
+                                    </div>
+                                    <span class="text-muted" style="font-size:0.6rem;">Cycle ID: ${cyId}</span>
+                                </div>
+                                <span class="text-primary fw-bold" style="font-size:0.85rem;">${totalMnt.toLocaleString()} F</span>
+                            </div>
+                            <div class="list-group list-group-flush">`;
+
+                    listeCols.forEach(col => {
+                       // --- FORMATAGE DATE SÉCURISÉ ---
+                        let dateAffiche = "Date inc."; 
+                        const rawDate = col.date_saisie;
+                        // console.log("Raw date:", rawDate); // Debug : voir la valeur brute de la date
+                        if (rawDate) {
+                            const d = new Date(rawDate);
+                            
+                            // On vérifie si la date est valide
+                            if (!isNaN(d.getTime())) {
+                                const auj = new Date();
+                                
+                                // Si c'est aujourd'hui
+                                if (d.toDateString() === auj.toDateString()) {
+                                    const h = d.getHours().toString().padStart(2, '0');
+                                    const m = d.getMinutes().toString().padStart(2, '0');
+                                    dateAffiche = `Auj. à ${h}:${m}`;
+                                } else {
+                                    // Format jour/mois (ex: 02/mai)
+                                    const jour = d.getDate().toString().padStart(2, '0');
+                                    const moisNom = d.toLocaleString('fr-FR', { month: 'short' }).replace('.', '');
+                                    dateAffiche = `${jour}/${moisNom}`;
+                                }
+                            }
+                        }
+
+                        html += `
+                            <div class="list-group-item d-flex justify-content-between align-items-center border-0 py-1" style="border-bottom: 1px solid #f8f9fa !important;">
+                                <div style="font-size:0.75rem;">
+                                    <div class="fw-bold text-dark" style="font-size:0.8rem;">${parseFloat(col.montant).toLocaleString()} F</div>
+                                    <div class="text-muted" style="font-size:0.65rem;">
+                                        ${dateAffiche} • <span class="text-primary">${col.pointage || 1} jrs</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-3">
+                                    ${col.synced == 0 ? `
+                                        <i onclick="ouvrirModifCollecte(${col.id})" class="bi bi-pencil-square text-muted"></i>
+                                        <i onclick="supprimerCollecte(${col.id})" class="bi bi-trash text-danger"></i>
+                                    ` : '<i class="bi bi-cloud-check-fill text-success fs-6"></i>'}
+                                </div>
+                            </div>`;
+                    });
+                    html += `</div></div>`;
+                }
             }
-
             container.innerHTML = html;
+        } catch (e) { console.error(e); }
+    }
 
-        } catch (e) {
-            console.error(e);
-            container.innerHTML = `<div class="alert alert-danger mx-2 py-2 small">Erreur de lecture.</div>`;
+    // --- 5. FONCTIONS DE MAINTENANCE (Modif / Suppr) ---
+    function supprimerCollecte(id) {
+        document.getElementById('idCollecteASupprimer').value = id;
+        new bootstrap.Modal(document.getElementById('modalSupprCollecte')).show();
+    }
+
+    async function confirmerSuppression() {
+        const id = parseInt(document.getElementById('idCollecteASupprimer').value);
+        await db.collectes.delete(id);
+        bootstrap.Modal.getInstance(document.getElementById('modalSupprCollecte')).hide();
+        await chargerDonneesClient();
+    }
+
+async function ouvrirModifCollecte(id) {
+    const col = await db.collectes.get(id);
+    const cycle = await db.cycles.get(col.cycle_id);
+
+    // 1. Calculer le cumul du cycle (sauf la collecte actuelle qu'on modifie)
+    const toutesLesColsDuCycle = await db.collectes.where('cycle_id').equals(col.cycle_id).toArray();
+    const joursDejaPointes = toutesLesColsDuCycle
+        .filter(c => c.id !== id) // On exclut celle qu'on est en train de modifier
+        .reduce((sum, c) => sum + (parseInt(c.pointage) || 0), 0);
+
+    // 2. Déterminer le maximum autorisé pour cette modification
+    const maxAutorise = 31 - joursDejaPointes;
+
+    // 3. Remplir le modal
+    document.getElementById('edit-collecte-id').value = id;
+    document.getElementById('edit-mnt-journalier').value = cycle.montant_journalier;
+    document.getElementById('edit-max-jours').value = maxAutorise; // On stocke la limite dynamique
+
+    document.getElementById('edit-nb-val').innerText = col.pointage;
+    
+    const totalInitial = col.pointage * cycle.montant_journalier;
+    document.getElementById('edit-total-txt').innerText = totalInitial.toLocaleString();
+
+    new bootstrap.Modal(document.getElementById('modalModifCollecte')).show();
+}
+
+// Variable pour stocker le timer
+let errorTimer;
+
+function changePointageModif(delta) {
+    const elNb = document.getElementById('edit-nb-val');
+    const elTotal = document.getElementById('edit-total-txt');
+    const elError = document.getElementById('edit-error-msg');
+    const mntJournalier = parseFloat(document.getElementById('edit-mnt-journalier').value);
+    const maxAutorise = parseInt(document.getElementById('edit-max-jours').value);
+
+    let nouveauPointage = parseInt(elNb.innerText) + delta;
+
+    if (nouveauPointage >= 1 && nouveauPointage <= maxAutorise) {
+        // --- ACTION VALIDE ---
+        elNb.innerText = nouveauPointage;
+        elTotal.innerText = (nouveauPointage * mntJournalier).toLocaleString();
+        
+        // On cache l'erreur immédiatement si l'utilisateur revient dans les clous
+        elError.classList.add('d-none');
+        clearTimeout(errorTimer); 
+    } else {
+        // --- ACTION BLOQUÉE ---
+        elError.classList.remove('d-none');
+    const msg = nouveauPointage > maxAutorise 
+            ? `Limite de 31j atteinte (${31 - maxAutorise}j déjà enregistrés)` 
+            : "Le pointage minimum est de 1j";
+        elError.querySelector('span').innerText = msg;
+
+        // On fait disparaître le message automatiquement après 3 secondes
+        clearTimeout(errorTimer);
+        errorTimer = setTimeout(() => {
+            elError.classList.add('d-none');
+        }, 3000);
+
+        if (window.navigator.vibrate) window.navigator.vibrate(50);
+    }
+}   
+
+    async function enregistrerModifCollecte() {
+        const id = parseInt(document.getElementById('edit-collecte-id').value);
+        const ptsModifies = parseInt(document.getElementById('edit-nb-val').innerText);
+        const mntJournalier = parseFloat(document.getElementById('edit-mnt-journalier').value);
+        const mntTotal = ptsModifies * mntJournalier;
+
+        try {
+            // 1. Récupérer la collecte pour avoir le cycle_id
+            const col = await db.collectes.get(id);
+            
+            // 2. Calculer le nouveau cumul de jours pour ce cycle
+            const toutesCols = await db.collectes.where('cycle_id').equals(col.cycle_id).toArray();
+            
+            // Somme des autres collectes + le nouveau pointage qu'on vient de saisir
+            const cumulJours = toutesCols
+                .filter(c => c.id !== id)
+                .reduce((sum, c) => sum + (parseInt(c.pointage) || 0), 0) + ptsModifies;
+
+            // 3. Déterminer le statut du cycle
+            const nouveauStatut = (cumulJours >= 31) ? 'termine' : 'en_cours';
+
+            // 4. Mise à jour de la COLLECTE
+            await db.collectes.update(id, { 
+                pointage: ptsModifies, 
+                montant: mntTotal,
+                synced: 0 // On force la resynchronisation
+            });
+
+            // 5. Mise à jour du CYCLE (le statut)
+            await db.cycles.update(col.cycle_id, { 
+                statut: nouveauStatut 
+            });
+
+            // 6. Fermer le modal et rafraîchir l'affichage
+            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalModifCollecte'));
+            if (modalInstance) modalInstance.hide();
+            
+            await chargerDonneesClient();
+
+        } catch (error) {
+            console.error("Erreur update statut :", error);
         }
     }
-    // --- FONCTIONS POUR LE MODAL DE MODIFICATION ---
-
-    window.ouvrirModifCollecte = async function(id) {
-        try {
-            const collecte = await db.collectes.get(id);
-            const cycle = await db.cycles.get(collecte.cycle_id);
-            
-            if (!collecte || !cycle) return;
-
-            // 1. Calcul du maximum autorisé
-            // On récupère toutes les collectes du cycle pour savoir combien de jours ont été déjà pointés
-            const toutesCollectesCycle = await db.collectes.where('cycle_id').equals(cycle.id).toArray();
-            const totalJoursPointes = toutesCollectesCycle.reduce((sum, c) => sum + (parseInt(c.pointage) || 0), 0);
-            
-            // Le max autorisé est : (31 - jours pointés par les AUTRES collectes)
-            // Donc : 31 - (total - pointage_actuel)
-            const maxAutorise = 31 - (totalJoursPointes - (parseInt(collecte.pointage) || 0));
-
-            // 2. Remplir le modal
-            document.getElementById('edit-collecte-id').value = id;
-            document.getElementById('edit-mnt-journalier').value = cycle.montant_journalier;
-            document.getElementById('edit-max-jours').value = maxAutorise;
-            
-            document.getElementById('edit-nb-val').innerText = collecte.pointage || 1;
-            document.getElementById('edit-total-txt').innerText = (collecte.pointage * cycle.montant_journalier).toLocaleString();
-
-            const modal = new bootstrap.Modal(document.getElementById('modalModifCollecte'));
-            modal.show();
-        } catch (e) { console.error(e); }
-    };
-
-    window.changePointageModif = function(delta) {
-        const el = document.getElementById('edit-nb-val');
-        const txtTotal = document.getElementById('edit-total-txt');
-        const mntJournalier = parseFloat(document.getElementById('edit-mnt-journalier').value);
-        const maxJours = parseInt(document.getElementById('edit-max-jours').value);
-        
-        let current = parseInt(el.innerText);
-        let nouveau = current + delta;
-
-        // Sécurité : Min 1 jour, Max restant dans le cycle (selon limite 31)
-        if (nouveau >= 1 && nouveau <= maxJours) {
-            el.innerText = nouveau;
-            txtTotal.innerText = (nouveau * mntJournalier).toLocaleString();
-        } else if (nouveau > maxJours) {
-            // Optionnel : petite alerte ou effet visuel si on dépasse
-            console.warn("Limite du cycle atteinte : " + maxJours + " jours");
+    async function viderRecherche() {
+        const input = document.getElementById('inputSearchClient');
+            if (input) {
+                input.value = ''; // On vide le champ
+                await gererAffichageCroix(); // On cache la croix
+                await chargerDonneesClient(); // RELANCE LE CHARGEMENT (affichera tout le monde par défaut)
         }
-    };
+    }
 
-    window.enregistrerModifCollecte = async function() {
-        const id = parseInt(document.getElementById('edit-collecte-id').value);
-        const nouveauPointage = parseInt(document.getElementById('edit-nb-val').innerText);
-        const mntJournalier = parseFloat(document.getElementById('edit-mnt-journalier').value);
-        
-        try {
-            // 1. Récupérer la collecte avant modif pour avoir le cycle_id
-            const colAvant = await db.collectes.get(id);
-            const cycleId = colAvant.cycle_id;
+    async function gererAffichageCroix() {
+        const input = document.getElementById('inputSearchClient');
+        const btnX = document.getElementById('btnViderRecherche');
+        const val = input.value.trim();
 
-            // 2. Mettre à jour la collecte
-            await db.collectes.update(id, {
-                pointage: nouveauPointage,
-                montant: nouveauPointage * mntJournalier
-            });
-
-            // 3. SURVEILLANCE DU CYCLE : Recompter tout le cycle
-            const toutesLesCollectesDuCycle = await db.collectes.where('cycle_id').equals(cycleId).toArray();
-            const cumulPointage = toutesLesCollectesDuCycle.reduce((sum, c) => sum + (parseInt(c.pointage) || 0), 0);
-
-            // 4. Mise à jour automatique du statut du cycle
-            if (cumulPointage < 31) {
-                await db.cycles.update(cycleId, { statut: 'en_cours' });
-            } else {
-                await db.cycles.update(cycleId, { statut: 'termine' });
-            }
-
-            // 5. Fermer le modal et rafraîchir la vue
-            bootstrap.Modal.getInstance(document.getElementById('modalModifCollecte')).hide();
+        if (val.length > 0) {
+            btnX.classList.remove('d-none');
+        } else {
+            btnX.classList.add('d-none');
+            // IMPORTANT : Si l'utilisateur efface tout manuellement, on recharge la vue globale
             chargerDonneesClient(); 
-
-        } catch (e) {
-            console.error("Erreur lors de la modif/surveillance :", e);
         }
-    };
+    }
+
+    // Dans initialiserRecherche, on prépare juste le datalist
+    async function initialiserRecherche() {
+        const clients = await db.clients.toArray();
+        const dl = document.getElementById('datalistClients');
+        if (dl) dl.innerHTML = clients.map(c => `<option value="${c.nom} ${c.prenom}">`).join('');
+        
+        // Optionnel : Forcer le style du premier bouton au démarrage
+        await setFiltre('non_synchro');
+    }
 
     initialiserRecherche();
 </script>

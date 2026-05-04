@@ -27,6 +27,7 @@
                 <a href="/agents" class="nav-link btn btn-outline-light btn-sm mx-1 text-white">Agents</a>
                 <a href="/clients" class="nav-link btn btn-outline-light btn-sm mx-1 text-white">Clients</a>
                 <a href="/admin/carnets" class="nav-link btn btn-outline-light btn-sm mx-1 text-white">Carnets</a>
+                <a href="/admin/credits" class="nav-link btn btn-outline-light btn-sm mx-1 text-white">Crédits</a>
             </div>
         </div>
     </div>

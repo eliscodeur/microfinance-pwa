@@ -159,35 +159,71 @@ class SyncController extends Controller
             // --- ÉTAPE 2 : COLLECTES ---
           
             
-        foreach ($batch->collectes as $bCol) {
-            // 1. UTILISER LE cycle_uid DU DUMP (celui qui commence par f8db89b9...)
-            $uidAchercher = $bCol->cycle_uid; 
+        // foreach ($batch->collectes as $bCol) {
+        //     // 1. UTILISER LE cycle_uid DU DUMP (celui qui commence par f8db89b9...)
+        //     $uidAchercher = $bCol->cycle_uid; 
 
-            // 2. Chercher l'ID interne MySQL
-            $cycleId = Cycle::where('cycle_uid', $uidAchercher)->value('id');
+        //     // 2. Chercher l'ID interne MySQL
+        //     $cycleId = Cycle::where('cycle_uid', $uidAchercher)->value('id');
 
-            // 3. LOG DE SÉCURITÉ (si ça ne marche toujours pas, tu verras pourquoi)
-            if (!$cycleId) {
-                \Log::error("Cycle introuvable pour l'UID : " . $uidAchercher);
-                continue;
+        //     // 3. LOG DE SÉCURITÉ (si ça ne marche toujours pas, tu verras pourquoi)
+        //     if (!$cycleId) {
+        //         \Log::error("Cycle introuvable pour l'UID : " . $uidAchercher);
+        //         continue;
+        //     }
+
+        //     // 4. INSERTION FINALE
+        //     Collecte::updateOrCreate(
+        //         ['collecte_uid' => $bCol->collecte_uid],
+        //         [
+        //             'cycle_id'    => $cycleId, 
+        //             'cycle_uid'   => $uidAchercher, 
+        //             'client_id'   => $bCol->client_id,
+        //             'agent_id'    => $bCol->agent_id,
+        //             'montant'     => $bCol->montant,
+        //             'pointage'    => $bCol->pointage,
+        //             'date_saisie' => $bCol->date_saisie,
+        //             'sync_uuid'   => $batch->sync_uuid,
+        //         ]
+        //     );
+        // }
+            // --- ÉTAPE 2 : COLLECTES (Optimisée en Bulk) ---
+            $collectesData = [];
+            $now = now();
+
+            foreach ($batch->collectes as $bCol) {
+                $uidAchercher = $bCol->cycle_uid;
+                $cycleId = $mappedCycleIds[$uidAchercher] ?? Cycle::where('cycle_uid', $uidAchercher)->value('id');
+
+                if (!$cycleId) {
+                    Log::error("Cycle introuvable pour l'UID : " . $uidAchercher);
+                    continue;
+                }
+
+                // On prépare le tableau pour l'insertion massive
+                $collectesData[] = [
+                    'collecte_uid' => $bCol->collecte_uid,
+                    'cycle_id'     => $cycleId,
+                    'cycle_uid'    => $uidAchercher,
+                    'client_id'    => $bCol->client_id,
+                    'agent_id'     => $bCol->agent_id,
+                    'montant'      => $bCol->montant,
+                    'pointage'     => $bCol->pointage,
+                    'date_saisie'  => $bCol->date_saisie,
+                    'sync_uuid'    => $batch->sync_uuid,
+                    'created_at'   => $now,
+                    'updated_at'   => $now,
+                ];
             }
 
-            // 4. INSERTION FINALE
-            Collecte::updateOrCreate(
-                ['collecte_uid' => $bCol->collecte_uid],
-                [
-                    'cycle_id'    => $cycleId, 
-                    'cycle_uid'   => $uidAchercher, 
-                    'client_id'   => $bCol->client_id,
-                    'agent_id'    => $bCol->agent_id,
-                    'montant'     => $bCol->montant,
-                    'pointage'    => $bCol->pointage,
-                    'date_saisie' => $bCol->date_saisie,
-                    'sync_uuid'   => $batch->sync_uuid,
-                ]
-            );
-        }
-
+            // Insertion en une seule fois (par paquets de 50 pour la sécurité)
+            if (!empty($collectesData)) {
+                Collecte::upsert(
+                    $collectesData, 
+                    ['collecte_uid'], // Colonne d'unicité
+                    ['montant', 'pointage', 'updated_at'] // Colonnes à mettre à jour si doublon
+                );
+            }
             // --- ÉTAPE 3 : HISTORIQUE ET STATUT ---
             SyncHistory::create([
                 'agent_id' => $batch->agent_id,

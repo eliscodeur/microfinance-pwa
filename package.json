@@ -1,5 +1,6 @@
 {
     "private": true,
+    "version": "1.0.0",
     "scripts": {
         "dev": "npm run development",
         "development": "mix",
@@ -9,9 +10,18 @@
         "prod": "npm run production",
         "production": "mix --production"
     },
+    "dependencies": {
+        "@inertiajs/inertia": "0.11.1",
+        "@inertiajs/inertia-react": "0.8.1",
+        "@inertiajs/progress": "0.2.7",
+        "react": "^18.2.0", 
+        "react-dom": "^18.2.0"
+    },
     "devDependencies": {
+        "@babel/preset-react": "^7.18.6",
         "axios": "^0.25",
-        "laravel-mix": "^6.0.6",
+        "laravel-mix": "6.0.43",
+        "webpack": "5.60.0",
         "lodash": "^4.17.19",
         "postcss": "^8.1.14"
     }

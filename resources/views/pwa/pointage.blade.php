@@ -175,7 +175,7 @@
             }
 
             const client = await db.clients.get(Number(carnet.client_id));
-            document.getElementById('client-nom').innerText = client ? client.nom : "Client #" + carnet.client_id;
+            document.getElementById('client-nom').innerText = client ? client.nom + " " + client.prenom : "Client #" + carnet.client_id;
             document.getElementById('carnet-numero').innerText = "Carnet : " + (carnet.numero || "N/A");
 
             const cycles = await db.cycles.where('carnet_id').equals(carnet.id).toArray();

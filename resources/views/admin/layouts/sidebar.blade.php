@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Nana Eco Consulting Administration</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -162,6 +165,7 @@
     $usersMenuOpen = request()->routeIs('admin.roles.*') || request()->routeIs('admin.users.*');
     $agentsMenuOpen = request()->routeIs('admin.agents.*');
     $clientsMenuOpen = request()->routeIs('admin.clients.*');
+    $creditsMenuOpen = request()->routeIs('admin.credits.*') || request()->routeIs('admin.credits.approve');
     $carnetsMenuOpen = request()->routeIs('admin.carnets.*') || request()->routeIs('admin.categories.*');
     $collecteMenuOpen = request()->routeIs('admin.cycles.*') || request()->routeIs('admin.sync-batches.*');
 @endphp
@@ -200,6 +204,14 @@
             <a href="{{ route('admin.clients.create') }}" class="{{ request()->routeIs('admin.clients.create') ? 'active' : '' }}">Ajouter Client</a>
         </div>
         @endcan
+
+        <a href="#creditsSub" data-bs-toggle="collapse" aria-expanded="{{ $creditsMenuOpen ? 'true' : 'false' }}" class="menu-toggle {{ $creditsMenuOpen ? 'active' : '' }}">
+            <i class="bi bi-cash-stack"></i> <span>Crédits</span>
+        </a>
+        <div class="collapse submenu {{ $creditsMenuOpen ? 'show' : '' }}" id="creditsSub" data-bs-parent="#sidebarNav">
+            <a href="{{ route('admin.credits.index') }}" class="{{ request()->routeIs('admin.credits.index') ? 'active' : '' }}">Liste Crédits</a>
+            <a href="{{ route('admin.credits.create') }}" class="{{ request()->routeIs('admin.credits.create') ? 'active' : '' }}">Nouvelle demande</a>
+        </div>
 
         @can('Gérer Collectes')
         <a href="#carnetsSub" data-bs-toggle="collapse" aria-expanded="{{ $carnetsMenuOpen ? 'true' : 'false' }}" class="menu-toggle {{ $carnetsMenuOpen ? 'active' : '' }}">
@@ -255,6 +267,24 @@
     overlay.addEventListener('click', () => {
         sidebar.classList.remove('open');
         overlay.classList.remove('show');
+    });
+
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+
+    // Ouvre automatiquement le menu actif si le groupe est déjà marqué actif
+    document.querySelectorAll('.menu-toggle.active').forEach(toggle => {
+        const target = toggle.getAttribute('href');
+        if (target && target.startsWith('#')) {
+            const collapseEl = document.querySelector(target);
+            if (collapseEl && !collapseEl.classList.contains('show')) {
+                collapseEl.classList.add('show');
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+        }
     });
 </script>
 </body>

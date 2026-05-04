@@ -279,7 +279,7 @@ async function afficherCyclesRegroupes() {
                             <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center text-white me-2 shadow-sm" style="width: 35px; height: 35px; font-weight: 800; font-size: 0.9rem;">
                                 ${client.nom.charAt(0).toUpperCase()}
                             </div>
-                            <h6 class="mb-0 fw-black text-dark" style="font-size: 1.1rem; letter-spacing: -0.5px;">${client.nom.toUpperCase()}</h6>
+                            <h6 class="mb-0 fw-black text-dark" style="font-size: 1.1rem; letter-spacing: -0.5px;">${client.nom.toUpperCase()} ${client.prenom.toUpperCase()}</h6>
                         </div>
                         ${clientHtml}
                     </div>
