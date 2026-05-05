@@ -27,5 +27,5 @@ class Collecte extends Model
 
     public function cycle(): BelongsTo { return $this->belongsTo(Cycle::class); }
     public function client(): BelongsTo { return $this->belongsTo(Client::class); }
-    public function agent(): BelongsTo { return $this->belongsTo(Agent::class); }
+    public function agent(): BelongsTo { return $this->belongsTo(Agent::class, 'agent_id');}
 }

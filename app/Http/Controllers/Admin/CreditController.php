@@ -202,6 +202,7 @@ class CreditController extends Controller
         $today = Carbon::today();
         $totalPenalty = 0;
         $latePaymentFound = false;
+        $emergencyWithdrawals = [];
 
         if ($credit->statut === 'active') {
             $overduePayments = $credit->payments()
@@ -211,7 +212,10 @@ class CreditController extends Controller
                 ->get();
 
             foreach ($overduePayments as $payment) {
-                $this->applyEmergencyWithdrawal($credit, $payment);
+                $event = $this->applyEmergencyWithdrawal($credit, $payment);
+                if ($event) {
+                    $emergencyWithdrawals[] = $event;
+                }
             }
 
             $credit->refresh();
@@ -261,6 +265,7 @@ class CreditController extends Controller
 
         $credit->penalty_amount = round($totalPenalty, 2);
         $credit->payments = $payments;
+        $credit->emergency_withdrawal_summary = $emergencyWithdrawals;
 
         return Inertia::render('Credits/Show', [
             'credit' => $credit,
@@ -322,7 +327,7 @@ class CreditController extends Controller
         }
 
         if ($withdrawn <= 0) {
-            return;
+            return null;
         }
 
         $paidBefore = (float) $payment->montant_paye;
@@ -338,6 +343,14 @@ class CreditController extends Controller
         if ($paidDiff > 0) {
             $credit->increment('montant_rembourse', round($paidDiff, 2));
         }
+
+        return [
+            'payment_id' => $payment->id,
+            'echeance' => $payment->echeance,
+            'amount_withdrawn' => round($withdrawn, 2),
+            'amount_applied' => round($paidDiff, 2),
+            'note' => 'Prélèvement de secours automatique pour échéance en défaut',
+        ];
     }
 
     public function updatePayment(Request $request, Credit $credit, CreditPayment $payment)
@@ -386,6 +399,47 @@ class CreditController extends Controller
                 return back()->with('error', 'Le montant payé doit être supérieur à zéro.');
             }
 
+            $remainingDue = $totalDue - $currentPaid;
+            $surplus = 0.0;
+            $amountToApply = $amountPaye;
+            $surplusNote = null;
+
+            if ($amountPaye > $remainingDue) {
+                $surplus = round($amountPaye - $remainingDue, 2);
+                $amountToApply = $remainingDue;
+
+                $client = $credit->client ?: $credit->load('client')->client;
+                $compteCarnet = $client->carnets()
+                    ->where('type', 'compte')
+                    ->where('statut', 'actif')
+                    ->first();
+
+                if ($compteCarnet) {
+                    $surplusNote = 'Le surplus de ' . number_format($surplus, 2, ',', ' ') . ' FCFA a été versé sur le compte épargne du client (' . $compteCarnet->numero . ').';
+                    $metadata = $credit->metadata ?? [];
+                    $metadata['surplus_deposits'] = array_merge($metadata['surplus_deposits'] ?? [], [[
+                        'payment_id' => $payment->id,
+                        'amount' => $surplus,
+                        'carnet_id' => $compteCarnet->id,
+                        'carnet_numero' => $compteCarnet->numero,
+                        'type' => 'savings_deposit',
+                        'created_at' => now()->toDateTimeString(),
+                    ]]);
+                    $credit->update(['metadata' => $metadata]);
+                } else {
+                    $surplusNote = 'Le montant exact de l\'échéance a été enregistré. Le reliquat de ' . number_format($surplus, 2, ',', ' ') . ' FCFA doit être remis au client.';
+                    $metadata = $credit->metadata ?? [];
+                    $metadata['surplus_returns'] = array_merge($metadata['surplus_returns'] ?? [], [[
+                        'payment_id' => $payment->id,
+                        'amount' => $surplus,
+                        'note' => 'Reliquat remis au client',
+                        'created_at' => now()->toDateTimeString(),
+                    ]]);
+                    $credit->update(['metadata' => $metadata]);
+                }
+            }
+
+            $newPaid = round($currentPaid + $amountToApply, 2);
             $updates['montant_paye'] = $newPaid;
 
             if ($newPaid >= $totalDue) {
@@ -398,6 +452,10 @@ class CreditController extends Controller
                 $remaining = number_format($totalDue - $newPaid, 2, ',', ' ');
                 $successMessage = "Paiement partiel enregistré. Solde restant : {$remaining} FCFA.";
             }
+
+            if ($surplusNote) {
+                $successMessage .= ' ' . $surplusNote;
+            }
         }
 
         if (empty($updates)) {
@@ -405,6 +463,10 @@ class CreditController extends Controller
         }
 
         $payment->update($updates);
+
+        if (!empty($amountToApply) && $amountToApply > 0) {
+            $credit->increment('montant_rembourse', round($amountToApply, 2));
+        }
 
         return back()->with('success', $successMessage ?? 'Échéance mise à jour avec succès.');
     }

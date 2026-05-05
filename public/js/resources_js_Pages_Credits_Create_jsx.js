@@ -104,7 +104,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
 function Create(_ref) {
-  var _selectedCarnet$total, _selectedCarnet$requi;
+  var _selectedCarnet$total, _selectedCarnet$requi, _selectedCarnet$avail, _selectedCarnet$guara;
   var clients = _ref.clients;
   var form = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.useForm)({
     client_id: '',
@@ -113,7 +113,7 @@ function Create(_ref) {
     type: 'compte',
     mode: 'degressif',
     periodicite: 'mensuelle',
-    nombre_echeances: 6,
+    nombre_echeances: 5,
     taux: 1.5,
     taux_manuelle: '',
     date_debut: new Date().toISOString().slice(0, 10)
@@ -154,16 +154,26 @@ function Create(_ref) {
       },
       signal: controller.signal
     }).then(function (response) {
+      if (!response.ok) {
+        throw new Error("HTTP error! status: ".concat(response.status));
+      }
       return response.json();
     }).then(function (data) {
-      setCarnets(data);
-      if (!data.some(function (item) {
-        return String(item.id) === String(form.data.carnet_id);
-      })) {
-        form.setData('carnet_id', '');
+      console.log('Carnets fetched:', data);
+      if (Array.isArray(data)) {
+        setCarnets(data);
+        if (!data.some(function (item) {
+          return String(item.id) === String(form.data.carnet_id);
+        })) {
+          form.setData('carnet_id', '');
+        }
+      } else {
+        console.error('Expected array, got:', data);
+        setCarnets([]);
       }
-    })["catch"](function () {
-      return setCarnets([]);
+    })["catch"](function (err) {
+      console.error('Error fetching carnets:', err);
+      setCarnets([]);
     });
     return function () {
       return controller.abort();
@@ -284,9 +294,16 @@ function Create(_ref) {
             }), !form.errors.carnet_id && isCompteCredit && carnets.length === 0 && form.data.client_id && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
               className: "form-text text-warning",
               children: "Le client ne poss\xE8de pas de carnet de compte actif. Veuillez d'abord cr\xE9er un carnet."
-            }), (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'tontine' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+            }), selectedCarnet && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
               className: "form-text text-muted mt-2",
-              children: ["Cat\xE9gorie : ", selectedCarnet.category || 'N/A', " \u2022 Cycles : ", selectedCarnet.nombre_cycles || 'N/A', " \u2022 Pointages : ", (_selectedCarnet$total = selectedCarnet.total_pointages) !== null && _selectedCarnet$total !== void 0 ? _selectedCarnet$total : 0, "/", (_selectedCarnet$requi = selectedCarnet.required_pointages) !== null && _selectedCarnet$requi !== void 0 ? _selectedCarnet$requi : '?']
+              children: selectedCarnet.type === 'tontine' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+                children: ["Cat\xE9gorie : ", selectedCarnet.category || 'N/A', " \u2022 Cycles : ", selectedCarnet.nombre_cycles || 'N/A', " \u2022 Pointages : ", (_selectedCarnet$total = selectedCarnet.total_pointages) !== null && _selectedCarnet$total !== void 0 ? _selectedCarnet$total : 0, "/", (_selectedCarnet$requi = selectedCarnet.required_pointages) !== null && _selectedCarnet$requi !== void 0 ? _selectedCarnet$requi : '?']
+              }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.Fragment, {
+                children: ["Compte li\xE9 : ", selectedCarnet.linked_tontine ? selectedCarnet.linked_tontine.numero : 'Aucun']
+              })
+            }), selectedCarnet && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsxs)("div", {
+              className: "form-text text-muted mt-1",
+              children: ["Assiette de l'\xE9pargne : ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_3__.formatCurrency)((_selectedCarnet$avail = selectedCarnet.available_savings) !== null && _selectedCarnet$avail !== void 0 ? _selectedCarnet$avail : 0), " \u2022 Garantie maximale possible : ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_3__.formatCurrency)((_selectedCarnet$guara = selectedCarnet.guarantee_base) !== null && _selectedCarnet$guara !== void 0 ? _selectedCarnet$guara : 0)]
             }), pointageWarning && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_4__.jsx)("div", {
               className: "form-text text-warning",
               children: "Seuil recommand\xE9 non atteint, mais l\u2019admin peut enregistrer le cr\xE9dit malgr\xE9 tout."

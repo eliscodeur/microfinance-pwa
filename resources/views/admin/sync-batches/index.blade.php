@@ -8,9 +8,9 @@
 
 <div class="row g-3 mb-4">
     <div class="col-md-3"><div class="card p-3"><div class="small text-muted">En attente</div><div class="fs-4 fw-bold text-warning">{{ $totals['pending_review'] }}</div></div></div>
-    <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Validees</div><div class="fs-4 fw-bold text-success">{{ $totals['approved'] }}</div></div></div>
-    <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Refusees</div><div class="fs-4 fw-bold text-danger">{{ $totals['rejected'] }}</div></div></div>
-    <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Annulees</div><div class="fs-4 fw-bold text-secondary">{{ $totals['cancelled'] }}</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Validées</div><div class="fs-4 fw-bold text-success">{{ $totals['approved'] }}</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Refusées</div><div class="fs-4 fw-bold text-danger">{{ $totals['rejected'] }}</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Annulées</div><div class="fs-4 fw-bold text-secondary">{{ $totals['cancelled'] }}</div></div></div>
 </div>
 
 <div class="mb-3 d-flex gap-2 flex-wrap">

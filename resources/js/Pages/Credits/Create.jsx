@@ -11,7 +11,7 @@ export default function Create({ clients }) {
         type: 'compte',
         mode: 'degressif',
         periodicite: 'mensuelle',
-        nombre_echeances: 6,
+        nombre_echeances: 3,
         taux: 1.5,
         taux_manuelle: '',
         date_debut: new Date().toISOString().slice(0, 10),
@@ -53,14 +53,28 @@ export default function Create({ clients }) {
             },
             signal: controller.signal,
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                setCarnets(data);
-                if (!data.some(item => String(item.id) === String(form.data.carnet_id))) {
-                    form.setData('carnet_id', '');
+                console.log('Carnets fetched:', data);
+                if (Array.isArray(data)) {
+                    setCarnets(data);
+                    if (!data.some(item => String(item.id) === String(form.data.carnet_id))) {
+                        form.setData('carnet_id', '');
+                    }
+                } else {
+                    console.error('Expected array, got:', data);
+                    setCarnets([]);
                 }
             })
-            .catch(() => setCarnets([]));
+            .catch(err => {
+                console.error('Error fetching carnets:', err);
+                setCarnets([]);
+            });
 
         return () => controller.abort();
     }, [form.data.client_id]);

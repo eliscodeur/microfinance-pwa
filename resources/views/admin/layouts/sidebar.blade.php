@@ -223,10 +223,10 @@
         </div>
 
         <a href="#collecteSub" data-bs-toggle="collapse" aria-expanded="{{ $collecteMenuOpen ? 'true' : 'false' }}" class="menu-toggle {{ $collecteMenuOpen ? 'active' : '' }}">
-            <i class="bi bi-arrow-repeat"></i> <span>Gestion Collecte</span>
+            <i class="bi bi-arrow-repeat"></i> <span>Gestion synchro</span>
         </a>
         <div class="collapse submenu {{ $collecteMenuOpen ? 'show' : '' }}" id="collecteSub" data-bs-parent="#sidebarNav">
-            <a href="{{ route('admin.cycles.index') }}" class="{{ request()->routeIs('admin.cycles.*') ? 'active' : '' }}">Cycles</a>
+            <!-- <a href="{{ route('admin.cycles.index') }}" class="{{ request()->routeIs('admin.cycles.*') ? 'active' : '' }}">Cycles</a> -->
             @can('Valider Synchros')
             <a href="{{ route('admin.sync-batches.index') }}" class="{{ request()->routeIs('admin.sync-batches.*') ? 'active' : '' }}">Synchros</a>
             @endcan

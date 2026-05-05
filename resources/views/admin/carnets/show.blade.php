@@ -2,179 +2,310 @@
 
 @section('content')
 <div class="container-fluid">
+    {{-- Entête avec Actions Rapides --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="h3 mb-0 text-gray-800">Gestion des Carnets</h2>
-            <p class="text-muted">Suivi des comptes épargne et tontines clients.</p>
+            <h2 class="h4 mb-0">Détails du Carnet #{{ $carnet->numero }}</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ route('admin.carnets.index') }}">Carnets</a></li>
+                    <li class="breadcrumb-item active">{{ $carnet->type === 'tontine' ? 'Tontine' : 'Épargne' }}</li>
+                </ol>
+            </nav>
         </div>
-        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#createCarnetModal">
-            <i class="fas fa-plus fa-sm text-white-50 me-2"></i> Nouveau Carnet
-        </button>
+        <div class="d-flex gap-2">
+            {{-- Le retrait est désormais accessible aux deux types --}}
+            <button class="btn btn-danger fw-bold" data-bs-toggle="modal" data-bs-target="#modalRetrait">
+                <i class="bi bi-box-arrow-up me-2"></i>Effectuer un Retrait
+            </button>
+
+            @if($carnet->type === 'compte')
+                <button class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#modalDepot">
+                    <i class="bi bi-plus-lg me-2"></i>Nouveau Dépôt
+                </button>
+            @endif
+        </div>
     </div>
 
-    <div class="row mb-4">
+    {{-- Cartes de Statistiques --}}
+    <div class="row g-3 mb-4 align-items-stretch">
         <div class="col-md-3">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Carnets</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $carnets->count() }}</div>
+            <div class="card border-0 shadow-sm p-3 h-100">
+                <div class="h6 mb-1">{{ $carnet->client->nom }} {{ $carnet->client->prenom }}</div>
+                <small class="text-primary mt-auto">{{ $carnet->client->telephone }}</small>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-success border-4 h-100">
+                <small class="text-muted fw-bold text-uppercase">
+                    {{ $carnet->type === 'tontine' ? 'Solde Tontine (Non retiré)' : 'Solde Épargne' }}
+                </small>
+                <div class="h4 mb-0 text-success mt-1">
+                    {{ number_format($carnet->type === 'tontine' ? $carnet->solde_tontine_non_retire : $carnet->solde_disponible, 0, ',', ' ') }} F
                 </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-danger border-4 h-100">
+                <small class="text-muted fw-bold text-uppercase">Encours Crédit</small>
+                <div class="h4 mb-0 text-danger mt-1">
+                    {{ number_format($carnet->credits->where('statut', 'en_cours')->sum('montant_restant'), 0, ',', ' ') }} F
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-info border-4 h-100">
+                <small class="text-muted fw-bold text-uppercase">Type de Carnet</small>
+                <div class="h4 mb-0 text-info text-uppercase mt-1">{{ $carnet->type }}</div>
             </div>
         </div>
     </div>
 
-    <div class="card shadow mb-4 border-0">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
+    {{-- Onglets de gestion --}}
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white p-0">
+            <ul class="nav nav-tabs border-0" id="detailTabs" role="tablist">
+                @if($carnet->type === 'tontine')
+                    <li class="nav-item">
+                        <button class="nav-link active px-4 py-3 fw-bold" data-bs-toggle="tab" data-bs-target="#tab-cycles">
+                            <i class="bi bi-arrow-repeat me-2"></i>Historique des Cycles
+                        </button>
+                    </li>
+                @else
+                    <li class="nav-item">
+                        <button class="nav-link active px-4 py-3 fw-bold" data-bs-toggle="tab" data-bs-target="#tab-depots">
+                            <i class="bi bi-journal-plus me-2"></i>Historique des Dépôts
+                        </button>
+                    </li>
+                @endif
+                <li class="nav-item">
+                    <button class="nav-link px-4 py-3 fw-bold text-danger" data-bs-toggle="tab" data-bs-target="#tab-retraits">
+                        <i class="bi bi-box-arrow-up me-2"></i>Historique des Retraits
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link px-4 py-3 fw-bold text-warning" data-bs-toggle="tab" data-bs-target="#tab-credits">
+                        <i class="bi bi-bank me-2"></i>Crédits & Prêts
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="tab-content p-4">
+            {{-- TONTINE : CYCLES --}}
+            @if($carnet->type === 'tontine')
+            <div class="tab-pane fade show active" id="tab-cycles">
+                <table class="table align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>Numéro</th>
-                            <th>Client</th>
-                            <th>Type</th>
-                            <th>Détails / Parent</th>
-                            <th>Statut</th>
-                            <th>Date Début</th>
+                            <th>N° Cycle</th>
+                            <th>Mise Journalière</th>
+                            <th>Total Collecté</th>
+                            <th>Fin de cycle</th>
+                            <th>État</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($carnets as $carnet)
+                        @foreach($carnet->cycles->sortByDesc('created_at') as $cycle)
                         <tr>
-                            <td><span class="fw-bold text-primary">{{ $carnet->numero }}</span></td>
-                            <td>{{ $carnet->client->nom }} {{ $carnet->client->prenom }}</td>
+                            <td class="fw-bold">#{{ $loop->iteration }}</td>
+                            <td>{{ number_format($cycle->montant_journalier, 0) }} F</td>
+                            <td class="text-primary fw-bold">{{ number_format($cycle->collectes->sum('montant'), 0) }} F</td>
+                            <td>{{ $cycle->retire_at ? $cycle->retire_at->format('d/m/Y') : 'En attente' }}</td>
                             <td>
-                                @if($carnet->type === 'tontine')
-                                    <span class="badge bg-info-soft text-info">Tontine</span>
-                                @else
-                                    <span class="badge bg-warning-soft text-warning">Compte</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($carnet->type === 'tontine')
-                                    <small>{{ $carnet->categoryTontine->libelle ?? '---' }}</small>
-                                @else
-                                    @if($carnet->parent)
-                                        <small class="text-muted">Lié à : #{{ $carnet->parent->numero }}</small>
-                                    @else
-                                        <small class="text-muted">Épargne libre</small>
-                                    @endif
-                                @endif
-                            </td>
-                            <td>
-                                <span class="badge {{ $carnet->statut == 'actif' ? 'bg-success' : 'bg-danger' }}">
-                                    {{ ucfirst($carnet->statut) }}
+                                <span class="badge {{ $cycle->statut === 'termine' ? 'bg-success' : ($cycle->statut === 'en_cours' ? 'bg-warning' : 'bg-secondary') }}">
+                                    {{ ucfirst($cycle->statut) }}
                                 </span>
                             </td>
-                            <td>{{ $carnet->date_debut->format('d/m/Y') }}</td>
                             <td class="text-end">
-                                <a href="{{ route('admin.carnets.show', $carnet->id) }}" class="btn btn-sm btn-light border">
-                                    <i class="fas fa-eye"></i>
-                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-primary view-collectes" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalCollectes"
+                                        data-cycle="{{ $loop->iteration }}"
+                                        data-collectes="{{ json_encode($cycle->collectes->map(function($c) {
+                                            return [
+                                                'date' => $c->created_at->format('d/m/Y H:i'),
+                                                'montant' => number_format($c->montant, 0, ',', ' ') . ' F',
+                                                'pointage' => $c->pointage ?? 1, // On récupère le nombre de pointages
+                                                'agent' => $c->agent ? ($c->agent->nom . ' ' . $c->agent->prenom) : 'Inconnu'
+                                            ];
+                                        })) }}">
+                                    <i class="bi bi-list-check"></i> Collectes
+                                </button>
                             </td>
                         </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
-        </div>
-        <div class="card-footer bg-white border-top py-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="text-muted small">
-                    Affichage de <strong>{{ $carnets->firstItem() }}</strong> à <strong>{{ $carnets->lastItem() }}</strong> sur <strong>{{ $carnets->total() }}</strong> carnets
-                </div>
-                <div>
-                    {{ $carnets->links('pagination::bootstrap-5') }}
-                </div>
+            @endif
+
+            {{-- ÉPARGNE : DÉPÔTS --}}
+            @if($carnet->type === 'compte')
+            <div class="tab-pane fade show active" id="tab-depots">
+                <table class="table align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date & Heure</th>
+                            <th>Montant</th>
+                            <th>Note / Commentaire</th>
+                            <th>Enregistré par</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($carnet->depots->whereNull('cycle_id')->sortByDesc('date_depot') as $depot)
+                        <tr>
+                            <td>{{ $depot->date_depot->format('d/m/Y H:i') }}</td>
+                            <td class="fw-bold text-success">{{ number_format($depot->montant, 0) }} F</td>
+                            <td class="text-muted small">{{ $depot->commentaire ?? '-' }}</td>
+                            <td class="text-uppercase small fw-bold">{{ $depot->user->name }}</td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="4" class="text-center py-4 text-muted">Aucun dépôt enregistré.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @endif
+
+            {{-- COMMUN : RETRAITS --}}
+            <div class="tab-pane fade" id="tab-retraits">
+                <table class="table align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th class="text-end">Brut</th>
+                            <th class="text-end">Commission</th>
+                            <th class="text-end">Net perçu</th>
+                            <th>Validé par</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($carnet->retraits->sortByDesc('date_retrait') as $retrait)
+                        <tr>
+                            <td>{{ $retrait->date_retrait->format('d/m/Y H:i') }}</td>
+                            <td>
+                                <span class="badge {{ $retrait->cycle_id ? 'bg-info' : 'bg-secondary' }}">
+                                    {{ $retrait->cycle_id ? 'Tontine' : 'Épargne' }}
+                                </span>
+                            </td>
+                            <td class="text-end text-muted">{{ number_format($retrait->montant_total, 0) }} F</td>
+                            <td class="text-end text-danger">-{{ number_format($retrait->commission, 0) }} F</td>
+                            <td class="text-end fw-bold text-success">{{ number_format($retrait->montant_net, 0) }} F</td>
+                            <td class="small fw-bold text-uppercase">{{ $retrait->admin->name ?? 'Admin' }}</td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="6" class="text-center py-4 text-muted">Aucun retrait enregistré.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- COMMUN : CRÉDITS --}}
+            <div class="tab-pane fade" id="tab-credits">
+                <table class="table align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Montant Prêté</th>
+                            <th>Reste à payer</th>
+                            <th>Échéance</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($carnet->credits as $credit)
+                        <tr>
+                            <td class="fw-bold">{{ number_format($credit->montant, 0) }} F</td>
+                            <td class="text-danger fw-bold">{{ number_format($credit->montant_restant, 0) }} F</td>
+                            <td>{{ $credit->date_echeance ? $credit->date_echeance->format('d/m/Y') : '-' }}</td>
+                            <td>
+                                <span class="badge {{ $credit->statut === 'solde' ? 'bg-success' : 'bg-danger' }}">
+                                    {{ ucfirst($credit->statut) }}
+                                </span>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="4" class="text-center py-4 text-muted">Aucun crédit enregistré.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="createCarnetModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Ouvrir un nouveau carnet</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="{{ route('admin.carnets.store') }}" method="POST">
-                @csrf
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold">Sélectionner le Client</label>
-                            <select name="client_id" class="form-select select2" required>
-                                <option value="">Choisir un client...</option>
-                                @foreach($clients as $client)
-                                    <option value="{{ $client->id }}">{{ $client->nom }} {{ $client->prenom }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Type de Carnet</label>
-                            <select name="type" id="typeSelect" class="form-select" required onchange="toggleFields()">
-                                <option value="tontine">Tontine (Fixe)</option>
-                                <option value="compte">Compte (Libre)</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Date de début</label>
-                            <input type="date" name="date_debut" class="form-control" value="{{ date('Y-m-d') }}" required>
-                        </div>
-
-                        <div class="col-md-12" id="tontineFields">
-                            <label class="form-label fw-bold text-info">Durée de la Tontine</label>
-                            <select name="category_tontine_id" class="form-select">
-                                <option value="">Choisir la catégorie...</option>
-                                @foreach($categories as $cat)
-                                    <option value="{{ $cat->id }}">{{ $cat->libelle }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-12 d-none" id="compteFields">
-                            <label class="form-label fw-bold text-warning">Lier à une Tontine existante ? (Optionnel)</label>
-                            <select name="parent_id" class="form-select">
-                                <option value="">Aucun lien (Compte indépendant)</option>
-                                @foreach($carnetsTontine as $ct)
-                                    <option value="{{ $ct->id }}">Carnet #{{ $ct->numero }} ({{ $ct->client->nom }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary px-4">Créer le Carnet</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
+{{-- MODALS --}}
+@include('admin.carnets.partials.modal_depot')
+@include('admin.carnets.partials.modal_retrait')
+@include('admin.carnets.partials.modal_collecte')
 <script>
-function toggleFields() {
-    const type = document.getElementById('typeSelect').value;
-    const tontineDiv = document.getElementById('tontineFields');
-    const compteDiv = document.getElementById('compteFields');
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalCollectes = document.getElementById('modalCollectes');
+        const tableBody = document.getElementById('collectesTableBody');
+        const cycleSpan = document.getElementById('modalCycleNumber');
 
-    if (type === 'tontine') {
-        tontineDiv.classList.remove('d-none');
-        compteDiv.classList.add('d-none');
-    } else {
-        tontineDiv.classList.add('d-none');
-        compteDiv.classList.remove('d-none');
-    }
-}
+        if (modalCollectes) {
+            modalCollectes.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                let collectes = [];
+                
+                try {
+                    collectes = JSON.parse(button.getAttribute('data-collectes'));
+                    
+                    // TRI PAR DATE DÉCROISSANTE
+                    // On transforme les chaînes de date "JJ/MM/AAAA HH:mm" en objets Date pour comparer
+                    collectes.sort((a, b) => {
+                        const dateA = new Date(a.date.split('/').reverse().join('-'));
+                        const dateB = new Date(b.date.split('/').reverse().join('-'));
+                        return dateB - dateA;
+                    });
+
+                } catch (e) {
+                    console.error("Erreur JSON :", e);
+                    return;
+                }
+
+                cycleSpan.textContent = '#' + button.getAttribute('data-cycle');
+                tableBody.innerHTML = '';
+
+                if (collectes.length > 0) {
+                    collectes.forEach(collecte => {
+                        const row = `
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="small fw-bold">${collecte.date.split(' ')[0]}</div>
+                                    <div class="small text-muted">${collecte.date.split(' ')[1]}</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-xs me-2 bg-light rounded-circle text-center" style="width: 25px; height: 25px; line-height: 25px;">
+                                            <i class="bi bi-person text-primary" style="font-size: 0.8rem;"></i>
+                                        </div>
+                                        <small class="fw-semibold text-truncate" style="max-width: 120px;">${collecte.agent}</small>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill bg-info-subtle text-info border border-info px-2">
+                                        ${collecte.pointage} pt(s)
+                                    </span>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <span class="fw-bold text-dark">${collecte.montant}</span>
+                                </td>
+                            </tr>`;
+                        tableBody.insertAdjacentHTML('beforeend', row);
+                    });
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">Aucune donnée disponible.</td></tr>';
+                }
+            });
+        }
+    });
 </script>
-
-<style>
-    /* Pour des badges plus modernes */
-    .bg-info-soft { background-color: #e0f7fa; color: #00acc1; }
-    .bg-warning-soft { background-color: #fff8e1; color: #ffb300; }
-    .modal-content { border-radius: 15px; }
-</style>
 @endsection

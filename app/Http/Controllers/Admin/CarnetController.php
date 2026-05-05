@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Carnet;
 use App\Models\Client;
+use App\Models\Depot;
+use App\Models\Retrait;
+use App\Models\Cycle;
 use App\Models\CategoryTontine;
 use Illuminate\Http\Request;
 
@@ -16,18 +19,29 @@ class CarnetController extends Controller
     public function index(Request $request)
     {
         try {
-            // 1. Initialisation de la requête avec le count des cycles pour le filtre "vierge"
-            $query = Carnet::with(['client', 'categoryTontine', 'parent'])
-                        ->withCount('cycles');
-
-            // --- FILTRE RECHERCHE (Numéro ou Nom Client) ---
+            // 1. Initialisation de la requête
+            $query = Carnet::with([
+                'client', 
+                'categoryTontine', 
+                'parent', 
+                'cycles.collectes', 
+                'credits'           
+            ])->withCount('cycles');
+            
+            // --- FILTRE RECHERCHE (Numéro, Nom, Prénom ou Téléphone) ---
             if ($request->filled('search')) {
                 $search = $request->search;
+                
                 $query->where(function($q) use ($search) {
+                    // Recherche par numéro de carnet
                     $q->where('numero', 'LIKE', "%$search%")
+                    // Recherche dans la relation Client
                     ->orWhereHas('client', function($sq) use ($search) {
                         $sq->where('nom', 'LIKE', "%$search%")
-                            ->orWhere('prenom', 'LIKE', "%$search%");
+                            ->orWhere('prenom', 'LIKE', "%$search%")
+                            ->orWhere('telephone', 'LIKE', "%$search%")
+                            // Optionnel : Recherche combinée "Nom Prénom"
+                            ->orWhere(\DB::raw("CONCAT(nom, ' ', prenom)"), 'LIKE', "%$search%");
                     });
                 });
             }
@@ -37,7 +51,7 @@ class CarnetController extends Controller
                 $query->where('type', $request->type);
             }
 
-            // --- FILTRE ÉTAT (Basé sur les cycles pour l'instant) ---
+            // --- FILTRE ÉTAT (Basé sur les cycles) ---
             if ($request->filled('filter')) {
                 if ($request->filter == 'vierge') {
                     $query->has('cycles', '=', 0);
@@ -46,10 +60,10 @@ class CarnetController extends Controller
                 }
             }
 
-            // 2. Exécution avec pagination pour supporter les filtres
+            // 2. Exécution avec pagination et conservation des paramètres de filtrage
             $carnets = $query->latest()->paginate(20)->withQueryString();
 
-            // 3. Récupération des données pour les formulaires (inchangé)
+            // 3. Récupération des données pour les formulaires
             $categories = CategoryTontine::all();
             $clients = Client::orderBy('nom')->get();
             
@@ -58,23 +72,17 @@ class CarnetController extends Controller
                 ->with('client')
                 ->get();
 
+            return view('admin.carnets.index', compact(
+                'carnets', 
+                'clients', 
+                'categories', 
+                'tontinesActives'
+            ));
+
         } catch (\Exception $e) {
             \Log::error("Erreur base de données Carnets : " . $e->getMessage());
-
-            $carnets = collect();
-            $categories = collect();
-            $clients = collect();
-            $tontinesActives = collect();
-            
-            return redirect()->back()->with('error', "Erreur : " . $e->getMessage());
+            return redirect()->back()->with('error', "Une erreur est survenue lors de la récupération des données.");
         }
-
-        return view('admin.carnets.index', compact(
-            'carnets', 
-            'clients', 
-            'categories', 
-            'tontinesActives'
-        ));
     }
 
     /**
@@ -171,43 +179,127 @@ class CarnetController extends Controller
 
     public function getCarnetsByClient($clientId)
     {
-        $id = (int) $clientId;
-        $carnets = Carnet::with(['categoryTontine', 'parent', 'enfants'])
-                        ->where('client_id', $id)
-                        ->where('statut', 'actif')
-                        ->get(['id', 'numero', 'type', 'category_tontine_id', 'parent_id']);
+        try {
+            $id = (int) $clientId;
+            $carnets = Carnet::with([
+                'categoryTontine',
+                'parent',
+                'cycles.collectes',
+                'depots',
+                'retraits'
+            ])
+                            ->where('client_id', $id)
+                            ->where('statut', 'actif')
+                            ->get();
 
-        $carnets = $carnets->map(function (Carnet $carnet) {
-            $category = $carnet->categoryTontine;
-            $requiredPointages = $category ? $category->minimumPointagesRequired() : null;
-            $totalPointages = $carnet->totalPointages();
-            $availableSavings = $carnet->availableSavings();
-            $guaranteeBase = $carnet->guaranteeBase();
+            $carnets = $carnets->map(function (Carnet $carnet) {
+                $category = $carnet->categoryTontine;
+                $requiredPointages = $category ? $category->minimumPointagesRequired() : null;
+                $totalPointages = $carnet->totalPointages();
+                $availableSavings = $carnet->availableSavings();
+                $guaranteeBase = $carnet->guaranteeBase();
 
-            return [
-                'id' => $carnet->id,
-                'numero' => $carnet->numero,
-                'type' => $carnet->type,
-                'category' => $category ? $category->libelle : null,
-                'nombre_cycles' => $category ? $category->nombre_cycles : null,
-                'required_pointages' => $requiredPointages,
-                'total_pointages' => $totalPointages,
-                'available_savings' => $availableSavings,
-                'guarantee_base' => $guaranteeBase,
-                'linked_tontine' => $carnet->parent ? [
-                    'id' => $carnet->parent->id,
-                    'numero' => $carnet->parent->numero,
-                ] : null,
-            ];
-        });
+                return [
+                    'id' => $carnet->id,
+                    'numero' => $carnet->numero,
+                    'type' => $carnet->type,
+                    'category' => $category ? $category->libelle : null,
+                    'nombre_cycles' => $category ? $category->nombre_cycles : null,
+                    'required_pointages' => $requiredPointages,
+                    'total_pointages' => $totalPointages,
+                    'available_savings' => $availableSavings,
+                    'guarantee_base' => $guaranteeBase,
+                    'linked_tontine' => $carnet->parent ? [
+                        'id' => $carnet->parent->id,
+                        'numero' => $carnet->parent->numero,
+                    ] : null,
+                ];
+            });
 
-        return response()->json($carnets);
+            return response()->json($carnets);
+        } catch (\Exception $e) {
+            \Log::error('Error in getCarnetsByClient: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function show($id)
     {
-        $carnet = Carnet::with(['client', 'cycles.collectes', 'cycles.agent', 'cycles.retrait.admin'])->findOrFail($id);
+        $carnet = Carnet::with([
+            'client', 
+            // Pour les Tontines
+            'cycles.collectes', 
+            'cycles.agent', 
+            'cycles.retrait.admin', 
+            // Pour les Comptes Épargne (Dépôts libres)
+            'depots.user', 
+            // Pour les Retraits globaux (si applicables)
+            'retraits.admin',
+            // Pour les Crédits
+            'credits'
+        ])->findOrFail($id);
 
         return view('admin.carnets.show', compact('carnet'));
+    }
+
+    public function storeDepot(Request $request)
+    {
+        $validated = $request->validate([
+            'carnet_id'   => 'required|exists:carnets,id',
+            'client_id'   => 'required|exists:clients,id',
+            'montant'     => 'required|numeric|min:1',
+            'date_depot'  => 'required|date',
+            'commentaire' => 'nullable|string',
+        ]);
+
+        // On récupère le carnet pour vérification
+        $carnet = Carnet::findOrFail($request->carnet_id);
+
+        // Création du dépôt
+        Depot::create([
+            'client_id'   => $validated['client_id'],
+            'carnet_id'   => $validated['carnet_id'],
+            'user_id'     => auth()->id(), // L'admin connecté
+            'montant'     => $validated['montant'],
+            'date_depot'  => $validated['date_depot'],
+            'commentaire' => $validated['commentaire'],
+            'cycle_id'    => null, // Toujours null car c'est un dépôt d'épargne (compte)
+        ]);
+
+        return redirect()->back()->with('success', 'Le dépôt d\'épargne a été enregistré avec succès.');
+    }
+
+    public function storeRetrait(Request $request)
+    {
+        $request->validate([
+            'carnet_id' => 'required|exists:carnets,id',
+            'montant_total' => 'required|numeric|min:1',
+            'date_retrait' => 'required|date',
+        ]);
+
+        // Calcul du montant net
+        $commission = $request->input('commission', 0);
+        $montantNet = $request->montant_total - $commission;
+
+        // Création du retrait
+        $retrait = Retrait::create([
+            'carnet_id' => $request->carnet_id,
+            'client_id' => $request->client_id,
+            'cycle_id'  => $request->input('cycle_id'), // Sera null pour un compte épargne
+            'admin_id'  => auth()->id(),
+            'montant_total' => $request->montant_total,
+            'commission'    => $commission,
+            'montant_net'   => $montantNet,
+            'date_retrait'  => $request->date_retrait,
+            'note'          => $request->note,
+        ]);
+
+        // Si c'est une tontine liée à un cycle, on marque le cycle comme "retiré"
+        if ($request->filled('cycle_id')) {
+            $cycle = Cycle::find($request->cycle_id);
+            $cycle->update(['retire_at' => $request->date_retrait, 'statut' => 'termine']);
+        }
+
+        return redirect()->back()->with('success', 'Retrait effectué et comptabilisé.');
     }
 }

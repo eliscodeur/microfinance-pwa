@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CategoryTontineController;
 use App\Http\Controllers\Pwa\PwaController; 
 use App\Http\Controllers\Admin\CarnetController;
+use App\Http\Controllers\Admin\CreditController;
 use App\Http\Controllers\Api\SyncController;
 
 /*
@@ -55,9 +56,9 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('clients/export/{format}', [ClientController::class, 'export'])->name('clients.export');
     Route::get('clients/{client}/export-history', [ClientController::class, 'exportHistory'])->name('clients.exportHistory');
 
-    Route::resource('credits', \App\Http\Controllers\Admin\CreditController::class)->only(['index', 'create', 'store', 'show']);
-    Route::post('credits/{credit}/approve', [\App\Http\Controllers\Admin\CreditController::class, 'approve'])->name('credits.approve');
-    Route::patch('credits/{credit}/payments/{payment}', [\App\Http\Controllers\Admin\CreditController::class, 'updatePayment'])->name('credits.payments.update');
+    Route::resource('credits', CreditController::class)->only(['index', 'create', 'store', 'show']);
+    Route::post('credits/{credit}/approve', [CreditController::class, 'approve'])->name('credits.approve');
+    Route::patch('credits/{credit}/payments/{payment}', [CreditController::class, 'updatePayment'])->name('credits.payments.update');
 
     Route::get('/carnets/get-tontines/{clientId}', [CarnetController::class, 'getTontinesByClient'])->name('carnets.get-tontines');
     Route::get('/carnets/get-by-client/{clientId}', [CarnetController::class, 'getCarnetsByClient'])->name('carnets.get-by-client');
@@ -66,7 +67,8 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::post('/carnets/store', [CarnetController::class, 'store'])->name('carnets.store');
     Route::put('/carnets/{carnet}', [CarnetController::class, 'update'])->name('carnets.update');
     Route::delete('/carnets/{carnet}', [CarnetController::class, 'destroy'])->name('carnets.destroy');
-    
+    Route::post('/carnets/depot', [CarnetController::class, 'storeDepot'])->name('carnets.depot');
+    Route::post('/carnets/retrait', [CarnetController::class, 'storeRetrait'])->name('carnets.retrait');
     Route::resource('roles', RoleController::class);
     Route::resource('users', UserController::class);
     // Dans routes/web.php

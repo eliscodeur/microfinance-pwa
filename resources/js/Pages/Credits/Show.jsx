@@ -261,6 +261,31 @@ export default function Show({ credit }) {
                     </div>
                 </div>
 
+                {credit.emergency_withdrawal_summary?.length > 0 && (
+                    <>
+                        <div className="alert alert-warning">
+                            <strong>Prélèvement automatique appliqué :</strong> des sommes ont été prélevées sur l'épargne disponible pour couvrir une ou plusieurs échéances en défaut.
+                        </div>
+                        <div className="card shadow-sm mb-4 border-danger">
+                            <div className="card-header bg-white text-danger">
+                                <strong>Prélèvements de secours automatiques</strong>
+                            </div>
+                            <div className="card-body">
+                                <p className="mb-3 text-muted">
+                                    Les montants suivants ont été retirés automatiquement et affectés aux paiements en défaut.
+                                </p>
+                                <ul className="list-group list-group-flush">
+                                    {credit.emergency_withdrawal_summary.map((item, index) => (
+                                        <li key={index} className="list-group-item px-0">
+                                            <strong>Échéance #{item.echeance} :</strong> {formatCurrency(item.amount_withdrawn)} prélevés, dont {formatCurrency(item.amount_applied)} appliqués au paiement.
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </>
+                )}
+
                 <div className="card shadow-sm">
                     <div className="card-header bg-white">
                         <strong>Échéancier</strong>

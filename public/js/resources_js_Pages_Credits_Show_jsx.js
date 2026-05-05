@@ -196,7 +196,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
 function Show(_ref) {
-  var _credit$payments$data, _credit$payments, _credit$payments2, _credit$penalty_amoun, _credit$penalty_amoun2;
+  var _credit$payments$data, _credit$payments, _credit$payments2, _credit$penalty_amoun, _credit$penalty_amoun2, _credit$emergency_wit;
   var credit = _ref.credit;
   var flash = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.usePage)().props.flash;
   var _useState = (0,react__WEBPACK_IMPORTED_MODULE_2__.useState)(false),
@@ -457,6 +457,37 @@ function Show(_ref) {
               }), " ", formatCurrency(credit.montant_rembourse)]
             })]
           })
+        })]
+      }), ((_credit$emergency_wit = credit.emergency_withdrawal_summary) === null || _credit$emergency_wit === void 0 ? void 0 : _credit$emergency_wit.length) > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.Fragment, {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          className: "alert alert-warning",
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+            children: "Pr\xE9l\xE8vement automatique appliqu\xE9 :"
+          }), " des sommes ont \xE9t\xE9 pr\xE9lev\xE9es sur l'\xE9pargne disponible pour couvrir une ou plusieurs \xE9ch\xE9ances en d\xE9faut."]
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          className: "card shadow-sm mb-4 border-danger",
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+            className: "card-header bg-white text-danger",
+            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+              children: "Pr\xE9l\xE8vements de secours automatiques"
+            })
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            className: "card-body",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
+              className: "mb-3 text-muted",
+              children: "Les montants suivants ont \xE9t\xE9 retir\xE9s automatiquement et affect\xE9s aux paiements en d\xE9faut."
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("ul", {
+              className: "list-group list-group-flush",
+              children: credit.emergency_withdrawal_summary.map(function (item, index) {
+                return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("li", {
+                  className: "list-group-item px-0",
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("strong", {
+                    children: ["\xC9ch\xE9ance #", item.echeance, " :"]
+                  }), " ", formatCurrency(item.amount_withdrawn), " pr\xE9lev\xE9s, dont ", formatCurrency(item.amount_applied), " appliqu\xE9s au paiement."]
+                }, index);
+              })
+            })]
+          })]
         })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
         className: "card shadow-sm",
