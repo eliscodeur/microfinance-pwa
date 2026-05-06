@@ -17,6 +17,7 @@ class Cycle extends Model
         'montant_journalier',
         'nombre_jours_objectif',
         'statut',
+        'commission_genere',
         'date_debut',
         'date_fin_prevue',
         'completed_at',

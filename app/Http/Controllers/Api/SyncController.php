@@ -154,6 +154,28 @@ class SyncController extends Controller
                     ]
                 );
                 $mappedCycleIds[$bCycle->cycle_uid] = $cycle->id;
+                // --- DÉTECTION ET GÉNÉRATION DE COMMISSION ---
+                // On vérifie si le cycle vient de passer à 'termine' et n'a pas encore été traité
+                // --- DÉTECTION ET GÉNÉRATION DE COMMISSION ---
+                if ($cycle->statut === 'termine' && !$cycle->commission_genere) {
+                    // On charge explicitement la relation carnet pour avoir accès au montant
+                    $cycle->load('carnet'); 
+
+                    if ($cycle->carnet) {
+                        \App\Models\Bonus::create([
+                            'agent_id'          => $cycle->agent_id,
+                            'cycle_id'          => $cycle->id, 
+                            'montant'           => $cycle->montant_journalier ?? 0, 
+                            'motif'             => "Commission Automatique - Cycle #" . $cycle->id, 
+                            'date_attribution'  => $now,
+                            'commission_genere' => false,
+                            'validated_by'      => null, 
+                            'admin_id'          => null
+                        ]);
+
+                        $cycle->update(['commission_genere' => true]);
+                    }
+                }
             }
 
             // --- ÉTAPE 2 : COLLECTES ---

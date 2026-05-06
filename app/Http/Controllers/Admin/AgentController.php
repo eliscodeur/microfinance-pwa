@@ -229,6 +229,52 @@ class AgentController extends Controller
         ]);
     }
 
+    /**
+     * Ajouter un bonus manuel à un agent.
+     */
+    public function storeBonus(Request $request, Agent $agent)
+    {
+        $request->validate([
+            'montant' => 'required|numeric|min:0',
+            'motif' => 'required|string|max:255',
+        ]);
+
+        \App\Models\Bonus::create([
+            'agent_id' => $agent->id,
+            'montant' => $request->montant,
+            'motif' => $request->motif,
+            'admin_id' => auth()->id(),
+            'date_attribution' => now()->toDateString(),
+        ]);
+
+        // Mettre à jour le portefeuille virtuel
+        $agent->increment('portefeuille_virtuel', $request->montant);
+
+        return redirect()->back()->with('success', 'Bonus ajouté avec succès.');
+    }
+
+    /**
+     * Calculer et enregistrer les commissions automatiques pour un agent.
+     */
+    public function calculateCommissions(Agent $agent)
+    {
+        $commission = $agent->calculateAutomaticCommissions();
+
+        if ($commission > 0) {
+            \App\Models\Bonus::create([
+                'agent_id' => $agent->id,
+                'montant' => $commission,
+                'motif' => 'Commission automatique sur cycles terminés',
+                'admin_id' => auth()->id(),
+                'date_attribution' => now()->toDateString(),
+            ]);
+
+            $agent->increment('portefeuille_virtuel', $commission);
+        }
+
+        return redirect()->back()->with('success', 'Commissions calculées et ajoutées.');
+    }
+
     public function export($format)
     {
         $agents = Agent::all();

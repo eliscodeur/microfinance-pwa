@@ -40,7 +40,7 @@ class CreditCalculator
             $total = round($principal + $interest, 2);
             $schedule[] = [
                 'numero' => $i,
-                'date' => $start->copy()->addDays(($i - 1) * $periodDays)->toDateString(),
+                'date' => $start->copy()->addDays($i * $periodDays)->toDateString(),
                 'principal' => $principal,
                 'interest' => $interest,
                 'total' => $total,

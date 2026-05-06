@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\AgentController;
-use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\CycleController as AdminCycleController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\SyncBatchController;
@@ -51,6 +50,10 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::resource('agents', AgentController::class);
     Route::patch('agents/{agent}/toggle-status', [AgentController::class, 'toggleStatus'])->name('agents.toggleStatus');
     Route::get('agents/export/{format}', [AgentController::class, 'export'])->name('agents.export');
+    Route::post('agents/{agent}/bonus', [AgentController::class, 'storeBonus'])->name('agents.storeBonus');
+    Route::post('agents/{agent}/calculate-commissions', [AgentController::class, 'calculateCommissions'])->name('agents.calculateCommissions');
+
+    Route::resource('bonuses', \App\Http\Controllers\Admin\BonusController::class)->only(['index', 'store', 'destroy']);
 
     Route::resource('clients', ClientController::class);
     Route::get('clients/export/{format}', [ClientController::class, 'export'])->name('clients.export');
@@ -58,6 +61,7 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
 
     Route::resource('credits', CreditController::class)->only(['index', 'create', 'store', 'show']);
     Route::post('credits/{credit}/approve', [CreditController::class, 'approve'])->name('credits.approve');
+    Route::post('credits/{credit}/settle-with-tontine', [CreditController::class, 'settleCreditWithTontine'])->name('credits.settle-with-tontine');
     Route::patch('credits/{credit}/payments/{payment}', [CreditController::class, 'updatePayment'])->name('credits.payments.update');
 
     Route::get('/carnets/get-tontines/{clientId}', [CarnetController::class, 'getTontinesByClient'])->name('carnets.get-tontines');

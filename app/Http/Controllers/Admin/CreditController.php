@@ -468,6 +468,20 @@ class CreditController extends Controller
             $credit->increment('montant_rembourse', round($amountToApply, 2));
         }
 
+        // Check if all payments are paid and mark credit as settled
+        $allPaymentsPaid = $credit->payments()
+            ->where('status', '!=', 'paid')
+            ->doesntExist();
+
+        if ($allPaymentsPaid) {
+            $credit->update([
+                'statut' => 'solder',
+                'blocked_amount' => 0,
+            ]);
+
+            $successMessage = ($successMessage ?? 'Échéance mise à jour') . ' - Crédit entièrement remboursé et statut mis à jour.';
+        }
+
         return back()->with('success', $successMessage ?? 'Échéance mise à jour avec succès.');
     }
 
@@ -484,5 +498,22 @@ class CreditController extends Controller
         ]);
 
         return redirect()->route('admin.credits.show', $credit)->with('success', 'Crédit approuvé et activé.');
+    }
+
+    /**
+     * Solder un crédit actif avec les fonds disponibles des cycles de tontine.
+     */
+    public function settleCreditWithTontine(Credit $credit)
+    {
+        $result = \App\Services\CreditSettlementService::settleCreditWithAvailableFunds($credit);
+
+        $messageType = $result['success'] ? 'success' : 'warning';
+        $message = $result['message'];
+
+        if (!empty($result['cycles_used'])) {
+            $message .= ' - Fonds utilisés : ' . number_format($result['amount_used'], 0, ',', ' ') . ' FCFA de ' . count($result['cycles_used']) . ' cycle(s).';
+        }
+
+        return redirect()->route('admin.credits.show', $credit)->with($messageType, $message);
     }
 }

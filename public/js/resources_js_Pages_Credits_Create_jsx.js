@@ -113,7 +113,7 @@ function Create(_ref) {
     type: 'compte',
     mode: 'degressif',
     periodicite: 'mensuelle',
-    nombre_echeances: 5,
+    nombre_echeances: 3,
     taux: 1.5,
     taux_manuelle: '',
     date_debut: new Date().toISOString().slice(0, 10)

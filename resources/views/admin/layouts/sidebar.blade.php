@@ -192,6 +192,7 @@
         <div class="collapse submenu {{ $agentsMenuOpen ? 'show' : '' }}" id="agentsSub" data-bs-parent="#sidebarNav">
             <a href="{{ route('admin.agents.index') }}" class="{{ request()->routeIs('admin.agents.index') ? 'active' : '' }}">Liste Agents</a>
             <a href="{{ route('admin.agents.create') }}" class="{{ request()->routeIs('admin.agents.create') ? 'active' : '' }}">Ajouter Agent</a>
+            <a href="{{ route('admin.bonuses.index') }}" class="{{ request()->routeIs('admin.bonuses.index') ? 'active' : '' }}">Bonus & Commissions</a>
         </div>
         @endcan
 

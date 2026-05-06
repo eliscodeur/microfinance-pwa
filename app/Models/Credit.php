@@ -71,4 +71,10 @@ class Credit extends Model
     {
         return $this->belongsTo(User::class, 'admin_id');
     }
+    public function getMontantRestantAttribute()
+    {
+        // L'encours est : (Montant accordé + Intérêts) - Montant remboursé
+        // Ici, on fait simple : montant accordé moins montant remboursé
+        return max(0, ($this->montant_accorde + $this->interet_total) - $this->montant_rembourse);
+    }
 }

@@ -25,7 +25,9 @@ class CarnetController extends Controller
                 'categoryTontine', 
                 'parent', 
                 'cycles.collectes', 
-                'credits'           
+                'credits' => function($q) {
+                    $q->where('statut', 'active');
+                }          
             ])->withCount('cycles');
             
             // --- FILTRE RECHERCHE (Numéro, Nom, Prénom ou Téléphone) ---

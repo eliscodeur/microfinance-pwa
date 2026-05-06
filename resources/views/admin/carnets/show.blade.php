@@ -292,7 +292,7 @@
                                 </td>
                                 <td class="text-center">
                                     <span class="badge rounded-pill bg-info-subtle text-info border border-info px-2">
-                                        ${collecte.pointage} pt(s)
+                                        ${collecte.pointage}
                                     </span>
                                 </td>
                                 <td class="text-end pe-3">

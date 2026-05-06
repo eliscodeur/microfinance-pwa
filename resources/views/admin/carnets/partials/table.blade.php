@@ -31,23 +31,33 @@
                 @endif
 
                 {{-- État du Crédit --}}
-                <td>
-                    @php 
-                        $creditEnCours = $carnet->credits->where('statut', 'en_cours')->first(); 
-                    @endphp
+                    <td>
+                        @php 
+                            // On récupère uniquement les crédits dont le statut est 'active'
+                            $creditsActifs = $carnet->credits->where('statut', 'active');
+                            $aUnCredit = $creditsActifs->isNotEmpty();
+                        @endphp
 
-                    @if($creditEnCours)
-                        <span class="badge rounded-pill bg-danger">
-                            <i class="bi bi-exclamation-triangle me-1"></i> Crédit en cours
-                        </span>
-                        <br>
-                        <small class="text-danger fw-bold">{{ number_format($creditEnCours->montant_restant, 0, ',', ' ') }} F</small>
-                    @else
-                        <span class="badge rounded-pill bg-light text-success border border-success">
-                            <i class="bi bi-check-circle me-1"></i> Aucun crédit
-                        </span>
-                    @endif
-                </td>
+                        @if($aUnCredit)
+                            <span class="badge rounded-pill bg-danger">
+                                <i class="bi bi-exclamation-triangle me-1"></i> Crédit en cours
+                            </span>
+                            <br>
+                            <small class="text-danger fw-bold">
+                                @php
+                                    // Calcul de l'encours réel : (Accordé + Intérêts) - Remboursé
+                                    $totalEncours = $creditsActifs->sum(function($c) {
+                                        return ($c->montant_accorde + $c->interet_total) - $c->montant_rembourse;
+                                    });
+                                @endphp
+                                {{ number_format($totalEncours, 0, ',', ' ') }} F
+                            </small>
+                        @else
+                            <span class="badge rounded-pill bg-light text-success border border-success">
+                                <i class="bi bi-check-circle me-1"></i> Aucun crédit
+                            </span>
+                        @endif
+                    </td>
 
                 {{-- Solde Disponible --}}
                 @if($type == 'tontine')
