@@ -9,6 +9,7 @@ return [
         'Gérer Clients',
         'Gérer Utilisateurs',
         'Gérer Collectes',
+        'Gérer Commissions',
         'Valider Synchros',
         'Voir Rapports',
         'Modifier données',

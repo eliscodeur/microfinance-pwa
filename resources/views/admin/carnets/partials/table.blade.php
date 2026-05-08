@@ -59,18 +59,17 @@
                         @endif
                     </td>
 
-                {{-- Solde Disponible --}}
-                @if($type == 'tontine')
-                    {{-- Solde tontine : Cycles terminés et non retirés --}}
-                    <td class="fw-bold text-danger">
-                        {{ number_format($carnet->solde_tontine_non_retire, 0, ',', ' ') }} F
-                    </td>
-                @else
-                    {{-- Solde Épargne classique --}}
-                    <td class="fw-bold text-success">
-                        {{ number_format($carnet->solde_disponible, 0, ',', ' ') }} F
-                    </td>
-                @endif
+@if($type == 'tontine')
+    <td class="fw-bold">
+        <i class="bi bi-arrow-down-circle me-1"></i>
+        {{ number_format($carnet->solde_tontine_non_retire, 0, ',', ' ') }} F
+    </td>
+@else
+    <td class="fw-bold">
+        <i class="bi bi-piggy-bank me-1"></i>
+        {{ number_format($carnet->solde_disponible, 0, ',', ' ') }} F
+    </td>
+@endif
 
                 <td class="text-end pe-3">
                     <div class="btn-group">

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Retrait;
 use Illuminate\Database\Eloquent\Builder;
 
 class Cycle extends Model
@@ -44,14 +45,31 @@ class Cycle extends Model
         return $this->hasMany(Collecte::class);
     }
 
-    public function retrait()
+    public function retraits()
     {
-        return $this->hasOne(Retrait::class);
+        return $this->hasMany(Retrait::class, 'cycle_id');
     }
 
     public function scopeVisibleForAgentSync(Builder $query): Builder
     {
         return $query->where('statut', 'en_cours');
+    }
+    
+    public function getSoldeBrutRestantAttribute()
+    {
+        $totalCollecte = $this->collectes()->sum('montant');
+        $totalRetire = $this->retraits()->sum('montant_net');
+        
+        return $totalCollecte - $totalRetire;
+    }
+
+    /**
+     * Calcul du solde net (après déduction de la commission/mise journalière)
+     */
+    public function getSoldeNetRestantAttribute()
+    {
+        $commission = $this->montant_journalier ?? 0;
+        return $this->solde_brut_restant - $commission;
     }
 
 }

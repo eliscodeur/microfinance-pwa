@@ -3,12 +3,14 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\AgentController;
+use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\CycleController as AdminCycleController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\SyncBatchController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CategoryTontineController;
+use App\Http\Controllers\Admin\BonusController;
 use App\Http\Controllers\Pwa\PwaController; 
 use App\Http\Controllers\Admin\CarnetController;
 use App\Http\Controllers\Admin\CreditController;
@@ -39,10 +41,10 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
-    Route::get('/sync-batches', [SyncBatchController::class, 'index'])->name('sync-batches.index');
-    Route::get('/sync-batches/{syncBatch}', [SyncBatchController::class, 'show'])->name('sync-batches.show');
-    Route::post('/sync-batches/{syncBatch}/approve', [SyncBatchController::class, 'approve'])->name('sync-batches.approve');
-    Route::post('/sync-batches/{syncBatch}/reject', [SyncBatchController::class, 'reject'])->name('sync-batches.reject');
+    Route::get('/sync-batches', [SyncBatchController::class, 'index'])->name('sync-batches.index')->middleware('can:Gérer Collectes');
+    Route::get('/sync-batches/{syncBatch}', [SyncBatchController::class, 'show'])->name('sync-batches.show')->middleware('can:Gérer Collectes');
+    Route::post('/sync-batches/{syncBatch}/approve', [SyncBatchController::class, 'approve'])->name('sync-batches.approve')->middleware('can:Gérer Collectes');
+    Route::post('/sync-batches/{syncBatch}/reject', [SyncBatchController::class, 'reject'])->name('sync-batches.reject')->middleware('can:Gérer Collectes');
     Route::get('/cycles', [AdminCycleController::class, 'index'])->name('cycles.index');
     Route::patch('/cycles/{cycle}/mark-withdrawn', [AdminCycleController::class, 'markWithdrawn'])->name('cycles.mark-withdrawn');
     Route::patch('/agents/{id}/toggle-sync', [AgentController::class, 'toggleSync'])->name('agents.toggle-sync');
@@ -73,6 +75,20 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::delete('/carnets/{carnet}', [CarnetController::class, 'destroy'])->name('carnets.destroy');
     Route::post('/carnets/depot', [CarnetController::class, 'storeDepot'])->name('carnets.depot');
     Route::post('/carnets/retrait', [CarnetController::class, 'storeRetrait'])->name('carnets.retrait');
+    // Route pour l'attribution manuelle d'un bonus
+    Route::post('/bonuses/store', [BonusController::class, 'store'])->name('admin.bonuses.store');
+
+    // --- NOUVELLES ROUTES POUR LA VALIDATION ---
+
+   // 1. Routes personnalisées (DÉCLARER AVANT LE RESOURCE)
+    Route::post('bonuses/bulk-approve', [BonusController::class, 'bulkApprove'])->name('bonuses.bulk-approve');
+    Route::post('bonuses/{id}/approve-single', [BonusController::class, 'approveSingle'])->name('bonuses.approve-single');
+    Route::delete('bonuses/{id}/reject-single', [BonusController::class, 'rejectSingle'])->name('bonuses.reject-single');
+
+    // 2. Route Resource (Seulement pour index, store et destroy)
+    Route::resource('bonuses', BonusController::class)->only(['index', 'store', 'destroy']);
+    Route::get('paiements/historique', [BonusController::class, 'history'])->name('bonuses.history');
+    
     Route::resource('roles', RoleController::class);
     Route::resource('users', UserController::class);
     // Dans routes/web.php

@@ -25,56 +25,21 @@ class Carnet extends Model
     ];
 
     /* -------------------------------------------------------------------------- */
-    /*                                 RELATIONS                                  */
+    /* RELATIONS                                  */
     /* -------------------------------------------------------------------------- */
 
-    public function client()
-    {
-        return $this->belongsTo(Client::class);
-    }
-
-    public function depots()
-    {
-        return $this->hasMany(Depot::class);
-    }
-
-    public function retraits() 
-    {
-        return $this->hasMany(Retrait::class);
-    }
-
-    public function cycles()
-    {
-        return $this->hasMany(Cycle::class);
-    }
-
-    public function collectes() 
-    {
-        return $this->hasManyThrough(Collecte::class, Cycle::class);
-    }
-
-    public function credits()
-    {
-        return $this->hasMany(Credit::class);
-    }
-
-    public function categoryTontine()
-    {
-        return $this->belongsTo(CategoryTontine::class, 'category_tontine_id');
-    }
-
-    public function parent()
-    {
-        return $this->belongsTo(Carnet::class, 'parent_id');
-    }
-
-    public function enfants() 
-    {
-        return $this->hasMany(Carnet::class, 'parent_id');
-    }
+    public function client() { return $this->belongsTo(Client::class); }
+    public function depots() { return $this->hasMany(Depot::class); }
+    public function retraits() { return $this->hasMany(Retrait::class); }
+    public function cycles() { return $this->hasMany(Cycle::class); }
+    public function collectes() { return $this->hasManyThrough(Collecte::class, Cycle::class); }
+    public function credits() { return $this->hasMany(Credit::class); }
+    public function categoryTontine() { return $this->belongsTo(CategoryTontine::class, 'category_tontine_id'); }
+    public function parent() { return $this->belongsTo(Carnet::class, 'parent_id'); }
+    public function enfants() { return $this->hasMany(Carnet::class, 'parent_id'); }
 
     /* -------------------------------------------------------------------------- */
-    /*                                 ATTRIBUTES                                 */
+    /* ATTRIBUTES                                 */
     /* -------------------------------------------------------------------------- */
 
     /**
@@ -82,40 +47,72 @@ class Carnet extends Model
      */
     public function getSoldeDisponibleAttribute(): float
     {
-        // On utilise les relations pour profiter de l'Eager Loading du Controller
         $totalDepots = (float) $this->depots->sum('montant');
-        $totalRetraits = (float) $this->retraits->sum('montant_total');
+        // On déduit tous les retraits liés à ce carnet (montant_net pour la sortie réelle client)
+        $totalRetraits = (float) $this->retraits->sum('montant_net'); 
         
         return round($totalDepots - $totalRetraits, 2);
     }
 
     /**
-     * Argent des cycles de tontine terminés qui n'a pas encore été retiré
+     * Argent des cycles de tontine terminés qui n'a pas encore été retiré (Net restant)
      */
-    /**
-     * Calcule le solde disponible uniquement pour les cycles achevés 
-     * et non encore décaissés (Somme des collectes - 1 mise).
-     */
-    public function getSoldeTontineNonRetireAttribute(): float
-    {
-        // On ne cible que les cycles TERMINÉS et NON RETIRÉS
-        $cyclesPretsPourRetrait = $this->cycles
-            ->where('statut', 'termine')
-            ->whereNull('retire_at');
+public function getSoldeTontineNonRetireAttribute(): float
+{
+    // On ne calcule que pour les cycles terminés qui n'ont pas encore leur date de retrait final
+    $cyclesPrets = $this->cycles
+        ->where('statut', 'termine')
+        ->whereNull('retire_at');
 
-        return (float) $cyclesPretsPourRetrait->reduce(function ($carry, $cycle) {
-            // Somme brute des collectes pour ce cycle
-            $totalCollectes = $cycle->collectes->sum('montant');
-            
-            // Déduction systématique de la commission (1 mise journalière)
-            $commission = (float) $cycle->montant_journalier;
-            
-            return $carry + ($totalCollectes - $commission);
-        }, 0);
-    }
+    return (float) $cyclesPrets->reduce(function ($carry, $cycle) {
+        $totalCollectes = (float) $cycle->collectes->sum('montant');
+        $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
+        $commissionFixe = (float) ($cycle->montant_journalier ?? 0);
+
+        // LOGIQUE : Le solde disponible est TOUJOURS :
+        // (Ce qui a été cotisé) - (La commission du cycle) - (Ce qui a déjà été pris)
+        $soldeRestant = $totalCollectes - $commissionFixe - $totalDejaRetire;
+
+        // On retourne le cumul, mais jamais en dessous de 0
+        return $carry + max(0, $soldeRestant);
+    }, 0);
+}
+
     /**
-     * Vérifie si le carnet peut être supprimé (Admin)
+     * Épargne retirable des cycles terminés (Alias pour la méthode ci-dessous)
      */
+    public function terminalWithdrawableSavings(): float
+    {
+        return $this->solde_tontine_non_retire;
+    }
+
+    /**
+     * Épargne disponible dans les cycles actifs (Non encore terminés)
+     */
+    public function activeCycleSavings(): float
+    {
+        // On utilise la relation chargée pour éviter les requêtes N+1
+        $cycleEnCours = $this->cycles->where('statut', 'en_cours')->first();
+
+        if (!$cycleEnCours) {
+            return 0.0;
+        }
+
+        return (float) $cycleEnCours->collectes->sum('montant');
+    }
+
+    /**
+     * Total de l'épargne (Actifs + Terminés non retirés)
+     */
+    public function availableSavings(): float
+    {
+        return round($this->activeCycleSavings() + $this->terminalWithdrawableSavings(), 2);
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /* LOGIQUE                                   */
+    /* -------------------------------------------------------------------------- */
+
     public function getIsDeletableAttribute(): bool
     {
         return !$this->cycles()->exists() 
@@ -124,95 +121,28 @@ class Carnet extends Model
             && !$this->credits()->exists();
     }
 
-    /**
-     * Calcul du nombre total de pointages pour un carnet tontine
-     */
-    public function totalPointages(): int
-    {
-        return (int) $this->collectes()->sum('pointage');
-    }
-
-    /**
-     * Épargne disponible dans les cycles actifs
-     */
-    public function activeCycleSavings(): float
-    {
-        $cycle = $this->cycles()->where('statut', 'en_cours')->first();
-
-        if (!$cycle) {
-            return 0.0;
-        }
-
-        return (float) $cycle->collectes()->sum('montant');
-    }
-
-    /**
-     * Épargne retirable des cycles terminés non encore retirés
-     */
-    public function terminalWithdrawableSavings(): float
-    {
-        $cycles = $this->cycles()
-            ->where('statut', 'termine')
-            ->whereNull('retire_at')
-            ->get();
-
-        return round($cycles->reduce(function ($carry, $cycle) {
-            $totalCollectes = (float) $cycle->collectes()->sum('montant');
-            $commission = (float) ($cycle->montant_journalier ?? 0);
-            return $carry + max(0, $totalCollectes - $commission);
-        }, 0.0), 2);
-    }
-
-    /**
-     * Total de l'épargne disponible (actifs + terminés)
-     */
-    public function availableSavings(): float
-    {
-        return round($this->activeCycleSavings() + $this->terminalWithdrawableSavings(), 2);
-    }
-
-    /**
-     * Tous les carnets liés (parent, enfants, self)
-     */
     public function allLinkedCarnets()
     {
         $collection = collect([$this]);
-
         if ($this->parent) {
             $collection->push($this->parent);
             $collection = $collection->merge($this->parent->enfants);
         }
-
         if ($this->type === 'tontine') {
             $collection = $collection->merge($this->enfants);
         }
-
         return $collection->unique('id');
     }
 
-    /**
-     * Base de garantie : somme des épargnes disponibles de tous les carnets liés
-     */
     public function guaranteeBase(): float
     {
-        return round($this->allLinkedCarnets()->sum(function (Carnet $carnet) {
-            return $carnet->availableSavings();
-        }), 2);
+        return round($this->allLinkedCarnets()->sum(fn($c) => $c->availableSavings()), 2);
     }
 
-    /**
-     * Garantie retirable : somme des épargnes retiables de tous les carnets liés
-     */
     public function withdrawableGuarantee(): float
     {
-        return round($this->allLinkedCarnets()->sum(function (Carnet $carnet) {
-            return $carnet->terminalWithdrawableSavings();
-        }), 2);
+        return round($this->allLinkedCarnets()->sum(fn($c) => $c->terminalWithdrawableSavings()), 2);
     }
-
-    /* -------------------------------------------------------------------------- */
-    /*                                   LOGIQUE                                  */
-    /* -------------------------------------------------------------------------- */
 
     protected static function booted()
     {
@@ -220,7 +150,6 @@ class Carnet extends Model
             if (empty($carnet->numero)) {
                 $count = self::count(); 
                 $idPart = 1000 + $count + 1;
-
                 if ($carnet->type === 'tontine') {
                     $carnet->numero = (string)$idPart;
                 } else {
@@ -238,13 +167,4 @@ class Carnet extends Model
             }
         });
     }
-
-    // App\Models\Collecte.php
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'agent_id'); 
-        // Remplace 'user_id' par le nom de la colonne qui stocke l'ID de l'agent
-    }
-
-    // Garde tes méthodes de calcul de garanties (guaranteeBase, etc.) si tu les utilises pour les crédits
 }

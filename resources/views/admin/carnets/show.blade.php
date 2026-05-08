@@ -39,7 +39,7 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm p-3 border-start border-success border-4 h-100">
                 <small class="text-muted fw-bold text-uppercase">
-                    {{ $carnet->type === 'tontine' ? 'Solde Tontine (Non retiré)' : 'Solde Épargne' }}
+                    {{ $carnet->type === 'tontine' ? 'Solde Tontine' : 'Solde Épargne' }}
                 </small>
                 <div class="h4 mb-0 text-success mt-1">
                     {{ number_format($carnet->type === 'tontine' ? $carnet->solde_tontine_non_retire : $carnet->solde_disponible, 0, ',', ' ') }} F
@@ -259,7 +259,6 @@
                     collectes = JSON.parse(button.getAttribute('data-collectes'));
                     
                     // TRI PAR DATE DÉCROISSANTE
-                    // On transforme les chaînes de date "JJ/MM/AAAA HH:mm" en objets Date pour comparer
                     collectes.sort((a, b) => {
                         const dateA = new Date(a.date.split('/').reverse().join('-'));
                         const dateB = new Date(b.date.split('/').reverse().join('-'));
@@ -306,6 +305,106 @@
                 }
             });
         }
+
+        // --- LOGIQUE RETRAIT : AUTOMATISATION ---
+        const cycleSelect = document.getElementById('cycle_select');
+        const montantInput = document.getElementById('montant_total');
+        const commissionInput = document.getElementById('commission_input');
+        const radioTotal = document.getElementById('retrait_total');
+        const radioPartiel = document.getElementById('retrait_partiel');
+        const brutView = document.getElementById('brut_view');
+        const netView = document.getElementById('net_view');
+        const submitBtn = document.querySelector('#modalRetrait button[type="submit"]');
+
+        function updateCalculations() {
+            if (!cycleSelect) return;
+            const selected = cycleSelect.options[cycleSelect.selectedIndex];
+            
+            if (!selected || selected.value === "") {
+                brutView.innerText = "0";
+                netView.innerText = "0";
+                if (submitBtn) submitBtn.disabled = true;
+                return;
+            }
+
+            const soldeBrut = parseFloat(selected.getAttribute('data-solde')) || 0;
+            const commission = parseFloat(selected.getAttribute('data-commission')) || 0;
+            const soldeNet = soldeBrut - commission;
+
+            // Affichage permanent de la commission
+            commissionInput.value = Math.round(commission);
+            brutView.innerText = new Intl.NumberFormat('fr-FR').format(soldeBrut);
+            
+            // Reset couleur par défaut
+            netView.classList.remove('text-warning');
+            netView.classList.add('text-success');
+            netView.innerText = new Intl.NumberFormat('fr-FR').format(soldeNet);
+
+            if (radioTotal.checked) {
+                montantInput.value = Math.round(soldeNet);
+                montantInput.readOnly = true; 
+                montantInput.classList.add('bg-light');
+                montantInput.classList.remove('is-invalid');
+                if (submitBtn) submitBtn.disabled = false;
+            } else {
+                montantInput.readOnly = false; 
+                montantInput.classList.remove('bg-light');
+                montantInput.placeholder = "Saisir montant (Max: " + soldeNet + ")";
+                
+                if (montantInput.value == Math.round(soldeNet)) {
+                    montantInput.value = "";
+                }
+            }
+            
+            montantInput.max = soldeNet;
+            validateAmount(soldeNet);
+        }
+
+        function validateAmount(maxAllowed) {
+            const montantSaisi = parseFloat(montantInput.value) || 0;
+
+            if (montantSaisi > maxAllowed) {
+                montantInput.classList.add('is-invalid');
+                netView.innerText = "Dépassement du solde !";
+                netView.classList.replace('text-success', 'text-danger');
+                if(submitBtn) submitBtn.disabled = true;
+            } else {
+                montantInput.classList.remove('is-invalid');
+                netView.classList.replace('text-danger', 'text-success');
+                if(submitBtn) submitBtn.disabled = false;
+
+                // Alerte si on vide tout en mode partiel
+                if (radioPartiel.checked && montantSaisi > 0 && montantSaisi >= maxAllowed) {
+                    netView.innerText = "Total saisi : le cycle sera clôturé.";
+                    netView.classList.replace('text-success', 'text-warning');
+                } else {
+                    netView.innerText = new Intl.NumberFormat('fr-FR').format(maxAllowed);
+                }
+            }
+        }
+
+        // Écouteurs pour les calculs
+        if (cycleSelect) {
+            cycleSelect.addEventListener('change', updateCalculations);
+            radioTotal.addEventListener('change', updateCalculations);
+            radioPartiel.addEventListener('change', updateCalculations);
+            
+            // Écouteur pour la validation en temps réel de la saisie
+            montantInput.addEventListener('input', function() {
+                const selected = cycleSelect.options[cycleSelect.selectedIndex];
+                if (selected && selected.value !== "") {
+                    const soldeNet = parseFloat(selected.getAttribute('data-solde')) - parseFloat(selected.getAttribute('data-commission'));
+                    validateAmount(soldeNet);
+                }
+            });
+        }
+
+        // Refresh auto à l'ouverture
+        const myModal = document.getElementById('modalRetrait');
+        if (myModal) {
+            myModal.addEventListener('shown.bs.modal', updateCalculations);
+        }
     });
 </script>
+
 @endsection

@@ -37,7 +37,7 @@
                         <div class="card-body">
                             <h6 class="text-success">Valider la synchro</h6>
                             <textarea name="review_note" class="form-control mb-3" rows="3" placeholder="Note optionnelle de validation"></textarea>
-                            <button type="submit" class="btn btn-success">Valider et integrer</button>
+                            <button type="submit" class="btn btn-success">Valider et intégrer</button>
                         </div>
                     </form>
                 </div>
@@ -59,7 +59,7 @@
 <div class="row g-4">
     <div class="col-lg-5">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white"><h5 class="mb-0">Cycles proposes</h5></div>
+            <div class="card-header bg-white"><h5 class="mb-0">Cycles proposés</h5></div>
             <div class="table-responsive">
                 <table class="table mb-0">
                     <thead class="table-light">
@@ -79,7 +79,7 @@
                                 <td>{{ $cycle->statut }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="text-center text-muted py-4">Aucun cycle dans ce batch.</td></tr>
+                            <tr><td colspan="4" class="text-center text-muted py-4">Aucun cycle dans ce lot.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -88,7 +88,7 @@
     </div>
     <div class="col-lg-7">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white"><h5 class="mb-0">Collectes proposees</h5></div>
+            <div class="card-header bg-white"><h5 class="mb-0">Collectes proposées</h5></div>
             <div class="table-responsive">
                 <table class="table mb-0">
                     <thead class="table-light">
@@ -102,13 +102,13 @@
                     <tbody>
                         @forelse($syncBatch->collectes as $collecte)
                             <tr>
-                                <td>{{ $collecte->client->nom ?? '--' }}</td>
+                                <td>{{ $collecte->client->nom ?? '--' }} {{ $collecte->client->prenom ?? '--' }}</td>
                                 <td>{{ $collecte->pointage }}</td>
                                 <td>{{ number_format((float) $collecte->montant, 0, ',', ' ') }} FCFA</td>
                                 <td>{{ $collecte->date_saisie?->format('d/m/Y H:i') }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="text-center text-muted py-4">Aucune collecte dans ce batch.</td></tr>
+                            <tr><td colspan="4" class="text-center text-muted py-4">Aucune collecte dans ce lot.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

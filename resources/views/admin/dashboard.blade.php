@@ -51,7 +51,7 @@
             <div class="ms-2">
                 {{-- Affichage de la Trésorerie Réelle --}}
                 <h6 class="mb-1 text-uppercase small fw-bold text-dark">Trésorerie (En Caisse)</h6>
-                <h3 class="mb-0 fw-bold">{{ number_format($tresorerieNette, 0, ',', ' ') }} <small>FCFA</small></h3>
+                <h3 class="mb-0 ">{{ number_format($tresorerieNette, 0, ',', ' ') }} <small>FCFA</small></h3>
                 
                 {{-- Petit rappel de la Collecte Totale en dessous --}}
                 <div class="mt-2 pt-2 border-top border-white border-opacity-25">

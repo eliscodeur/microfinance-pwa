@@ -50,4 +50,15 @@ class Bonus extends Model
     {
         return $query->where('motif', 'not like', '%Commission%');
     }
+    /**
+     * Obtenir le cycle associé à cette commission.
+     */
+    public function cycle()
+    {
+        return $this->belongsTo(Cycle::class);
+    }
+    public function paiement()
+    {
+        return $this->belongsTo(Paiement::class);
+    }
 }

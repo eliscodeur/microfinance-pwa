@@ -288,17 +288,30 @@ class SyncController extends Controller
             }])
             ->get();
 
-        // 3. Récupération des cycles : "En cours" OU "Terminé sans retrait"
+        
+        // 3. Récupération des cycles pour l'agent
         $cycles = Cycle::whereIn('carnet_id', $carnets->pluck('id'))
             ->where(function($query) {
                 $query->where('statut', 'en_cours')
                     ->orWhere(function($q) {
                         $q->where('statut', 'termine')
-                            ->whereNull('retire_at'); // L'admin n'a pas encore validé le retrait
+                        ->whereNull('retire_at'); 
                     });
             })
-            ->with('collectes') // On prend les collectes pour que Dexie les ait
-            ->get();
+            ->with(['collectes', 'retraits']) // On charge les retraits faits par l'admin
+            ->get()
+            ->map(function($cycle) {
+                
+                // Calcul du Net disponible (Brut - Commission - Déjà retiré par l'admin)
+                $totalCollectes = (float) $cycle->collectes->sum('montant');
+                $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
+                $commission = (float) ($cycle->montant_journalier ?? 0);
+
+                // On crée une propriété "solde_restant_net" que Dexie va stocker
+                $cycle->solde_restant_net = max(0, $totalCollectes - $commission - $totalDejaRetire);
+                
+                return $cycle;
+        });
 
         // 4. Extraction des collectes à plat pour Dexie
         $collectes = $cycles->pluck('collectes')->flatten()->map(function($col) {
