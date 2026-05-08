@@ -31,32 +31,33 @@
             ]);
 
             const container = document.getElementById('collecte-content');
-            if (client) document.getElementById('clientName').innerText = client.nom;
+            if (client) document.getElementById('clientName').innerText = client.nom+ ' ' + client.prenom;
 
             if (carnets.length === 0) {
                 container.innerHTML = `<div class="text-center py-5 text-muted">Aucun carnet trouvé.</div>`;
                 return;
             }
 
-            let html = `<p class="text-muted small mb-3 text-uppercase fw-bold" style="letter-spacing: 1px;">Mes Livrets d'Épargne</p>`;
+            let html = `<p class="text-muted small mb-3 text-uppercase fw-bold" style="letter-spacing: 1px;">Livrets d'Épargne</p>`;
 
             for (const carnet of carnets) {
                 const cyclesDuCarnet = await db.cycles.where('carnet_id').equals(carnet.id).toArray() || [];
-                
+                // console.log(cyclesDuCarnet);
+                const soldeNet = cyclesDuCarnet[0]?.solde_restant_net || 0;
                 const cycleActif = cyclesDuCarnet.find(cy => cy.statut === 'en_cours');
                 const cyclesAencaisser = cyclesDuCarnet.filter(cy => cy.statut === 'termine' && !cy.retire_at);
                 
                 // --- CALCUL DU SOLDE DISPONIBLE ---
-                let soldeRetirable = 0;
-                for (const cy of cyclesAencaisser) {
-                    const collectesDuCycle = await db.collectes.where('cycle_uid').equals(String(cy.cycle_uid)).toArray();
-                    const totalCollectes = collectesDuCycle.reduce((sum, c) => sum + (Number(c.montant) || 0), 0);
-                    const commission = Number(cy.montant_journalier || 0);
+                // let soldeRetirable = 0;
+                // for (const cy of cyclesAencaisser) {
+                //     const collectesDuCycle = await db.collectes.where('cycle_uid').equals(String(cy.cycle_uid)).toArray();
+                //     const totalCollectes = collectesDuCycle.reduce((sum, c) => sum + (Number(c.montant) || 0), 0);
+                //     const commission = Number(cy.montant_journalier || 0);
                     
-                    if (totalCollectes > 0) {
-                        soldeRetirable += Math.max(0, totalCollectes - commission);
-                    }
-                }
+                //     if (totalCollectes > 0) {
+                //         soldeRetirable += Math.max(0, totalCollectes - commission);
+                //     }
+                // }
 
                 // --- CALCUL DE L'ÉPARGNE DU CYCLE EN COURS ---
                 let epargneEnCours = 0;
@@ -87,8 +88,8 @@
                     <div class="p-3 d-flex justify-content-between align-items-center" style="background: rgba(13, 110, 253, 0.05);">
                         <span class="badge rounded-pill bg-primary px-3 shadow-sm">LIVRET N° ${carnet.numero || '---'}</span>
                         <div class="text-end">
-                            <small class="text-muted d-block" style="font-size: 0.65rem; font-weight: 700;">SOLDE À REVERSER</small>
-                            <span class="fw-bold text-success fs-5">${soldeRetirable.toLocaleString()} F</span>
+                            <small class="text-muted d-block" style="font-size: 0.65rem; font-weight: 700;">SOLDE DISPONIBLE</small>
+                            <span class="fw-bold text-success fs-5">${soldeNet} F</span>
                         </div>
                     </div>
 

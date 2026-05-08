@@ -272,70 +272,89 @@ class CarnetController extends Controller
         return redirect()->back()->with('success', 'Le dépôt d\'épargne a été enregistré avec succès.');
     }
 
-public function storeRetrait(Request $request)
-{
-    // 1. Validation stricte des données
-    $request->validate([
-        'carnet_id'     => 'required|exists:carnets,id',
-        'client_id'     => 'required|exists:clients,id',
-        'cycle_id'      => 'required|exists:cycles,id',
-        'montant_total' => 'required|numeric|min:0',
-        'date_retrait'  => 'required|date',
-        'type_retrait'  => 'required|in:partiel,total', // Pour savoir si on clôture le cycle
-        'note'          => 'nullable|string',
-    ]);
+    public function storeRetrait(Request $request)
+    {
+        // 1. Validation : cycle_id est bien nullable pour l'épargne
+        $request->validate([
+            'carnet_id'     => 'required|exists:carnets,id',
+            'client_id'     => 'required|exists:clients,id',
+            'cycle_id'      => 'nullable|exists:cycles,id', 
+            'montant_total' => 'required|numeric|min:0',
+            'date_retrait'  => 'required|date',
+            'type_retrait'  => 'required|in:partiel,total',
+            'note'          => 'nullable|string',
+        ]);
 
-    try {
-        // 2. Utilisation de la transaction pour garantir l'intégrité des données
-        return DB::transaction(function () use ($request) {
-            
-            // Récupération du cycle avec ses collectes et retraits déjà faits
-            $cycle = Cycle::with(['collectes', 'retraits'])->findOrFail($request->cycle_id);
-            
-            // Calculs de sécurité
-            $totalCollecte = (float) $cycle->collectes->sum('montant');
-            $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
-            $commissionFixe = (float) ($cycle->montant_journalier ?? 0);
-            
-            // La commission n'est prélevée que lors du tout premier retrait
-            $commissionAppliquee = ($cycle->retraits->count() == 0) ? $commissionFixe : 0;
-            
-            $montantNetSaisi = (float) $request->montant_total;
-            $soldeDisponible = $totalCollecte - $totalDejaRetire - $commissionAppliquee;
+        try {
+            return DB::transaction(function () use ($request) {
+                
+                $carnet = Carnet::findOrFail($request->carnet_id);
+                $montantNetSaisi = (float) $request->montant_total;
+                $commissionAppliquee = 0;
+                $soldeDisponible = 0;
+                $cycle = null;
 
-            // Vérification : on ne peut pas retirer plus que ce qu'on a
-            if ($montantNetSaisi > ($soldeDisponible + 1)) { // +1 pour éviter les erreurs de micro-arrondis
-                throw new \Exception("Fonds insuffisants. Solde dispo : " . number_format($soldeDisponible, 0, ',', ' ') . " F.");
-            }
+                // 2. Logique différenciée selon le type de carnet
+                if ($carnet->type === 'tontine') {
+                    // Pour la tontine, le cycle_id est obligatoire
+                    if (!$request->cycle_id) {
+                        throw new \Exception("Veuillez sélectionner un cycle pour un carnet de tontine.");
+                    }
 
-            // 3. Insertion du retrait via le Modèle (Maintenant que l'index UNIQUE est parti, ça passe !)
-            Retrait::create([
-                'carnet_id'     => $request->carnet_id,
-                'client_id'     => $request->client_id,
-                'cycle_id'      => $cycle->id,
-                'admin_id'      => auth()->id(),
-                'montant_total' => $montantNetSaisi + $commissionAppliquee,
-                'commission'    => $commissionAppliquee,
-                'montant_net'   => $montantNetSaisi,
-                'date_retrait'  => $request->date_retrait,
-                'note'          => $request->note,
-            ]);
+                    $cycle = Cycle::with(['collectes', 'retraits'])->findOrFail($request->cycle_id);
+                    
+                    $totalCollecte = (float) $cycle->collectes->sum('montant');
+                    $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
+                    $commissionFixe = (float) ($cycle->montant_journalier ?? 0);
+                    
+                    // Commission prélevée uniquement au premier retrait du cycle
+                    $commissionAppliquee = ($cycle->retraits->count() == 0) ? $commissionFixe : 0;
+                    $soldeDisponible = $totalCollecte - $totalDejaRetire - $commissionAppliquee;
 
+                } else {
+                    // LOGIQUE COMPTE ÉPARGNE
+                    // On utilise le solde global calculé du carnet (Somme Collectes - Somme Retraits)
+                    // Assure-toi que l'accessor 'solde_epargne' ou 'solde_disponible' existe dans Carnet.php
+                    $soldeDisponible = (float) $carnet->solde_disponible; 
+                    $commissionAppliquee = 0; 
+                }
 
-            $netTotalAttendu = $totalCollecte - $commissionFixe;
-            $cumulRetraitsNet = $totalDejaRetire + $montantNetSaisi;
-            if ($request->type_retrait === 'total' || $cumulRetraitsNet >= ($netTotalAttendu - 5)) {
-                $cycle->update([
-                    'retire_at' => $request->date_retrait, 
+                // Vérification de sécurité (marge de 1F pour les arrondis)
+                if ($montantNetSaisi > ($soldeDisponible + 1)) {
+                    throw new \Exception("Fonds insuffisants. Solde dispo : " . number_format($soldeDisponible, 0, ',', ' ') . " F.");
+                }
+
+                // 3. Insertion du retrait (Propre et sécurisée)
+                Retrait::create([
+                    'carnet_id'     => $request->carnet_id,
+                    'client_id'     => $request->client_id,
+                    'cycle_id'      => ($carnet->type === 'tontine') ? $request->cycle_id : null,
+                    'admin_id'      => auth()->id(),
+                    'montant_total' => $montantNetSaisi + $commissionAppliquee,
+                    'commission'    => $commissionAppliquee,
+                    'montant_net'   => $montantNetSaisi,
+                    'date_retrait'  => $request->date_retrait,
+                    'note'          => $request->note,
                 ]);
-            }
 
-            return redirect()->back()->with('success', "Retrait de " . number_format($montantNetSaisi, 0, ',', ' ') . " F enregistré avec succès.");
-        });
+                // 4. Gestion de la clôture automatique (Uniquement pour la Tontine)
+                if ($carnet->type === 'tontine' && $cycle) {
+                    $netTotalAttendu = $totalCollecte - $commissionFixe;
+                    $cumulRetraitsNet = $totalDejaRetire + $montantNetSaisi;
+                    
+                    // On clôture si c'est un retrait total ou si le solde devient quasi nul
+                    if ($request->type_retrait === 'total' || $cumulRetraitsNet >= ($netTotalAttendu - 5)) {
+                        $cycle->update(['retire_at' => $request->date_retrait]);
+                    }
+                }
 
-    } catch (\Exception $e) {
-        // En cas d'erreur (solde insuffisant ou bug SQL), la transaction annule tout
-        return redirect()->back()->with('error', "Échec : " . $e->getMessage())->withInput();
+                return redirect()->back()->with('success', "Retrait de " . number_format($montantNetSaisi, 0, ',', ' ') . " F enregistré avec succès.");
+            });
+
+        } catch (\Exception $e) {
+            // Log de l'erreur pour le debug en cas de besoin
+            \Log::error("Erreur Retrait: " . $e->getMessage());
+            return redirect()->back()->with('error', "Échec : " . $e->getMessage())->withInput();
+        }
     }
-}
 }

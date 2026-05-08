@@ -263,6 +263,7 @@ class SyncController extends Controller
             ]);
 
             $batch->agent->update(['can_sync' => true]);
+            broadcast(new \App\Events\AgentSynced($agent));
         });
     }
 
@@ -271,18 +272,16 @@ class SyncController extends Controller
         // 1. Récupérer les clients de l'agent
         $clients = Client::where('agent_id', $agent->id)
             ->whereHas('carnets', function($query) {
-                $query->where('statut', 'actif');
+                $query->where('statut', 'actif')
+                ->where('type', 'tontine');
             })
             ->get();
 
         $clientIds = $clients->pluck('id');
 
-        // 2. Récupérer les carnets actifs (sans calcul de solde ici, Dexie s'en chargera)
-        // $carnets = \App\Models\Carnet::whereIn('client_id', $clientIds)
-        //     ->where('statut', 'actif')
-        //     ->get();
         $carnets = Carnet::whereIn('client_id', $clientIds)
             ->where('statut', 'actif')
+            ->where('type', 'tontine') // Filtre pour ne garder que la tontine
             ->withCount(['cycles as total_cycles_termines' => function($query) {
                 $query->where('statut', 'termine');
             }])

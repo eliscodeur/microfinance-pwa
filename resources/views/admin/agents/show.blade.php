@@ -234,41 +234,63 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Données pour le graphique des gains
-    const bonusData = @json($agent->bonuses()->selectRaw('YEAR(date_attribution) as year, MONTH(date_attribution) as month, SUM(montant) as total')
-        ->where('date_attribution', '>=', now()->subMonths(12))
-        ->groupBy('year', 'month')
-        ->orderBy('year')
-        ->orderBy('month')
-        ->get()
-        ->map(function($item) {
-            return {
-                label: $item->year . '-' + String($item->month).padStart(2, '0'),
-                value: $item->total
-            };
-        }));
+    // 1. Préparation des données côté PHP avant conversion JSON
+    @php
+        $chartData = $agent->bonuses()
+            ->selectRaw('YEAR(date_attribution) as year, MONTH(date_attribution) as month, SUM(montant) as total')
+            ->where('date_attribution', '>=', now()->subMonths(12))
+            ->groupBy('year', 'month')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'label' => $item->year . '-' . str_pad($item->month, 2, '0', STR_PAD_LEFT),
+                    'value' => (float)$item->total
+                ];
+            });
+    @endphp
+
+    // 2. Récupération propre des données dans le script
+    const bonusData = @json($chartData);
 
     const ctx = document.getElementById('gainsChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: bonusData.map(d => d.label),
-            datasets: [{
-                label: 'Gains (FCFA)',
-                data: bonusData.map(d => d.value),
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
+    
+    if (bonusData.length > 0) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: bonusData.map(d => d.label),
+                datasets: [{
+                    label: 'Gains (FCFA)',
+                    data: bonusData.map(d => d.value),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString() + ' F';
+                            }
+                        }
+                    }
                 }
             }
-        }
-    });
+        });
+    } else {
+        // Optionnel : afficher un message si pas de données
+        ctx.font = "14px sans-serif";
+        ctx.fillStyle = "#666";
+        ctx.textAlign = "center";
+        ctx.fillText("Aucune donnée disponible pour les 12 derniers mois", 200, 100);
+    }
 </script>
 
 @endsection

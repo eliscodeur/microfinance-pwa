@@ -189,6 +189,8 @@ async function afficherCyclesRegroupes() {
                 const carnetCycles = cyclesTries.filter(cy => cy.carnet_id === carnet.id);
 
                 if (carnetCycles.length > 0 && (matchClient || matchCarnet)) {
+                    // console.log(carnetCycles[0].solde_restant_net);
+                    const soldeNet = carnetCycles[0].solde_restant_net || 0;
                     clientAffiche = true;
                     clientHtml += `
                         <div class="card border-0 shadow-sm mb-3" style="border-radius: 15px; overflow: hidden;">
@@ -202,6 +204,7 @@ async function afficherCyclesRegroupes() {
 
                     carnetCycles.forEach(cycle => {
                         const collectesCycle = collectes.filter(col => col.cycle_id === cycle.id);
+                       
                         
                         // --- NOUVELLE LOGIQUE : SOMME DES POINTAGES ---
                         const nbrPointages = collectesCycle.reduce((sum, col) => sum + parseInt(col.pointage || 0), 0);
@@ -209,7 +212,7 @@ async function afficherCyclesRegroupes() {
                         const progression = Math.min(Math.round((nbrPointages / 31) * 100), 100);
                         const brut = collectesCycle.reduce((sum, col) => sum + parseFloat(col.montant || 0), 0);
                         const mise = parseFloat(cycle.montant_journalier || 0);
-                        const net = brut > mise ? brut - mise : brut; 
+                        // const net = brut > mise ? brut - mise : brut; 
 
                         const estTermine = cycle.statut === 'termine' || nbrPointages >= 31;
                         const estSynchro = cycle.synced === 1;
@@ -241,7 +244,7 @@ async function afficherCyclesRegroupes() {
 
                                     <div class="text-end">
                                         ${afficherSomme ? `
-                                            <div class="bg-primary text-white px-2 py-1 rounded-3 mb-1" style="font-size: 0.8rem; font-weight: 700;">Net: ${net} F</div>
+                                            <div class="bg-primary text-white px-2 py-1 rounded-3 mb-1" style="font-size: 0.8rem; font-weight: 700;">Net: ${soldeNet} F</div>
                                             <div style="font-size: 0.55rem; color: #dc3545;">Com: -${mise} F</div>
                                         ` : `
                                             <div class="d-flex gap-1 justify-content-end">

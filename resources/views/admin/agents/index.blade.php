@@ -25,61 +25,61 @@
         </tr>
     </thead>
     <tbody>
-@foreach($agents as $agent)
-    <tr id="agent-row-{{ $agent->id }}">
-        <td><span class="badge bg-light text-dark border">{{ $agent->code_agent }}</span></td>
-        <td><strong>{{ $agent->nom }}</strong></td>
-        <td>{{ $agent->telephone }}</td>
-        
-        @can('Activer/Désactiver')
-        <td class="text-center">
+        @foreach($agents as $agent)
+        <tr id="agent-row-{{ $agent->id }}">
+            <td><span class="badge bg-light text-dark border">{{ $agent->code_agent }}</span></td>
+            <td><strong>{{ $agent->nom }}</strong></td>
+            <td>{{ $agent->telephone }}</td>
             
-            <button type="button" id="btn-status-{{ $agent->id }}" 
-                    class="btn btn-link p-0 border-0 shadow-none" 
-                    onclick="fastToggleStatus({{ $agent->id }}, {{ $agent->actif ? 'true' : 'false' }})">
-                @if($agent->actif)
-                    <i class="bi bi-toggle2-on text-success" style="font-size: 1.8rem;"></i>
-                @else
-                    <i class="bi bi-toggle2-off text-secondary" style="font-size: 1.8rem;"></i>
-                @endif
-            </button>
+            @can('Activer/Désactiver')
+            <td class="text-center">
                 
-        </td>
-        @endcan
-        @can('Gérer Sync')
-        <td class="text-center">
-            <button type="button" id="btn-sync-{{ $agent->id }}" 
-                    class="btn btn-link p-0 border-0" 
-                    onclick="confirmSync({{ $agent->id }}, {{ $agent->can_sync ? 'true' : 'false' }}, '{{ addslashes($agent->nom) }}')">
-                @if($agent->can_sync)
-                    <i class="bi bi-cloud-check-fill text-primary" style="font-size: 1.5rem;"></i>
-                @else
-                    <i class="bi bi-cloud-slash text-muted" style="font-size: 1.5rem;"></i>
-                @endif
-            </button>   
-        </td>
-        @endcan
-
-        <td>
-            <div class="d-flex gap-1">
-                <a href="{{ route('admin.agents.show', $agent->id) }}" class="btn btn-sm btn-info text-white">
-                    <i class="bi bi-eye"></i>
-                </a>
-                @can('Modifier données')   
-                <a href="{{ route('admin.agents.edit', $agent->id) }}" class="btn btn-sm btn-warning">
-                    <i class="bi bi-pencil"></i>
-                </a>
-                @endcan
-                @can('Supprimer données')
-                    <button type="button" class="btn btn-sm btn-danger" 
-                    onclick="confirmDelete({{ $agent->id }}, '{{ addslashes($agent->nom) }}')" title="Supprimer">
-                    <i class="bi bi-trash"></i>
+                <button type="button" id="btn-status-{{ $agent->id }}" 
+                        class="btn btn-link p-0 border-0 shadow-none" 
+                        onclick="fastToggleStatus({{ $agent->id }}, {{ $agent->actif ? 'true' : 'false' }})">
+                    @if($agent->actif)
+                        <i class="bi bi-toggle2-on text-success" style="font-size: 1.8rem;"></i>
+                    @else
+                        <i class="bi bi-toggle2-off text-secondary" style="font-size: 1.8rem;"></i>
+                    @endif
                 </button>
-                @endcan
-            </div>
-        </td>
-    </tr>
-@endforeach
+                    
+            </td>
+            @endcan
+            @can('Gérer Sync')
+            <td class="text-center">
+                <button type="button" id="btn-sync-{{ $agent->id }}" 
+                        class="btn btn-link p-0 border-0" 
+                        onclick="confirmSync({{ $agent->id }}, {{ $agent->can_sync ? 'true' : 'false' }}, '{{ addslashes($agent->nom) }}')">
+                    @if($agent->can_sync)
+                        <i class="bi bi-cloud-check-fill text-primary" style="font-size: 1.5rem;"></i>
+                    @else
+                        <i class="bi bi-cloud-slash text-muted" style="font-size: 1.5rem;"></i>
+                    @endif
+                </button>   
+            </td>
+            @endcan
+
+            <td>
+                <div class="d-flex gap-1">
+                    <a href="{{ route('admin.agents.show', $agent->id) }}" class="btn btn-sm btn-info text-white">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    @can('Modifier données')   
+                    <a href="{{ route('admin.agents.edit', $agent->id) }}" class="btn btn-sm btn-warning">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    @endcan
+                    @can('Supprimer données')
+                        <button type="button" class="btn btn-sm btn-danger" 
+                        onclick="confirmDelete({{ $agent->id }}, '{{ addslashes($agent->nom) }}')" title="Supprimer">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    @endcan
+                </div>
+            </td>
+        </tr>
+        @endforeach
     </tbody>
 </table>
 
@@ -147,24 +147,56 @@
         </div> 
     </div> 
 </div>
+<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
+    
+</div>
+<script src="{{ mix('js/app.js') }}"></script>
+@stack('scripts')
 <script>
-let currentAgentId = null;
-let currentSyncState = null;
+    // On attend que tout soit chargé, y compris Inertia et Echo
+    document.addEventListener('DOMContentLoaded', () => {
+        initAgentEcho();
+    });
 
-// Fonction pour ouvrir le modal de synchro
-function confirmSync(id, currentState, name) {
-    currentAgentId = id;
-    currentSyncState = currentState;
-    const action = currentState ? 'révoquer' : 'accorder';
-    
-    document.getElementById('syncModalMessage').innerHTML = `Voulez-vous <strong>${action}</strong> l'accès à la synchro pour <strong>${name}</strong> ?`;
-    
-    const modal = new bootstrap.Modal(document.getElementById('syncModal'));
-    modal.show();
-}
+    function initAgentEcho() {
+        // On vérifie window.Echo car Inertia l'attache à l'objet global window
+        if (window.Echo) {
+            window.Echo.channel('agents-channel')
+                .listen('.AgentSynced', (e) => {
+                    const agent = e.agent;
+                    const syncBtn = document.getElementById(`btn-sync-${agent.id}`);
+                    
+                    if (syncBtn) {
+                        syncBtn.innerHTML = '<i class="bi bi-cloud-slash text-muted fs-4"></i>';
+                        const safeName = agent.nom.replace(/'/g, "\\'");
+                        syncBtn.setAttribute('onclick', `confirmSync(${agent.id}, false, '${safeName}')`);
+                        showToast(`Synchro terminée pour ${agent.nom}`);
+                    }
+                });
+        } else {
+            // Petit délai de sécurité si le JS est encore en train de compiler
+            setTimeout(initAgentEcho, 500);
+        }
+    }
+</script>
+<script>
+    let currentAgentId = null;
+    let currentSyncState = null;
 
-// Fonction AJAX pour traiter le changement sans recharger
-// On utilise les variables globales définies plus haut (currentAgentId, currentSyncState)
+    // Fonction pour ouvrir le modal de synchro
+    function confirmSync(id, currentState, name) {
+        currentAgentId = id;
+        currentSyncState = currentState;
+        const action = currentState ? 'révoquer' : 'accorder';
+        
+        document.getElementById('syncModalMessage').innerHTML = `Voulez-vous <strong>${action}</strong> l'accès à la synchro pour <strong>${name}</strong> ?`;
+        
+        const modal = new bootstrap.Modal(document.getElementById('syncModal'));
+        modal.show();
+    }
+
+    // Fonction AJAX pour traiter le changement sans recharger
+    // On utilise les variables globales définies plus haut (currentAgentId, currentSyncState)
     async function fastToggleStatus(agentId, currentState) {
         const btn = document.getElementById(`btn-status-${agentId}`);
         
@@ -250,80 +282,81 @@ function confirmSync(id, currentState, name) {
             btn.innerText = 'Confirmer';
         }
     }
-// Fonction pour afficher un message rapide (Toast)
-function showToast(message, type = 'success') {
-    const toastContainer = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type} border-0 show`;
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">${message}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    `;
-    toastContainer.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-let agentToDeleteId = null;
-
-function confirmDelete(id, name) {
-    // 1. On stocke l'ID pour la requête Fetch
-    agentToDeleteId = id;
-    
-    // 2. On injecte UNIQUEMENT le nom dans le span dédié
-    const nameSpan = document.getElementById('delAgentName');
-    if (nameSpan) {
-        nameSpan.innerText = name;
+    // Fonction pour afficher un message rapide (Toast)
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0 show`;
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        toastContainer.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
+    let agentToDeleteId = null;
 
-    // 3. On affiche le modal proprement avec l'API Bootstrap 5
-    const modalElement = document.getElementById('deleteModal');
-    const myModal = new bootstrap.Modal(modalElement);
-    myModal.show();
-}
-
-async function executeDelete() {
-    const btn = document.getElementById('confirmDelBtn');
-    
-    // UI : Chargement
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Traitement...';
-
-    try {
-        const response = await fetch(`/admin/agents/${agentToDeleteId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            // Suppression réussie : on retire la ligne du tableau
-            const row = document.getElementById(`agent-row-${agentToDeleteId}`);
-            if (row) row.remove();
-            
-            // Fermeture du modal
-            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
-            modalInstance.hide();
-
-            showToast(data.message || "Agent supprimé.", "success");
-        } else {
-            // Erreur métier (ex: historique existant)
-            showToast(data.message || "Impossible de supprimer cet agent.", "danger");
-            
-            // Fermeture automatique même en cas d'erreur pour ne pas bloquer l'écran
-            bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+    function confirmDelete(id, name) {
+        // 1. On stocke l'ID pour la requête Fetch
+        agentToDeleteId = id;
+        
+        // 2. On injecte UNIQUEMENT le nom dans le span dédié
+        const nameSpan = document.getElementById('delAgentName');
+        if (nameSpan) {
+            nameSpan.innerText = name;
         }
-    } catch (error) {
-        showToast("Erreur de communication avec le serveur.", "danger");
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "Confirmer la suppression";
+
+        // 3. On affiche le modal proprement avec l'API Bootstrap 5
+        const modalElement = document.getElementById('deleteModal');
+        const myModal = new bootstrap.Modal(modalElement);
+        myModal.show();
     }
-}
+
+    async function executeDelete() {
+        const btn = document.getElementById('confirmDelBtn');
+        
+        // UI : Chargement
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Traitement...';
+
+        try {
+            const response = await fetch(`/admin/agents/${agentToDeleteId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Suppression réussie : on retire la ligne du tableau
+                const row = document.getElementById(`agent-row-${agentToDeleteId}`);
+                if (row) row.remove();
+                
+                // Fermeture du modal
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                modalInstance.hide();
+
+                showToast(data.message || "Agent supprimé.", "success");
+            } else {
+                // Erreur métier (ex: historique existant)
+                showToast(data.message || "Impossible de supprimer cet agent.", "danger");
+                
+                // Fermeture automatique même en cas d'erreur pour ne pas bloquer l'écran
+                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+            }
+        } catch (error) {
+            showToast("Erreur de communication avec le serveur.", "danger");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Confirmer la suppression";
+        }
+    }
+
 </script>
 @endsection

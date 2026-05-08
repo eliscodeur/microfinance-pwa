@@ -245,7 +245,10 @@
 
 <main class="content" id="mainContent">
     <div class="container-fluid p-4">
-        @yield('content')
+        {{-- On ajoute l'ID 'app' ici pour qu'Inertia et Echo s'activent --}}
+        <div id="app">
+            @yield('content')
+        </div>
     </div>
 </main>
 

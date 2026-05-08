@@ -30,7 +30,7 @@ class Retrait extends Model
 
     public function cycle()
     {
-        return $this->belongsTo(Cycle::class);
+        return $this->belongsTo(Cycle::class)->withDefault();
     }
 
     public function client()

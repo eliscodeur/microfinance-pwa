@@ -59,13 +59,17 @@ class PwaController extends Controller
 
         // 3. Récupération des clients (uniquement ceux qui ont des carnets)
         $clients = Client::where('agent_id', $agent->id)
-            ->whereHas('carnets')
+            ->whereHas('carnets', function($query) {
+                $query->where('type', 'tontine')
+                    ->where('statut', 'actif'); // Optionnel : seulement ceux qui sont actifs
+            })
             ->get();
         $clientIds = $clients->pluck('id');
 
         // 4. Récupération des carnets actifs
         $carnets = Carnet::whereIn('client_id', $clientIds)
             ->where('statut', 'actif')
+            ->where('type', 'tontine') // <--- Indispensable pour isoler la tontine
             ->get();
         $carnetIds = $carnets->pluck('id');
 
@@ -81,6 +85,7 @@ class PwaController extends Controller
             ->values();
             
         $agent->update(['can_sync' => false]);  
+        broadcast(new \App\Events\AgentSynced($agent));
         // 6. VERROUILLAGE AUTOMATIQUE ET HISTORIQUE DE SYNCHRO UNIQUEMENT POUR LA PREMIÈRE FOIS
         $existingSync = SyncHistory::where('agent_id', $agent->id)
             ->where('sync_uuid', 'like', 'initial-sync-' . $agent->id . '-%')
@@ -96,7 +101,6 @@ class PwaController extends Controller
                 'status' => 'success',
                 'ip_address' => request()->ip(),
             ]);
-
              
         }
 

@@ -15,10 +15,17 @@
         </div>
         <div class="d-flex gap-2">
             {{-- Le retrait est désormais accessible aux deux types --}}
-            <button class="btn btn-danger fw-bold" data-bs-toggle="modal" data-bs-target="#modalRetrait">
+            <!-- <button class="btn btn-danger fw-bold" data-bs-toggle="modal" data-bs-target="#modalRetrait">
                 <i class="bi bi-box-arrow-up me-2"></i>Effectuer un Retrait
+            </button> -->
+            <button type="button" 
+                class="btn btn-primary" 
+                data-bs-toggle="modal" 
+                data-bs-target="#modalRetrait"
+                data-type="{{ $carnet->type }}"
+                data-solde="{{ $carnet->type === 'tontine' ? $carnet->solde_tontine_non_retire : $carnet->solde_epargne }}">
+                Effectuer un Retrait
             </button>
-
             @if($carnet->type === 'compte')
                 <button class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#modalDepot">
                     <i class="bi bi-plus-lg me-2"></i>Nouveau Dépôt
@@ -246,6 +253,7 @@
 @include('admin.carnets.partials.modal_collecte')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- LOGIQUE AFFICHAGE COLLECTES (DÉJÀ EXISTANTE) ---
         const modalCollectes = document.getElementById('modalCollectes');
         const tableBody = document.getElementById('collectesTableBody');
         const cycleSpan = document.getElementById('modalCycleNumber');
@@ -306,7 +314,8 @@
             });
         }
 
-        // --- LOGIQUE RETRAIT : AUTOMATISATION ---
+        // --- LOGIQUE RETRAIT (ADAPTÉE TONTINE & ÉPARGNE) ---
+        const carnetType = document.getElementById('carnet_type_hidden')?.value;
         const cycleSelect = document.getElementById('cycle_select');
         const montantInput = document.getElementById('montant_total');
         const commissionInput = document.getElementById('commission_input');
@@ -314,95 +323,99 @@
         const radioPartiel = document.getElementById('retrait_partiel');
         const brutView = document.getElementById('brut_view');
         const netView = document.getElementById('net_view');
-        const submitBtn = document.querySelector('#modalRetrait button[type="submit"]');
+        const submitBtn = document.getElementById('submit_retrait');
 
         function updateCalculations() {
-            if (!cycleSelect) return;
-            const selected = cycleSelect.options[cycleSelect.selectedIndex];
-            
-            if (!selected || selected.value === "") {
-                brutView.innerText = "0";
-                netView.innerText = "0";
-                if (submitBtn) submitBtn.disabled = true;
-                return;
-            }
+            let soldeBrut = 0;
+            let commission = 0;
+            let soldeNet = 0;
 
-            const soldeBrut = parseFloat(selected.getAttribute('data-solde')) || 0;
-            const commission = parseFloat(selected.getAttribute('data-commission')) || 0;
-            const soldeNet = soldeBrut - commission;
+            if (carnetType === 'tontine') {
+                // CAS TONTINE : Dépend du cycle choisi
+                if (cycleSelect && cycleSelect.selectedIndex > 0) {
+                    const selected = cycleSelect.options[cycleSelect.selectedIndex];
+                    soldeBrut = parseFloat(selected.getAttribute('data-solde')) || 0;
+                    commission = parseFloat(selected.getAttribute('data-commission')) || 0;
+                    soldeNet = soldeBrut - commission;
 
-            // Affichage permanent de la commission
-            commissionInput.value = Math.round(commission);
-            brutView.innerText = new Intl.NumberFormat('fr-FR').format(soldeBrut);
-            
-            // Reset couleur par défaut
-            netView.classList.remove('text-warning');
-            netView.classList.add('text-success');
-            netView.innerText = new Intl.NumberFormat('fr-FR').format(soldeNet);
-
-            if (radioTotal.checked) {
-                montantInput.value = Math.round(soldeNet);
-                montantInput.readOnly = true; 
-                montantInput.classList.add('bg-light');
-                montantInput.classList.remove('is-invalid');
-                if (submitBtn) submitBtn.disabled = false;
+                    // Gestion automatique du champ montant selon le type de retrait
+                    if (radioTotal && radioTotal.checked) {
+                        montantInput.value = Math.round(soldeNet);
+                        montantInput.readOnly = true;
+                        montantInput.classList.add('bg-light');
+                    } else {
+                        montantInput.readOnly = false;
+                        montantInput.classList.remove('bg-light');
+                    }
+                } else {
+                    // Si aucun cycle n'est encore choisi
+                    if(submitBtn) submitBtn.disabled = true;
+                }
             } else {
-                montantInput.readOnly = false; 
-                montantInput.classList.remove('bg-light');
-                montantInput.placeholder = "Saisir montant (Max: " + soldeNet + ")";
+                // CAS ÉPARGNE : Utilise le solde global du carnet
+                soldeNet = parseFloat(montantInput.getAttribute('data-solde-global')) || 0;
+                soldeBrut = soldeNet;
+                commission = 0;
                 
-                if (montantInput.value == Math.round(soldeNet)) {
-                    montantInput.value = "";
+                montantInput.readOnly = false;
+                montantInput.classList.remove('bg-light');
+                
+                // Pré-remplir le montant pour le confort (optionnel)
+                if(montantInput.value == "" || montantInput.value == 0) {
+                    montantInput.value = soldeNet;
                 }
             }
-            
-            montantInput.max = soldeNet;
+
+            // Mise à jour de l'affichage
+            if (commissionInput) commissionInput.value = Math.round(commission);
+            if (brutView) brutView.innerText = new Intl.NumberFormat('fr-FR').format(soldeBrut);
+            if (netView) netView.innerText = new Intl.NumberFormat('fr-FR').format(soldeNet);
+
             validateAmount(soldeNet);
         }
 
-        function validateAmount(maxAllowed) {
-            const montantSaisi = parseFloat(montantInput.value) || 0;
-
-            if (montantSaisi > maxAllowed) {
+        function validateAmount(limit) {
+            const saisie = parseFloat(montantInput.value) || 0;
+            // On autorise une petite marge de 0.5 pour les arrondis
+            if (saisie > (limit + 0.5)) {
                 montantInput.classList.add('is-invalid');
-                netView.innerText = "Dépassement du solde !";
-                netView.classList.replace('text-success', 'text-danger');
                 if(submitBtn) submitBtn.disabled = true;
             } else {
                 montantInput.classList.remove('is-invalid');
-                netView.classList.replace('text-danger', 'text-success');
-                if(submitBtn) submitBtn.disabled = false;
-
-                // Alerte si on vide tout en mode partiel
-                if (radioPartiel.checked && montantSaisi > 0 && montantSaisi >= maxAllowed) {
-                    netView.innerText = "Total saisi : le cycle sera clôturé.";
-                    netView.classList.replace('text-success', 'text-warning');
-                } else {
-                    netView.innerText = new Intl.NumberFormat('fr-FR').format(maxAllowed);
-                }
+                // On active le bouton seulement si le montant > 0
+                if(submitBtn) submitBtn.disabled = (saisie <= 0);
             }
         }
 
-        // Écouteurs pour les calculs
-        if (cycleSelect) {
-            cycleSelect.addEventListener('change', updateCalculations);
-            radioTotal.addEventListener('change', updateCalculations);
-            radioPartiel.addEventListener('change', updateCalculations);
-            
-            // Écouteur pour la validation en temps réel de la saisie
-            montantInput.addEventListener('input', function() {
-                const selected = cycleSelect.options[cycleSelect.selectedIndex];
-                if (selected && selected.value !== "") {
-                    const soldeNet = parseFloat(selected.getAttribute('data-solde')) - parseFloat(selected.getAttribute('data-commission'));
-                    validateAmount(soldeNet);
+        // --- ÉCOUTEURS D'ÉVÉNEMENTS ---
+
+        // Changement de cycle (Tontine uniquement)
+        if (cycleSelect) cycleSelect.addEventListener('change', updateCalculations);
+
+        // Changement de type de retrait (Tontine uniquement)
+        if (radioTotal) radioTotal.addEventListener('change', updateCalculations);
+        if (radioPartiel) radioPartiel.addEventListener('change', updateCalculations);
+
+        // Saisie manuelle du montant
+        if (montantInput) {
+            montantInput.addEventListener('input', () => {
+                let limit = 0;
+                if (carnetType === 'tontine') {
+                    if(cycleSelect && cycleSelect.selectedIndex > 0) {
+                        const sel = cycleSelect.options[cycleSelect.selectedIndex];
+                        limit = parseFloat(sel.getAttribute('data-solde')) - parseFloat(sel.getAttribute('data-commission'));
+                    }
+                } else {
+                    limit = parseFloat(montantInput.getAttribute('data-solde-global')) || 0;
                 }
+                validateAmount(limit);
             });
         }
 
-        // Refresh auto à l'ouverture
-        const myModal = document.getElementById('modalRetrait');
-        if (myModal) {
-            myModal.addEventListener('shown.bs.modal', updateCalculations);
+        // Forcer le calcul à l'ouverture du modal
+        const modalRetrait = document.getElementById('modalRetrait');
+        if (modalRetrait) {
+            modalRetrait.addEventListener('shown.bs.modal', updateCalculations);
         }
     });
 </script>

@@ -60,4 +60,5 @@ class Agent extends Model
         $totalNonReversed = $this->portefeuille_virtuel; // Supposons que c'est le montant non reversé
         return $totalNonReversed > $plafond;
     }
+    
 }
