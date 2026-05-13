@@ -1,4 +1,4 @@
-@extends('admin.layouts.sidebar')
+@extends('admin.layouts.app')
 
 @section('content')
 <div class="container-fluid">
@@ -58,7 +58,9 @@
             <div class="card border-0 shadow-sm p-3 border-start border-danger border-4 h-100">
                 <small class="text-muted fw-bold text-uppercase">Encours Crédit</small>
                 <div class="h4 mb-0 text-danger mt-1">
-                    {{ number_format($carnet->credits->where('statut', 'en_cours')->sum('montant_restant'), 0, ',', ' ') }} F
+                    {{ number_format($carnet->credits->whereIn('statut', ['active', 'in_arrears'])->sum(function($credit) {
+                        return ($credit->montant_accorde + $credit->interet_total + ($credit->penalty_amount ?? 0)) - ($credit->montant_rembourse ?? 0);
+                    }), 0, ',', ' ') }} F
                 </div>
             </div>
         </div>
@@ -228,12 +230,18 @@
                     <tbody>
                         @forelse($carnet->credits as $credit)
                         <tr>
-                            <td class="fw-bold">{{ number_format($credit->montant, 0) }} F</td>
-                            <td class="text-danger fw-bold">{{ number_format($credit->montant_restant, 0) }} F</td>
-                            <td>{{ $credit->date_echeance ? $credit->date_echeance->format('d/m/Y') : '-' }}</td>
+                            <td class="fw-bold">
+                                <a href="{{ route('admin.credits.show', $credit->id) }}" class="text-decoration-none">
+                                    {{ number_format($credit->montant_accorde, 0) }} F
+                                </a>
+                            </td>
+                            <td class="text-danger fw-bold">
+                                {{ number_format(($credit->montant_accorde + $credit->interet_total + ($credit->penalty_amount ?? 0)) - ($credit->montant_rembourse ?? 0), 0) }} F
+                            </td>
+                            <td>{{ $credit->date_fin_prevue ? $credit->date_fin_prevue->format('d/m/Y') : '-' }}</td>
                             <td>
-                                <span class="badge {{ $credit->statut === 'solde' ? 'bg-success' : 'bg-danger' }}">
-                                    {{ ucfirst($credit->statut) }}
+                                <span class="badge {{ in_array($credit->statut, ['closed']) ? 'bg-success' : (in_array($credit->statut, ['active', 'in_arrears']) ? 'bg-danger' : 'bg-secondary') }}">
+                                    {{ $credit->statut === 'active' ? 'Actif' : ($credit->statut === 'in_arrears' ? 'En retard' : ($credit->statut === 'closed' ? 'Clôturé' : ($credit->statut === 'approved' ? 'Approuvé' : ucfirst($credit->statut)))) }}
                                 </span>
                             </td>
                         </tr>

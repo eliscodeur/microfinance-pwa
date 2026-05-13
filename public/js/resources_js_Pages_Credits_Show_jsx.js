@@ -365,7 +365,7 @@ function Show(_ref) {
             href: "/admin/credits",
             className: "btn btn-outline-secondary me-2",
             children: "Retour"
-          }), credit.statut === 'pending' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+          }), credit.statut !== 'approved' && credit.statut !== 'active' && credit.statut !== 'rejected' && credit.statut !== 'closed' && credit.statut === 'pending' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
             className: "btn btn-success",
             onClick: approve,
             children: "Approuver"
@@ -541,7 +541,7 @@ function Show(_ref) {
                     children: formatCurrency(payment.montant_total)
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
                     children: payment.status !== 'paid' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-                      className: "input-group input-group-sm",
+                      className: "input-group",
                       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
                         type: "number",
                         step: "0.01",
@@ -570,7 +570,7 @@ function Show(_ref) {
                     children: [payment.status !== 'paid' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
                       className: "d-flex gap-2 align-items-center",
                       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-                        className: "input-group input-group-sm",
+                        className: "input-group",
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
                           type: "number",
                           step: "0.01",

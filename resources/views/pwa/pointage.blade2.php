@@ -19,6 +19,87 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalConfirm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered mobile-bottom-sheet">
+        <div class="modal-content p-2 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Pointage</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center pt-2">
+                <div class="text-primary mb-3"><i class="fas fa-check-circle fa-3x"></i></div>
+                <h4 class="fw-bold">Confirmer ?</h4>
+                <p class="text-muted px-3" id="text-confirm-details"></p>
+            </div>
+            <div class="d-grid gap-2 p-3 pt-0">
+                <button type="button" class="btn btn-primary btn-mobile shadow-sm" id="btn-valider-final">OUI, ENREGISTRER</button>
+                <button type="button" class="btn btn-light btn-mobile text-muted" data-bs-dismiss="modal">ANNULER</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmCloture" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered mobile-bottom-sheet">
+        <div class="modal-content p-2 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">Clôture</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center pt-2">
+                <div class="text-danger mb-3"><i class="bi bi-exclamation-octagon-fill display-2"></i></div>
+                <h3 class="fw-bold">Arrêter le cycle ?</h3>
+                <p class="text-muted">Cette action est définitive. Le client recevra son bilan final.</p>
+            </div>
+            <div class="d-grid gap-2 p-3 pt-0">
+                <button type="button" class="btn btn-danger btn-mobile shadow-sm" id="btn-valider-cloture-final">OUI, CLÔTURER MAINTENANT</button>
+                <button type="button" class="btn btn-light btn-mobile text-muted" data-bs-dismiss="modal">ANNULER</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalRecuFinal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered px-3">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close ms-auto" onclick="location.reload()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 pt-0">
+                <div class="text-center mb-4">
+                    <div class="bg-success text-white d-inline-block p-3 rounded-circle mb-2">
+                        <i class="fas fa-receipt fa-2x"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">BILAN FINAL</h2>
+                    <small class="text-muted" id="recu-date">--/--/----</small>
+                </div>
+                
+                <div class="p-3 rounded-4 mb-3" style="background: #f8f9fa; border: 1px dashed #ccc;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Jours :</span> <b id="recu-jours">0 / 31</b>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Mise :</span> <b id="recu-mise">0 FCFA</b>
+                    </div>
+                    <div class="d-flex justify-content-between text-danger pt-2 mt-2" style="border-top: 1px solid #dee2e6;">
+                        <span class="small">Frais (1j) :</span>
+                        <span class="small">- <b id="recu-commission">0</b> FCFA</span>
+                    </div>
+                </div>
+
+                <div class="text-center py-2">
+                    <small class="text-uppercase text-muted fw-bold">Net à reverser</small>
+                    <h1 class="display-5 fw-bold text-primary mb-0" id="recu-total">0 FCFA</h1>
+                </div>
+                
+                <button class="btn btn-dark w-100 btn-mobile mt-3" onclick="location.reload()">
+                    <i class="fas fa-check-circle me-2"></i> TERMINER & QUITTER
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     /* Design spécifique Mobile */
     .mobile-bottom-sheet {
@@ -50,12 +131,9 @@
             (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
         );
     }
-    const activeDB = getAgentDB();
     const urlParams = new URLSearchParams(window.location.search);
     let carnetId = urlParams.get('carnet_id');
-    const matricule = localStorage.getItem('current_agent_matricule');
-    const sessionData = JSON.parse(localStorage.getItem(`auth_v1_${matricule}`));
-    const agentId = sessionData.id;
+    const agentId = localStorage.getItem('agent_id') || 0;
     if (!carnetId) {
         const pathSegments = window.location.pathname.split('/');
         const lastSegment = pathSegments[pathSegments.length - 1];
@@ -175,7 +253,7 @@
         
         let n = parseInt(el.innerText) + v;
         if (n < 1) return;
-        
+
         if (max && n > max) {
             Swal.fire({
                 icon: 'warning',

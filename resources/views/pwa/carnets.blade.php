@@ -14,7 +14,7 @@
 
 
 <script type="module">
-    import { db } from "{{ asset('js/db-manager.js') }}";
+   import { db, getAgentDB } from '/js/db-manager.js'; 
    
     const urlParams = new URLSearchParams(window.location.search);
     const clientId = parseInt(urlParams.get('client_id'));
@@ -23,8 +23,12 @@
         if (!clientId) return;
 
         try {
-            if (!db.isOpen()) await db.open();
+            const database = getAgentDB();
 
+            if (!database.isOpen()) {
+                await database.open();
+            }
+           
             const [client, carnets] = await Promise.all([
                 db.clients.get(Number(clientId)),
                 db.carnets.where('client_id').equals(Number(clientId)).toArray()

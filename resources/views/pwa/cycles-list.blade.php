@@ -141,7 +141,15 @@
     .card { transition: all 0.2s ease; }
 </style>
 <script type="module">
-     import { db } from '/js/db-manager.js'; 
+    import { db, getAgentDB } from '/js/db-manager.js'; 
+
+    // --- EXPOSITION DES FONCTIONS AU HTML ---
+    window.afficherCyclesRegroupes = afficherCyclesRegroupes;
+    window.ouvrirModif = ouvrirModif;
+    window.enregistrerModifCycle = enregistrerModifCycle;
+    window.validerChampsModif = validerChampsModif;
+    window.supprimerCycle = supprimerCycle;
+    window.executerSuppression = executerSuppression;
     window.gererCroixCycles = function() {
         const input = document.getElementById('inputSearch');
         const btnX = document.getElementById('btnViderCycles');
@@ -158,143 +166,143 @@
 
     // Ta fonction existante à laquelle on ajoute juste le reset scroll
     
-</script>
-<script>
-async function afficherCyclesRegroupes() {
-    window.scrollTo(0, 0); 
-    const container = document.getElementById('cycles-master-container');
-    const search = document.getElementById('inputSearch').value.toLowerCase();
-    container.innerHTML = '';
 
-    const [clients, carnets, cycles, collectes] = await Promise.all([
-        db.clients.toArray(),
-        db.carnets.toArray(),
-        db.cycles.toArray(),
-        db.collectes.toArray()
-    ]);
+    async function afficherCyclesRegroupes() {
+        const activeDB = getAgentDB();
+        window.scrollTo(0, 0); 
+        const container = document.getElementById('cycles-master-container');
+        const search = document.getElementById('inputSearch').value.toLowerCase();
+        container.innerHTML = '';
 
-    const cyclesTries = cycles.sort((a, b) => new Date(b.date_debut) - new Date(a.date_debut));
+        const [clients, carnets, cycles, collectes] = await Promise.all([
+            activeDB.clients.toArray(),
+            activeDB.carnets.toArray(),
+            activeDB.cycles.toArray(),
+            activeDB.collectes.toArray()
+        ]);
 
-    clients.forEach(client => {
-        const matchClient = client.nom.toLowerCase().includes(search);
-        const clientCarnets = carnets.filter(car => car.client_id === client.id);
-        
-        if (cycles.some(cy => cy.client_id === client.id)) {
-            let clientHtml = '';
-            let clientAffiche = false;
+        const cyclesTries = cycles.sort((a, b) => new Date(b.date_debut) - new Date(a.date_debut));
 
-            clientCarnets.forEach(carnet => {
-                const numCarnet = carnet.numero;
-                const matchCarnet = numCarnet.toLowerCase().includes(search);
-                const carnetCycles = cyclesTries.filter(cy => cy.carnet_id === carnet.id);
+        clients.forEach(client => {
+            const matchClient = client.nom.toLowerCase().includes(search);
+            const clientCarnets = carnets.filter(car => car.client_id === client.id);
+            
+            if (cycles.some(cy => cy.client_id === client.id)) {
+                let clientHtml = '';
+                let clientAffiche = false;
 
-                if (carnetCycles.length > 0 && (matchClient || matchCarnet)) {
-                    // console.log(carnetCycles[0].solde_restant_net);
-                    const soldeNet = carnetCycles[0].solde_restant_net || 0;
-                    clientAffiche = true;
-                    clientHtml += `
-                        <div class="card border-0 shadow-sm mb-3" style="border-radius: 15px; overflow: hidden;">
-                            <div class="card-header border-0 py-2 px-3 d-flex justify-content-between align-items-center" style="background: #f1f3f5;">
-                                <span class="fw-bold" style="font-size: 0.7rem; color: #495057;">
-                                    <i class="bi bi-journal-bookmark-fill me-1"></i> CARNET: ${numCarnet}
-                                </span>
-                            </div>
-                            <div class="card-body p-0">
-                    `;
+                clientCarnets.forEach(carnet => {
+                    const numCarnet = carnet.numero;
+                    const matchCarnet = numCarnet.toLowerCase().includes(search);
+                    const carnetCycles = cyclesTries.filter(cy => cy.carnet_id === carnet.id);
 
-                    carnetCycles.forEach(cycle => {
-                        const collectesCycle = collectes.filter(col => col.cycle_id === cycle.id);
-                       
-                        
-                        // --- NOUVELLE LOGIQUE : SOMME DES POINTAGES ---
-                        const nbrPointages = collectesCycle.reduce((sum, col) => sum + parseInt(col.pointage || 0), 0);
-                        
-                        const progression = Math.min(Math.round((nbrPointages / 31) * 100), 100);
-                        const brut = collectesCycle.reduce((sum, col) => sum + parseFloat(col.montant || 0), 0);
-                        const mise = parseFloat(cycle.montant_journalier || 0);
-                        // const net = brut > mise ? brut - mise : brut; 
-
-                        const estTermine = cycle.statut === 'termine' || nbrPointages >= 31;
-                        const estSynchro = cycle.synced === 1;
-                        const afficherSomme = estTermine && (!cycle.retire_at || cycle.retire_at === "null");
-                        
-                        const peutAgir = (nbrPointages === 0 && !estSynchro);
-
+                    if (carnetCycles.length > 0 && (matchClient || matchCarnet)) {
+                        // console.log(carnetCycles[0].solde_restant_net);
+                        const soldeNet = carnetCycles[0].solde_restant_net || 0;
+                        clientAffiche = true;
                         clientHtml += `
-                            <div class="px-3 py-3 ${carnetCycles.indexOf(cycle) !== carnetCycles.length - 1 ? 'border-bottom' : ''}">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div style="flex: 1;">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <a href="/pwa/pointage-shell?carnet_id=${carnet.id}" class="text-decoration-none fw-bolder text-dark" style="font-size: 1.1rem;">
-                                                ${cycle.montant_journalier} F
-                                            </a>
-                                            ${estTermine 
-                                                ? '<span class="badge bg-success" style="font-size: 0.55rem;">Terminé (31/31)</span>' 
-                                                : `<span class="badge bg-light text-primary border" style="font-size: 0.55rem;">${nbrPointages} / 31 pts</span>`
-                                            }
-                                            ${estSynchro 
-                                                ? '<i class="bi bi-cloud-check-fill text-info" style="font-size: 0.8rem;"></i>' 
-                                                : '<i class="bi bi-cloud-arrow-up text-warning" style="font-size: 0.8rem;"></i>'
-                                            }
-                                        </div>
-                                        <div class="text-muted mt-1" style="font-size: 0.7rem;">
-                                            <i class="bi bi-cash-stack me-1"></i>Cumul: <strong>${brut} F</strong>
-                                        </div>
-                                    </div>
-
-                                    <div class="text-end">
-                                        ${afficherSomme ? `
-                                            <div class="bg-primary text-white px-2 py-1 rounded-3 mb-1" style="font-size: 0.8rem; font-weight: 700;">Net: ${soldeNet} F</div>
-                                            <div style="font-size: 0.55rem; color: #dc3545;">Com: -${mise} F</div>
-                                        ` : `
-                                            <div class="d-flex gap-1 justify-content-end">
-                                                ${peutAgir ? `
-                                                    <button onclick="event.preventDefault(); ouvrirModif(${cycle.id})" class="btn btn-outline-secondary btn-sm border-0 p-1"><i class="bi bi-pencil-square"></i></button>
-                                                    <button onclick="event.preventDefault(); supprimerCycle(${cycle.id})" class="btn btn-outline-danger btn-sm border-0 p-1"><i class="bi bi-trash3"></i></button>
-                                                ` : '<span class="text-muted small" style="font-size:0.55rem;"><i class="bi bi-lock-fill"></i> Actif</span>'}
-                                            </div>
-                                        `}
-                                    </div>
+                            <div class="card border-0 shadow-sm mb-3" style="border-radius: 15px; overflow: hidden;">
+                                <div class="card-header border-0 py-2 px-3 d-flex justify-content-between align-items-center" style="background: #f1f3f5;">
+                                    <span class="fw-bold" style="font-size: 0.7rem; color: #495057;">
+                                        <i class="bi bi-journal-bookmark-fill me-1"></i> CARNET: ${numCarnet}
+                                    </span>
                                 </div>
-
-                                <div class="progress" style="height: 6px; background-color: #eee; border-radius: 10px;">
-                                    <div class="progress-bar ${progression >= 100 ? 'bg-success' : 'bg-primary'}" 
-                                         role="progressbar" style="width: ${progression}%;"></div>
-                                </div>
-
-                                <div class="mt-2 d-flex justify-content-between align-items-center">
-                                    <small class="text-muted" style="font-size: 0.6rem;">
-                                        <i class="bi bi-calendar3 me-1"></i>Lancé le ${new Date(cycle.date_debut).toLocaleDateString()}
-                                    </small>
-                                    <a href="/pwa/pointage-shell?carnet_id=${carnet.id}" class="btn btn-link p-0 text-decoration-none shadow-none" style="font-size: 0.65rem;">Ouvrir <i class="bi bi-arrow-right"></i></a>
-                                </div>
-                            </div>
+                                <div class="card-body p-0">
                         `;
-                    });
-                    clientHtml += `</div></div>`;
-                }
-            });
 
-            if (clientAffiche) {
-                container.innerHTML += `
-                    <div class="client-group mb-4 px-1">
-                        <div class="d-flex align-items-center mb-2 mt-3">
-                            <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center text-white me-2 shadow-sm" style="width: 35px; height: 35px; font-weight: 800; font-size: 0.9rem;">
-                                ${client.nom.charAt(0).toUpperCase()}
+                        carnetCycles.forEach(cycle => {
+                            const collectesCycle = collectes.filter(col => col.cycle_id === cycle.id);
+                        
+                            
+                            // --- NOUVELLE LOGIQUE : SOMME DES POINTAGES ---
+                            const nbrPointages = collectesCycle.reduce((sum, col) => sum + parseInt(col.pointage || 0), 0);
+                            
+                            const progression = Math.min(Math.round((nbrPointages / 31) * 100), 100);
+                            const brut = collectesCycle.reduce((sum, col) => sum + parseFloat(col.montant || 0), 0);
+                            const mise = parseFloat(cycle.montant_journalier || 0);
+                            // const net = brut > mise ? brut - mise : brut; 
+
+                            const estTermine = cycle.statut === 'termine' || nbrPointages >= 31;
+                            const estSynchro = cycle.synced === 1;
+                            const afficherSomme = estTermine && (!cycle.retire_at || cycle.retire_at === "null");
+                            
+                            const peutAgir = (nbrPointages === 0);
+
+                            clientHtml += `
+                                <div class="px-3 py-3 ${carnetCycles.indexOf(cycle) !== carnetCycles.length - 1 ? 'border-bottom' : ''}">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div style="flex: 1;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <a href="/pwa/pointage-shell?carnet_id=${carnet.id}" class="text-decoration-none fw-bolder text-dark" style="font-size: 1.1rem;">
+                                                    ${cycle.montant_journalier} F
+                                                </a>
+                                                ${estTermine 
+                                                    ? '<span class="badge bg-success" style="font-size: 0.55rem;">Terminé (31/31)</span>' 
+                                                    : `<span class="badge bg-light text-primary border" style="font-size: 0.55rem;">${nbrPointages} / 31 pts</span>`
+                                                }
+                                                ${estSynchro 
+                                                    ? '<i class="bi bi-cloud-check-fill text-info" style="font-size: 0.8rem;"></i>' 
+                                                    : '<i class="bi bi-cloud-arrow-up text-warning" style="font-size: 0.8rem;"></i>'
+                                                }
+                                            </div>
+                                            <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                                                <i class="bi bi-cash-stack me-1"></i>Cumul: <strong>${brut} F</strong>
+                                            </div>
+                                        </div>
+
+                                        <div class="text-end">
+                                            ${afficherSomme ? `
+                                                <div class="bg-primary text-white px-2 py-1 rounded-3 mb-1" style="font-size: 0.8rem; font-weight: 700;">Net: ${soldeNet} F</div>
+                                                <div style="font-size: 0.55rem; color: #dc3545;">Com: -${mise} F</div>
+                                            ` : `
+                                                <div class="d-flex gap-1 justify-content-end">
+                                                    ${peutAgir ? `
+                                                        <button onclick="event.preventDefault(); ouvrirModif(${cycle.id})" class="btn btn-outline-secondary btn-sm border-0 p-1"><i class="bi bi-pencil-square"></i></button>
+                                                        <button onclick="event.preventDefault(); supprimerCycle(${cycle.id})" class="btn btn-outline-danger btn-sm border-0 p-1"><i class="bi bi-trash3"></i></button>
+                                                    ` : '<span class="text-muted small" style="font-size:0.55rem;"><i class="bi bi-lock-fill"></i> Actif</span>'}
+                                                </div>
+                                            `}
+                                        </div>
+                                    </div>
+
+                                    <div class="progress" style="height: 6px; background-color: #eee; border-radius: 10px;">
+                                        <div class="progress-bar ${progression >= 100 ? 'bg-success' : 'bg-primary'}" 
+                                            role="progressbar" style="width: ${progression}%;"></div>
+                                    </div>
+
+                                    <div class="mt-2 d-flex justify-content-between align-items-center">
+                                        <small class="text-muted" style="font-size: 0.6rem;">
+                                            <i class="bi bi-calendar3 me-1"></i>Lancé le ${new Date(cycle.date_debut).toLocaleDateString()}
+                                        </small>
+                                        <a href="/pwa/pointage-shell?carnet_id=${carnet.id}" class="btn btn-link p-0 text-decoration-none shadow-none" style="font-size: 0.65rem;">Ouvrir <i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        clientHtml += `</div></div>`;
+                    }
+                });
+
+                if (clientAffiche) {
+                    container.innerHTML += `
+                        <div class="client-group mb-4 px-1">
+                            <div class="d-flex align-items-center mb-2 mt-3">
+                                <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center text-white me-2 shadow-sm" style="width: 35px; height: 35px; font-weight: 800; font-size: 0.9rem;">
+                                    ${client.nom.charAt(0).toUpperCase()}
+                                </div>
+                                <h6 class="mb-0 fw-black text-dark" style="font-size: 1.1rem; letter-spacing: -0.5px;">${client.nom.toUpperCase()} ${client.prenom.toUpperCase()}</h6>
                             </div>
-                            <h6 class="mb-0 fw-black text-dark" style="font-size: 1.1rem; letter-spacing: -0.5px;">${client.nom.toUpperCase()} ${client.prenom.toUpperCase()}</h6>
+                            ${clientHtml}
                         </div>
-                        ${clientHtml}
-                    </div>
-                `;
+                    `;
+                }
             }
-        }
-    });
+        });
 
-    if (container.innerHTML === '') {
-        container.innerHTML = `<div class="text-center py-5 text-muted small">Aucun cycle trouvé</div>`;
+        if (container.innerHTML === '') {
+            container.innerHTML = `<div class="text-center py-5 text-muted small">Aucun cycle trouvé</div>`;
+        }
     }
-}
 
     // Appeler la fonction au chargement
     document.addEventListener('DOMContentLoaded', afficherCyclesRegroupes);
@@ -303,8 +311,9 @@ async function afficherCyclesRegroupes() {
 
     // 1. Ouvrir le modal et charger les infos
     async function ouvrirModif(id) {
+        const activeDB = getAgentDB();
         try {
-            const cycle = await db.cycles.get(id);
+            const cycle = await activeDB.cycles.get(id);
             if (!cycle) return;
 
             document.getElementById('edit-cycle-id').value = cycle.id;
@@ -338,14 +347,16 @@ async function afficherCyclesRegroupes() {
     }
 
     async function enregistrerModifCycle() {
+        const activeDB = getAgentDB();
         const id = parseInt(document.getElementById('edit-cycle-id').value);
         const montant = parseFloat(document.getElementById('edit-montant').value);
         const dateStr = document.getElementById('edit-date').value;
 
         try {
-            await db.cycles.update(id, {
+            await activeDB.cycles.update(id, {
                 montant_journalier: montant,
-                date_debut: dateStr
+                date_debut: dateStr,
+                synced: 0 // On marque comme non synchronisé pour forcer la mise à jour côté serveur
             });
 
             // Fermer le modal
@@ -360,6 +371,7 @@ async function afficherCyclesRegroupes() {
     }
 
     async function validerChampsModif() {
+        const activeDB = getAgentDB();
         const id = parseInt(document.getElementById('edit-cycle-id')?.value);
         const montant = parseFloat(document.getElementById('edit-montant')?.value) || 0;
         const dateStr = document.getElementById('edit-date')?.value;
@@ -372,7 +384,7 @@ async function afficherCyclesRegroupes() {
         document.getElementById('error-montant')?.classList.toggle('d-none', isMontantOk);
 
         if (dateStr && id) {
-            const cycleActuel = await db.cycles.get(id);
+            const cycleActuel = await activeDB.cycles.get(id);
             const nouvelleDate = new Date(dateStr);
             nouvelleDate.setHours(0,0,0,0);
 
@@ -385,7 +397,7 @@ async function afficherCyclesRegroupes() {
             if (isPast) isDateOk = false;
 
             // 2. Erreur si conflit avec un autre cycle du carnet
-            const cyclesDuCarnet = await db.cycles.where('carnet_id').equals(cycleActuel.carnet_id).toArray();
+            const cyclesDuCarnet = await activeDB.cycles.where('carnet_id').equals(cycleActuel.carnet_id).toArray();
             const conflit = cyclesDuCarnet.find(c => {
                 if (c.id === id) return false;
                 const dC = new Date(c.date_debut);
@@ -427,13 +439,14 @@ async function afficherCyclesRegroupes() {
      * 2. Exécute la suppression réelle dans Dexie
      */
     async function executerSuppression() {
+        const activeDB = getAgentDB();
         const id = parseInt(document.getElementById('suppr-cycle-id').value);
         
         if (!id) return;
 
         try {
             // Suppression dans la base de données
-            await db.cycles.delete(id);
+            await activeDB.cycles.delete(id);
 
             // Fermeture du modal
             if (instanceModalSuppr) {

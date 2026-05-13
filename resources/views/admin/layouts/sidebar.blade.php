@@ -216,7 +216,7 @@
         @endcan
 
         <!-- COLLECTES & PARAMÈTRES -->
-        @can('Gérer Collectes')
+        @can('Gérer Carnets')
         <div class="nav-section-title">Exploitation</div>
         <a href="#carnetsSub" data-bs-toggle="collapse" aria-expanded="{{ $carnetsMenuOpen ? 'true' : 'false' }}" class="menu-toggle {{ $carnetsMenuOpen ? 'active' : '' }}">
             <i class="bi bi-book"></i> <span>Carnets</span>
@@ -225,7 +225,7 @@
             <a href="{{ route('admin.carnets.index') }}" class="{{ request()->routeIs('admin.carnets.index') ? 'active' : '' }}">Gestion Carnets</a>
             <a href="{{ route('admin.categories.index') }}" class="{{ request()->routeIs('admin.categories.index') ? 'active' : '' }}">Catégories</a>
         </div>
-
+        @endcan
         <a href="#collecteSub" data-bs-toggle="collapse" aria-expanded="{{ $collecteMenuOpen ? 'true' : 'false' }}" class="menu-toggle {{ $collecteMenuOpen ? 'active' : '' }}">
             <i class="bi bi-arrow-repeat"></i> <span>Synchronisation</span>
         </a>
@@ -233,7 +233,7 @@
             <a href="{{ route('admin.sync-batches.index') }}" class="{{ request()->routeIs('admin.sync-batches.*') ? 'active' : '' }}">Lots de synchro</a>
             <a href="{{ route('admin.cycles.index') }}" class="{{ request()->routeIs('admin.cycles.index') ? 'active' : '' }}">Cycles de collecte</a>
         </div>
-        @endcan
+        
 
     </div>
 
@@ -245,14 +245,15 @@
 
 <main class="content" id="mainContent">
     <div class="container-fluid p-4">
-        {{-- On ajoute l'ID 'app' ici pour qu'Inertia et Echo s'activent --}}
-        <div id="app">
+        {{-- Wrapper Blade pour le contenu admin, pas pour Inertia --}}
+        <div id="blade-app">
             @yield('content')
         </div>
     </div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
     const btn = document.getElementById('hamburgerBtn');
     const sidebar = document.getElementById('sidebarNav');

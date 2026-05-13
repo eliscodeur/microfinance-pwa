@@ -10,7 +10,7 @@ class Agent extends Model
 {
     use HasFactory;
     protected $fillable = [
-       'user_id', 'code_agent', 'nom', 'telephone', 'image', 'actif', 'can_sync', 'portefeuille_virtuel'
+       'user_id', 'code_agent', 'pin_hash', 'nom', 'telephone', 'image', 'actif', 'can_sync', 'portefeuille_virtuel'
     ];
     public function user() {
         return $this->belongsTo(User::class);
@@ -59,6 +59,14 @@ class Agent extends Model
     {
         $totalNonReversed = $this->portefeuille_virtuel; // Supposons que c'est le montant non reversé
         return $totalNonReversed > $plafond;
+    }
+
+    // Dans app/Models/Agent.php
+
+    public static function generateNecCode()
+    {
+        $count = self::count() + 1;
+        return 'NEC-' . str_pad($count, 5, '0', STR_PAD_LEFT);
     }
     
 }

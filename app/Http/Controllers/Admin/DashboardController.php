@@ -84,8 +84,8 @@ public function index()
     }
 
     return view('admin.dashboard', compact(
-        'totalAgents', 'totalClients', 'totalCollecteBrute', 'totalRetraits', 
-        'tresorerieNette', 'pendingSyncBatches', 'totalEncours', 
+        'totalAgents', 'totalClients', 'totalCollecteBrute', 'totalRetraits',
+        'tresorerieNette', 'pendingSyncBatches', 'totalEncours',
         'countClientsEnRetard', 'totalPenalites', 'topPenalites',
         'dates', 'collectesData', 'remboursementsData',
         'monthsLabels', 'monthsCollecte', 'monthsRemboursement'

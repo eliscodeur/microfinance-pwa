@@ -1,4 +1,4 @@
-@extends('admin.layouts.sidebar')
+@extends('admin.layouts.app')
 
 @section('content')
 
@@ -18,7 +18,7 @@
                         <i class="bi bi-person-circle" style="font-size: 80px; color: #ccc;"></i>
                     </div>
                 @endif
-                <p class="mt-2 text-muted">Photo</p>
+                <!-- <p class="mt-2 text-muted">Photo</p> -->
             </div>
             <div class="col-md-8">
                 <h4 class="text-primary">{{ $agent->nom }}</h4>
@@ -38,6 +38,13 @@
                         <p><strong>Créé le :</strong> {{ $agent->created_at->format('d/m/Y') }}</p>
                         <p><strong>Mis à jour :</strong> {{ $agent->updated_at->format('d/m/Y') }}</p>
                     </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="resetPin({{ $agent->id }})">
+                        <i class="bi bi-shield-lock"></i> Réinitialiser le code PIN
+                    </button>
+                    <p class="small text-muted mt-1">L'agent devra définir un nouveau code à sa prochaine connexion offline.</p>
                 </div>
             </div>
         </div>
@@ -290,6 +297,42 @@
         ctx.fillStyle = "#666";
         ctx.textAlign = "center";
         ctx.fillText("Aucune donnée disponible pour les 12 derniers mois", 200, 100);
+    }
+
+    async function resetPin(agentId) {
+        const { isConfirmed } = await Swal.fire({
+            title: 'Réinitialiser le PIN ?',
+            text: "L'agent ne pourra plus utiliser son ancien code pour les collectes offline.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ffc107',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Oui, réinitialiser',
+            cancelButtonText: 'Annuler'
+        });
+
+        if (isConfirmed) {
+            try {
+                const response = await fetch(`/admin/agents/${agentId}/reset-pin`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    Swal.fire('Réinitialisé !', 'Le code PIN a été réinitialisé.', 'success');
+                } else {
+                    Swal.fire('Erreur', result.message || 'Une erreur est survenue', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Erreur', 'Impossible de contacter le serveur', 'error');
+            }
+        }
     }
 </script>
 

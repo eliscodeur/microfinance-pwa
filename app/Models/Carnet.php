@@ -109,6 +109,14 @@ public function getSoldeTontineNonRetireAttribute(): float
         return round($this->activeCycleSavings() + $this->terminalWithdrawableSavings(), 2);
     }
 
+    /**
+     * Total des pointages pour ce carnet.
+     */
+    public function totalPointages(): int
+    {
+        return (int) $this->collectes->sum('pointage');
+    }
+
     /* -------------------------------------------------------------------------- */
     /* LOGIQUE                                   */
     /* -------------------------------------------------------------------------- */

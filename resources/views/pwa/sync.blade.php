@@ -98,193 +98,69 @@
     </div>
 </div>
 
-<div id="sync-overlay" class="sync-overlay" style="display: none;">
-    <div class="sync-modal-card">
-        <div class="mb-3">
-            <div class="spinner-border text-primary" role="status"></div>
-        </div>
-        <h5 id="sync-status" class="fw-bold mb-1">Traitement...</h5>
-        <p id="sync-percent" class="text-primary fw-bold mb-3">0%</p>
-        <div class="progress mb-4" style="height: 10px; border-radius: 10px;">
-            <div id="sync-bar-overlay" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
-        </div>
-        <button id="btn-cancel-sync-overlay" class="btn btn-light btn-sm text-danger w-100" style="border-radius: 12px;">
-            ANNULER L'ATTENTE
-        </button>
-    </div>
-</div>
-
-<div id="mobile-alert-modal" class="modal-mobile-container" style="display: none;">
-    <div class="modal-mobile-content">
-        <button type="button" class="btn-close-modal-top" onclick="closeAlertModal()">
-            <i class="bi bi-x"></i>
-        </button>
-        <div id="modal-alert-icon" class="mb-3 mt-2"></div>
-        <h5 id="modal-alert-title" class="fw-bold px-3"></h5>
-        <p id="modal-alert-message" class="text-muted px-3 small"></p>
-        <div class="modal-mobile-footer">
-            <button onclick="closeAlertModal()" class="btn-modal-close">COMPRIS</button>
-        </div>
-    </div>
-</div>
 
 <style>
-    /* Correction de l'espacement pour le Tab Bar existant */
-    body { padding-bottom: 60px; } /* Hauteur de ton tab bar Accueil/Clients/Sync */
+    /* Espacement pour éviter que le contenu ne soit caché par le Tab Bar */
+    body { 
+        padding-bottom: 70px; 
+    }
 
-    /* Idée : Skeleton Loading Effet (S'active sur .shimmer-loading en JS) */
+    /* Effet Skeleton Loading pour le chargement initial des compteurs */
     .shimmer-loading {
         position: relative;
         overflow: hidden;
         color: transparent !important;
         background-color: #e9ecef !important;
+        border-radius: 8px;
     }
+
     .shimmer-loading::after {
         content: "";
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
-        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+        background: linear-gradient(90deg, 
+            rgba(255,255,255,0) 0%, 
+            rgba(255,255,255,0.6) 50%, 
+            rgba(255,255,255,0) 100%);
         animation: shimmer 1.5s infinite;
     }
-    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+    @keyframes shimmer { 
+        0% { transform: translateX(-100%); } 
+        100% { transform: translateX(100%); } 
+    }
     
-    /* Bootstrap 5.3 Utility Fallbacks for Subtles */
+    /* Fallbacks pour les couleurs Bootstrap si version < 5.3 */
     .bg-primary-subtle { background-color: #cfe2ff; }
     .text-primary { color: #0d6efd !important; }
     .bg-success-subtle { background-color: #d1e7dd; }
     .text-success { color: #198754 !important; }
-    .bg-secondary-subtle { background-color: #e2e3e5; }
-    .text-secondary { color: #6c757d !important; }
     .bg-warning-subtle { background-color: #fff3cd; }
     .text-warning { color: #856404 !important; }
-    .modal-mobile-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        backdrop-filter: blur(4px);
-    }
 
-    .modal-mobile-content {
-        background: white;
-        width: 100%;
-        max-width: 320px;
-        border-radius: 24px;
-        text-align: center;
-        padding-top: 20px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-        animation: slideUp 0.3s ease-out;
+    /* Customisation légère pour SweetAlert2 pour coller au style mobile */
+    .rounded-4 {
+        border-radius: 24px !important;
     }
-
-    .modal-mobile-footer {
-        border-top: 1px solid #f0f0f0;
-        margin-top: 20px;
-    }
-
-    .btn-modal-close {
-        width: 100%;
-        background: none;
-        border: none;
-        padding: 15px;
-        color: #007bff;
-        font-weight: bold;
-        letter-spacing: 1px;
-    }
-
-    @keyframes slideUp {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    .modal-mobile-content {
-        position: relative; /* Important pour positionner la croix par rapport au contenu */
-        background: white;
-        width: 100%;
-        max-width: 320px;
-        border-radius: 24px;
-        text-align: center;
-        padding-top: 30px; /* Un peu plus d'espace en haut */
-        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-        animation: slideUp 0.3s ease-out;
-    }
-
-    .btn-close-modal-top {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        background: #f0f2f5;
-        border: none;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #65676b;
-        font-size: 20px;
-        cursor: pointer;
-        transition: background 0.2s;
-    }
-
-    .btn-close-modal-top:hover {
-        background: #e4e6eb;
-    }
-
-    .modal-mobile-footer {
-        border-top: 1px solid #f0f0f0;
-        margin-top: 20px;
-    }
-    .sync-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
-        z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
-    }
-    .sync-modal-card {
-        background: white; width: 100%; max-width: 350px; padding: 30px;
-        border-radius: 28px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    }
-
-    /* Modale d'alerte mobile */
-    .modal-mobile-container {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5); z-index: 10000;
-        display: flex; align-items: center; justify-content: center; padding: 20px;
-    }
-    .modal-mobile-content {
-        position: relative; background: white; width: 100%; max-width: 320px;
-        border-radius: 24px; text-align: center; padding-top: 35px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;
-    }
-    .btn-close-modal-top {
-        position: absolute; top: 12px; right: 12px; background: #f0f2f5;
-        border: none; width: 32px; height: 32px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center; color: #65676b;
-    }
-    .modal-mobile-footer { border-top: 1px solid #f0f0f0; margin-top: 20px; }
-    .btn-modal-close {
-        width: 100%; background: none; border: none; padding: 15px;
-        color: #007bff; font-weight: bold;
-    }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 </style>
-<script type="module">
-    import { db, populateDatabase } from '/js/db-manager.js';
+<script src="/js/dexie.js"></script>
 
-    const PENDING_SYNC_KEY = 'pending_sync_job';
+<script type="module">
+    import { getAgentDB, populateDatabase, DBManager, db } from '/js/db-manager.js';
+
+    const getMatricule = () => localStorage.getItem('current_agent_matricule');
+    const getSyncKey = () => `pending_sync_job_${getMatricule()}`;
     const POLL_DELAY_MS = 8000;
+    
     window.syncRequestInFlight = false;
     window.batchStatusPolling = false;
+    let swalLoader = null; // Pour contrôler l'overlay de progression
 
     // --- INITIALISATION ---
     window.addEventListener('load', async () => {
         try {
-            if (!db.isOpen()) await db.open();
+            const database = getAgentDB();
+            if (database && !database.isOpen()) await database.open();
             
             await window.rafraichirResumeSync();
 
@@ -294,21 +170,20 @@
                 btnSync.addEventListener('click', window.demarrerAction);
             }
 
-            const btnCancel = document.getElementById('btn-cancel-sync-overlay');
-            if(btnCancel) btnCancel.addEventListener('click', annulerAttenteBatch);
-
-            // On appelle la reprise auto APRES que toutes les fonctions soient définies
             verifierRepriseAuto();
         } catch (e) {
             console.error("Erreur init:", e);
         }
     });
 
-    // --- FONCTIONS GLOBALEMENT ACCESSIBLES ---
+    // --- FONCTIONS GLOBALES ---
     window.rafraichirResumeSync = async function() {
-        if (!db.isOpen()) await db.open();
-        const pColl = await db.collectes.where('synced').equals(0).toArray();
-        const pCyc = await db.cycles.where('synced').equals(0).count();
+        const database = getAgentDB();
+        if (!database) return;
+        if (!database.isOpen()) await database.open();
+
+        const pColl = await database.collectes.where('synced').equals(0).toArray();
+        const pCyc = await database.cycles.where('synced').equals(0).count();
         const total = pColl.reduce((sum, c) => sum + parseFloat(c.montant || 0), 0);
         
         if(document.getElementById('count-collectes')) document.getElementById('count-collectes').innerText = pColl.length;
@@ -316,6 +191,7 @@
         if(document.getElementById('total-amount')) {
             document.getElementById('total-amount').innerText = new Intl.NumberFormat('fr-FR').format(total) + ' FCFA';
         }
+        // Retire l'effet de chargement une fois les données prêtes
         document.querySelectorAll('.shimmer-loading').forEach(el => el.classList.remove('shimmer-loading'));
     };
 
@@ -323,73 +199,75 @@
         if (window.syncRequestInFlight) return;
 
         if (!navigator.onLine) {
-            window.showAlertModal('Hors connexion', 'Une connexion internet est requise pour synchroniser.', 'error');
+            Swal.fire('Hors connexion', 'Une connexion internet est requise.', 'refer');
             return;
         }
 
-        const cycles = await db.cycles.where('synced').equals(0).toArray();
-        const collectes = await db.collectes.where('synced').equals(0).toArray();
+        const database = getAgentDB();
+        const cycles = await database.cycles.where('synced').equals(0).toArray();
+        const collectes = await database.collectes.where('synced').equals(0).toArray();
+        const agents = await database.agents.where('synced').equals(0).toArray();
 
         if (cycles.length === 0 && collectes.length === 0) {
-            window.showAlertModal('Déjà à jour', 'Toutes vos collectes locales sont déjà synchronisées.', 'info');
+            Swal.fire('Déjà à jour', 'Toutes les collectes sont déjà synchronisées.', 'info');
             return;
         }
         
         try {
-            const authRes = await fetch("{{ route('pwa.check-sync-permission') }}?t=" + Date.now(), {
+            const authRes = await fetch(`{{ route('pwa.check-sync-permission') }}?matricule=${getMatricule()}&t=${Date.now()}`, {
                 method: 'GET',
-                cache: 'no-store', // <--- FORCE LE NAVIGATEUR À IGNORER LE CACHE
-                headers: {
-                    'Pragma': 'no-cache',
-                    'Cache-Control': 'no-cache'
-                }
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' }
             });
 
             const auth = await authRes.json();
             
             if (!auth.can_sync) {
-                window.showAlertModal(
-                    'La synchronisation n\'est pas autorisée', 
-                    'contactez l\'admin', 
-                    'warning'
-                );
+                Swal.fire('Non autorisé', 'Votre autorisation a expiré.', 'warning');
                 return;
             }
-
-            
-
-            lancerProcessus(cycles, collectes);
+            lancerProcessus(cycles, collectes, agents);
 
         } catch (e) {
             console.error("Erreur check permission:", e);
-            window.showAlertModal('Erreur', 'Impossible de vérifier votre statut.', 'error');
+            Swal.fire('Erreur', 'Impossible de vérifier votre statut.', 'error');
         }
     };
 
-    async function lancerProcessus(cycles, collectes) {
+    async function lancerProcessus(cycles, collectes, agents) {
         window.syncRequestInFlight = true;
-        const btnSync = document.getElementById('btn-sync');
-            if(btnSync) {
-                btnSync.disabled = true;
-            }
-        // ÉTAPE 1 : OVERLAY ACTIF (Envoi des données)
-        afficherOverlayProgress(true); 
-        document.getElementById('sync-progress-container').classList.add('d-none');
         
-        updateProgressUI(20, "Préparation...", 'overlay');
+        swalLoader = Swal.fire({
+            title: 'Synchronisation',
+            html: '<b id="swal-status">Préparation...</b>',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
 
         try {
+            const agentsPayload = agents.map(a => ({
+                id: a.id,
+                pin_hash: a.pin_hash
+            }));
+          
             const syncJob = {
-                sync_uuid: `sync-${Date.now()}`,
+                sync_uuid: `sync-${getMatricule()}-${Date.now()}`,
                 cycles: cycles,
-                collectes: collectes
+                collectes: collectes,
+                agents: agentsPayload
             };
 
-            updateProgressUI(40, "Envoi au serveur...", 'overlay');
+            updateStatusUI("Envoi au serveur...");
             
             const response = await fetch("{{ route('pwa.sync-data-post') }}", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                credentials: 'same-origin',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                },
                 body: JSON.stringify(syncJob)
             });
 
@@ -398,236 +276,176 @@
 
             savePendingSyncJob(result.batch);
             
-            // ÉTAPE 2 : BASCULE VERS LE BANDEAU (Attente Admin)
-            // On libère l'interface pour l'agent
-            afficherOverlayProgress(false); 
-            document.getElementById('sync-progress-container').classList.remove('d-none');
-            
-            updateProgressUI(60, "Attente validation Admin...");
-
-            // Surveillance en arrière-plan
+            updateStatusUI("Attente validation Admin...");
             await surveillerLeBatch(result.batch.sync_uuid);
 
         } catch (error) {
-            afficherOverlayProgress(false);
-            window.showAlertModal('Échec', error.message, 'error');
+            Swal.fire('Échec', error.message, 'error');
         } finally {
             window.syncRequestInFlight = false;
         }
     }
 
-    
     async function surveillerLeBatch(uuid) {
-        // 1. Verrou pour éviter les doublons
         if (window.batchStatusPolling) return;
         window.batchStatusPolling = true;
 
-        console.log("Démarrage surveillance du batch :", uuid);
+        // Si l'overlay n'est pas déjà là (cas de la reprise auto), on l'affiche
+        if(!Swal.isVisible()) {
+            swalLoader = Swal.fire({
+                title: 'Validation en cours',
+                html: '<b id="swal-status">En attente de l\'administrateur...</b><br><small>Vous pouvez fermer, le suivi reprendra au retour.</small>',
+                showCancelButton: true,
+                cancelButtonText: 'Arrêter le suivi',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            }).then((result) => {
+                if (result.isDismissed) annulerAttenteBatch();
+            });
+        }
 
         try {
-            // Boucle tant qu'un job est présent
-            while (getPendingSyncJob()) {
+            while (true) {
+                const job = getPendingSyncJob();
+                if (!job || job.sync_uuid !== uuid) break; 
+
                 if (!navigator.onLine) {
-                    console.warn("Mode hors-ligne, attente reconnexion...");
+                    updateStatusUI("Connexion perdue... en attente");
                     await new Promise(r => setTimeout(r, 5000));
                     continue;
                 }
 
-                const timestamp = new Date().getTime();
                 const url = `{{ route('pwa.sync-batches.status', ['syncUuid' => ':uuid']) }}`.replace(':uuid', uuid);
 
-                const res = await fetch(`${url}?nocache=${timestamp}`, {
-                    method: 'GET',
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
-                    }
-                });
-                
-                if (!res.ok) {
-                    console.error("Erreur serveur (HTTP " + res.status + ")");
-                    await new Promise(r => setTimeout(r, 5000));
-                    continue;
-                }
-
-                const data = await res.json();
-                
-                // 2. Extraction ULTRA-SÉCURISÉE du statut
-                // On vérifie toutes les structures possibles (data.batch.status OU data.status)
-                let statut = null;
-                if (data && data.batch && data.batch.status) {
-                    statut = data.batch.status;
-                } else if (data && data.status) {
-                    statut = data.status;
-                }
-
-                console.log("Réponse serveur :", data, "Statut détecté :", statut);
-
-                if (statut === 'valide' || statut === 'approved') {
-                    console.log("Validation détectée ! Finalisation...");
-                    if (typeof finaliserTout === 'function') {
-                        await finaliserTout(data);
-                    } else {
-                        console.error("La fonction finaliserTout n'existe pas !");
-                    }
-                    break;
-                } 
-                else if (statut === 'rejected') {
-                    // 1. ARRÊT IMMÉDIAT des processus
-                    clearPendingSyncJob(); 
+                try {
+                    const res = await fetch(`${url}?nocache=${Date.now()}`, {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                    });
                     
-                    // 2. VERROUILLAGE du bouton (pour éviter le double-clic avant reload)
-                    // const btnSync = document.getElementById('btn-sync');
-                    // if (btnSync) {
-                    //     btnSync.disabled = true;
-                    // }
-                    updateProgressUI(0, "Demande rejetée...");
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-                    // 3. ON CACHE L'OVERLAY pour laisser voir le message d'erreur
-                    afficherOverlayProgress(false);
+                    const data = await res.json();
+                    const statut = data?.batch?.status || data?.status;
 
-                    // 4. ALERTE
-                    window.showAlertModal('Refusé', 'L\'administrateur a rejeté la demande. La page va s\'actualiser.', 'error');
-
-                    // 5. RELOAD FORCÉ
-                    // On utilise un délai légèrement plus long pour être sûr qu'il ne puisse pas relancer
-                    setTimeout(() => {
-                        window.location.reload(); 
-                    }, 2000);
-
-                    break; 
+                    if (statut === 'valide' || statut === 'approved') {
+                        await finaliserTout(data);
+                        break; 
+                    } 
+                    
+                    if (statut === 'rejected') {
+                        clearPendingSyncJob(); 
+                        Swal.fire('Refusé', 'L\'administrateur a rejeté la demande.', 'error');
+                        setTimeout(() => { window.location.reload(); }, 2000);
+                        break; 
+                    }
+                } catch (fetchError) {
+                    console.error("Erreur polling:", fetchError);
                 }
 
-                // Attendre avant la prochaine vérification (par défaut 3s)
-                const delay = window.POLL_DELAY_MS || 3000;
-                await new Promise(r => setTimeout(r, delay));
+                await new Promise(r => setTimeout(r, POLL_DELAY_MS));
             }
-        } catch (e) {
-            console.error("CRASH dans surveillerLeBatch :", e);
         } finally {
             window.batchStatusPolling = false;
         }
     }
 
     async function finaliserTout(serverData) {
-        // 1. On informe que le serveur a validé et qu'on traite les données
-        updateProgressUI(90, "Mise à jour finale...");
+        updateStatusUI("Mise à jour locale...");
         
         try {
+            await fetch("{{ route('pwa.lock-sync') }}", { 
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
+            });
+
             if (serverData.data) {
-                // Mise à jour de IndexedDB avec les données fraîches du serveur
                 await populateDatabase(serverData.data, { replaceAll: true });
             }
 
-            // 2. On affiche le succès final sur les deux barres (Bandeau et Overlay)
-            updateProgressUI(100, "Synchronisation réussie !");
-            
-            // Nettoyage du localStorage pour éviter de boucler sur ce job
             clearPendingSyncJob();
-            //  Changer l'autorisation de synchro de l'agent
-            await fetch("{{ route('pwa.lock-sync') }}", { 
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            Swal.fire({
+                icon: 'success',
+                title: 'Terminé !',
+                text: 'Synchronisation réussie.',
+                timer: 2000,
+                showConfirmButton: false
             });
-            // 3. Délai de confort pour que l'agent voit le résultat
-            setTimeout(() => {
-                window.location.href = "{{ route('pwa.index') }}";
-            }, 1500);
+            
+            setTimeout(() => { window.location.href = "{{ route('pwa.index') }}"; }, 1500);
 
         } catch (error) {
-            console.error("Erreur lors de la finalisation :", error);
-            window.showAlertModal('Erreur locale', 'Les données ont été validées mais le stockage local a échoué.', 'error');
+            Swal.fire('Erreur', 'Échec de mise à jour locale.', 'error');
         }
     }
 
-    // --- HELPERS ET PERSISTANCE ---
-    window.showAlertModal = function(title, message, type) {
-        const modal = document.getElementById('mobile-alert-modal');
-        let icon = '<i class="bi bi-info-circle text-primary fs-1"></i>';
-        if(type === 'error') icon = '<i class="bi bi-x-circle text-danger fs-1"></i>';
-        if(type === 'warning') icon = '<i class="bi bi-exclamation-triangle text-warning fs-1"></i>';
-        if(type === 'success') icon = '<i class="bi bi-check-circle text-success fs-1"></i>';
-
-        document.getElementById('modal-alert-icon').innerHTML = icon;
-        document.getElementById('modal-alert-title').innerText = title;
-        document.getElementById('modal-alert-message').innerText = message;
-        modal.style.display = 'flex';
-    };
-
-    window.closeAlertModal = () => document.getElementById('mobile-alert-modal').style.display = 'none';
-
-    // Fonction pour gérer les deux types d'affichage
-    function updateProgressUI(val, text, mode = 'both') {
-        const barBottom = document.getElementById('sync-bar-bottom'); 
-        const barOverlay = document.getElementById('sync-bar-overlay'); 
-        const pctOverlay = document.getElementById('sync-percent');
-        const pctBottom = document.getElementById('progress-percent');
-        const stOverlay = document.getElementById('sync-status');
-        const stBottom = document.getElementById('progress-label');
-
-        // Mise à jour des barres
-        if(barBottom) barBottom.style.width = val + '%';
-        if(barOverlay) barOverlay.style.width = val + '%';
-        
-        // Mise à jour des textes
-        if(pctOverlay) pctOverlay.innerText = val + '%';
-        if(pctBottom) pctBottom.innerText = val + '%';
-        if(stOverlay) stOverlay.innerText = text;
-        if(stBottom) stBottom.innerText = text;
+    // --- HELPERS ---
+    function updateStatusUI(text) {
+        const el = document.getElementById('swal-status');
+        if (el) el.innerText = text;
+        const fallback = document.getElementById('sync-status'); // Ton ancien texte dans le pied de page
+        if (fallback) fallback.innerText = text;
     }
 
-    function afficherOverlayProgress(show) {
-        const overlay = document.getElementById('sync-overlay');
-        if(overlay) overlay.style.display = show ? 'flex' : 'none';
+    function savePendingSyncJob(batch) { localStorage.setItem(getSyncKey(), JSON.stringify(batch)); }
+    function getPendingSyncJob() { 
+        const data = localStorage.getItem(getSyncKey());
+        return data ? JSON.parse(data) : null; 
     }
-
-    function savePendingSyncJob(batch) { localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(batch)); }
-    function getPendingSyncJob() { return JSON.parse(localStorage.getItem(PENDING_SYNC_KEY)); }
-    function clearPendingSyncJob() { localStorage.removeItem(PENDING_SYNC_KEY); }
+    function clearPendingSyncJob() { localStorage.removeItem(getSyncKey()); }
 
     async function initialiserDonneesSiVide() {
-        // 1. Vérifie si on vient de se faire "rejeter" du dashboard pour éviter la boucle
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('init') && await db.clients.count() > 0) {
-            
-            window.location.replace("{{ route('pwa.index') }}");  
-        }
-
         try {
-            const clientCount = await db.clients.count();
-            if (clientCount === 0) {
-                afficherOverlayProgress(true);
-                updateProgressUI(10, "Connexion au serveur...");
+            const database = getAgentDB();
+            await database.open(); 
+            const clientCount = await database.clients.count();
 
-                const res = await fetch("{{ route('pwa.initial-data') }}");
-                const result = await res.json();
-                
-                const payload = result.data ? result.data : result;
+            if (clientCount > 0) return; 
 
-                updateProgressUI(50, "Stockage des données...");
-                await populateDatabase(payload, { replaceAll: true });
-                updateProgressUI(100, "Initialisation terminée !");
-                localStorage.setItem('last_sync', new Date().toISOString());
-                // 2. Petit délai pour laisser Dexie fermer ses transactions
-                setTimeout(() => {
-                    window.location.replace("{{ route('pwa.index') }}");
-                },500);
+            Swal.fire({
+                title: 'Initialisation',
+                text: 'Téléchargement des données...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const res = await fetch("{{ route('pwa.initial-data') }}?t=" + Date.now());
+            if (!res.ok) throw new Error("Session expirée");
+
+            const result = await res.json();
+           
+            const payload = result.data || result;
+
+            // Enregistrement Agent
+            const matricule = getMatricule();
+            const authData = JSON.parse(localStorage.getItem(`auth_v1_${matricule}`));
+            if (authData && payload.agent) {
+                await database.agents.put({
+                    id: Number(payload.agent.id),
+                    nom: payload.agent.nom,
+                    matricule: matricule,
+                    pin_hash: authData.pin_hash, 
+                    synced: 0,
+                    updated_at: new Date().toISOString()
+                });
             }
+            await populateDatabase(payload, { replaceAll: true });
+
+            localStorage.setItem('last_sync', new Date().toISOString());
+            window.location.replace("{{ route('pwa.index') }}");
+
         } catch (e) {
-            console.error("Erreur init:", e);
-            afficherOverlayProgress(false);
+            if (e.message.includes("Session")) window.location.href = "{{ route('agent.login') }}";
         }
     }
+
     function verifierRepriseAuto() {
         const job = getPendingSyncJob();
-        
         if (job && navigator.onLine) {
-            // Cas A : Il y avait une synchronisation en attente (batch non validé)
-            afficherOverlayProgress(true);
-            updateProgressUI(70, "Reprise du suivi de validation...");
             surveillerLeBatch(job.sync_uuid);
         } else {
-            // Cas B : Pas de synchro en cours, on vérifie si on doit télécharger les données
             initialiserDonneesSiVide();
         }
     }
@@ -637,6 +455,7 @@
         if (job) {
             fetch(`{{ route('pwa.sync-batches.cancel', ['syncUuid' => ':uuid']) }}`.replace(':uuid', job.sync_uuid), {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
             });
         }
@@ -644,5 +463,4 @@
         location.reload();
     }
 </script>
-
 @endsection

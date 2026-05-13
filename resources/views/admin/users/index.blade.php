@@ -1,4 +1,4 @@
-@extends('admin.layouts.sidebar')
+@extends('admin.layouts.app')
 
 @section('content')
 <div class="container-fluid">
@@ -47,7 +47,7 @@
                                 <td>
                                     <span class="badge rounded-pill bg-light text-dark border">
                                         <i class="bi bi-shield-lock text-primary me-1"></i>
-                                        {{ $user->role->name ?: "---" }}
+                                        {{ $user->role->nom ?: "---" }}
                                     </span>
                                 </td>
                                 <td class="text-end">
@@ -90,52 +90,57 @@
             
             <h5 class="mb-4" id="form-title">Informations du nouvel administrateur</h5>
             
-            <form action="{{ route('admin.users.store') }}" method="POST" id="admin-form">
-                @csrf
-                <div id="method-field"></div> <input type="hidden" name="user_id" id="user_id">
+        <form action="{{ route('admin.users.store') }}" method="POST" id="admin-form">
+            @csrf
+            <div id="method-field"></div> <input type="hidden" name="user_id" id="user_id">
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Nom Complet</label>
-                        <input type="text" name="name" id="field-name" class="form-control" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Adresse Email</label>
-                        <input type="email" name="email" id="field-email" class="form-control" required>
-                    </div>
-                </div>
-                
-                <div id="password-group">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Mot de passe</label>
-                            <input type="password" name="password" id="field-password" class="form-control">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Confirmer le mot de passe</label>
-                            <input type="password" name="password_confirmation" id="field-password-conf" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Rôle</label>
-                        <select name="role_id" id="field-role" class="form-select" required>
-                            <option value="" disabled selected>Choisissez un rôle</option>
-                            @foreach($roles as $role)
-                                <option value="{{ $role->id }}">{{ $role->nom }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nom Complet</label>
+                    <input type="text" name="name" id="field-name" class="form-control">
+                    <div class="invalid-feedback" id="error-name"></div>
                 </div>
 
-                <div class="mt-4">
-                    <button type="submit" id="submit-btn" class="btn btn-primary px-4">
-                        <i class="bi bi-save"></i> Enregistrer l'administrateur
-                    </button>
-                    <button type="button" id="cancel-edit" class="btn btn-light border d-none">Annuler</button>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Adresse Email</label>
+                    <input type="email" name="email" id="field-email" class="form-control">
+                    <div class="invalid-feedback" id="error-email"></div>
                 </div>
-            </form>
+            </div>
+            
+            <div class="row" id="password-group">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Mot de passe</label>
+                    <input type="password" name="password" id="field-password" class="form-control">
+                    <div class="invalid-feedback" id="error-password"></div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Confirmer le mot de passe</label>
+                    <input type="password" name="password_confirmation" id="field-password-conf" class="form-control">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Rôle</label>
+                    <select name="role_id" id="field-role" class="form-select">
+                        <option value="" disabled selected>Choisissez un rôle</option>
+                        @foreach($roles as $role)
+                            <option value="{{ $role->id }}">{{ $role->nom }}</option>
+                        @endforeach
+                    </select>
+                    <div class="invalid-feedback" id="error-role_id"></div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" id="submit-btn" class="btn btn-primary px-4">
+                    <i class="bi bi-save"></i> <span id="btn-text">Enregistrer l'administrateur</span>
+                </button>
+                <button type="button" id="cancel-edit" class="btn btn-light border d-none">Annuler</button>
+            </div>
+        </form>
         </div>
     </div>
 </div>
@@ -162,6 +167,19 @@
     </div>
 </div>
 <script>
+    
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     // Alerte de succès
+    //     @if(session('success'))
+    //         Swal.fire({ icon: 'success', title: 'Fait !', text: "{{ session('success') }}", timer: 3000 });
+    //     @endif
+
+    //     // Alerte d'erreur fatale (catch)
+    //     @if(session('error'))
+    //         Swal.fire({ icon: 'error', title: 'Erreur', text: "{{ session('error') }}" });
+    //     @endif
+    // });
+
     document.querySelectorAll('.edit-btn').forEach(button => {
         button.addEventListener('click', function() {
             // ... (tes autres remplissages de champs) ...
@@ -213,6 +231,15 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         // Sélectionner tous les boutons modifier
+                // Alerte de succès
+        @if(session('success'))
+            Swal.fire({ icon: 'success', title: 'Fait !', text: "{{ session('success') }}", timer: 3000 });
+        @endif
+
+        // Alerte d'erreur fatale (catch)
+        @if(session('error'))
+            Swal.fire({ icon: 'error', title: 'Erreur', text: "{{ session('error') }}" });
+        @endif
         const editButtons = document.querySelectorAll('.edit-btn');
 
         editButtons.forEach(button => {
@@ -291,9 +318,71 @@
 
         // 3. Afficher la modale
         const myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        myModal.show();
+            myModal.show();
+        });
     });
-});
+    document.getElementById('admin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const form = this;
+        const formData = new FormData(form);
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+
+        // Désactiver le bouton pendant l'envoi
+        submitBtn.disabled = true;
+        btnText.innerText = "Traitement...";
+
+        // Réinitialiser les erreurs visuelles
+        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        form.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+            }
+        })
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(res => {
+            if (res.status === 422) {
+                // ERREURS DE VALIDATION
+                const errors = res.body.errors;
+                Object.keys(errors).forEach(key => {
+                    const input = form.querySelector(`[name="${key}"]`);
+                    const errorDiv = document.getElementById(`error-${key}`);
+                    if (input) input.classList.add('is-invalid');
+                    if (errorDiv) errorDiv.innerText = errors[key][0];
+                });
+            } else if (res.status === 200 || res.status === 201) {
+                // SUCCÈS
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Réussi !',
+                    text: res.body.message || 'Opération effectuée avec succès.',
+                    timer: 2000
+                }).then(() => {
+                    window.location.reload(); // Recharge pour voir le nouvel admin dans la liste
+                });
+            } else {
+                // ERREUR SERVEUR
+                throw new Error(res.body.message || 'Erreur inconnue');
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: 'Une erreur est survenue : ' + error.message
+            });
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            btnText.innerText = document.getElementById('user_id').value ? "Mettre à jour" : "Enregistrer l'administrateur";
+        });
+    });
 
 </script>
 @endsection

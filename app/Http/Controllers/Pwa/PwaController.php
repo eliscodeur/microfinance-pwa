@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; 
 use App\Models\Client;               
 use App\Models\Carnet;               
+use App\Models\Agent;               
 use App\Models\Cycle;
 use App\Models\Collecte;
 use App\Models\SyncHistory;
@@ -42,103 +43,137 @@ class PwaController extends Controller
     {
         try {
             $user = Auth::user();
-        // 1. On récupère l'agent associé
-        $agent = $user->agent; 
+            $agent = $user->agent; 
 
-        if (!$agent) {
-            return response()->json(['error' => 'Profil agent non trouvé'], 404);
-        }
+            if (!$agent) {
+                return response()->json(['error' => 'Profil agent non trouvé'], 404);
+            }
 
-        // 2. VERIFICATION ADMIN : L'agent a-t-il l'autorisation de synchroniser ?
-        if (!$agent->can_sync) {
-            return response()->json([
-                'error' => 'Synchronisation non autorisée.',
-                'message' => 'Veuillez demander l\'activation à votre administrateur.'
-            ], 403);
-        }
+            // 1. VERIFICATION ADMIN
+            if (!$agent->can_sync) {
+                return response()->json([
+                    'error' => 'Synchronisation non autorisée.',
+                    'message' => 'Veuillez demander l\'activation à votre administrateur.'
+                ], 403);
+            }
 
-        // 3. Récupération des clients (uniquement ceux qui ont des carnets)
-        $clients = Client::where('agent_id', $agent->id)
-            ->whereHas('carnets', function($query) {
-                $query->where('type', 'tontine')
-                    ->where('statut', 'actif'); // Optionnel : seulement ceux qui sont actifs
-            })
-            ->get();
-        $clientIds = $clients->pluck('id');
-
-        // 4. Récupération des carnets actifs
-        $carnets = Carnet::whereIn('client_id', $clientIds)
-            ->where('statut', 'actif')
-            ->where('type', 'tontine') // <--- Indispensable pour isoler la tontine
-            ->get();
-        $carnetIds = $carnets->pluck('id');
-
-        // 5. Récupération des cycles (Crucial pour tes calculs de PWA)
-        $cycles = Cycle::whereIn('carnet_id', $carnetIds)
-            ->where('agent_id', $agent->id)
-            ->visibleForAgentSync()
-            ->get()
-            ->map(function ($cycle) {
-                $cycle->cycle_uid = $cycle->cycle_uid ?: (string) $cycle->id;
-                return $cycle;
-            })
-            ->values();
+            // 2. Récupération des clients (uniquement tontine active)
+            $clients = Client::where('agent_id', $agent->id)
+                ->whereHas('carnets', function($query) {
+                    $query->where('type', 'tontine')->where('statut', 'actif');
+                })->get();
             
-        $agent->update(['can_sync' => false]);  
-        broadcast(new \App\Events\AgentSynced($agent));
-        // 6. VERROUILLAGE AUTOMATIQUE ET HISTORIQUE DE SYNCHRO UNIQUEMENT POUR LA PREMIÈRE FOIS
-        $existingSync = SyncHistory::where('agent_id', $agent->id)
-            ->where('sync_uuid', 'like', 'initial-sync-' . $agent->id . '-%')
-            ->exists();
+            $clientIds = $clients->pluck('id');
 
-        if (!$existingSync) {
-            SyncHistory::create([
-                'agent_id' => $agent->id,
-                'sync_uuid' => 'initial-sync-' . $agent->id . '-' . now()->timestamp,
-                'nb_collectes' => 0,
-                'nb_cycles' => $cycles->count(),
-                'total_montant' => 0,
-                'status' => 'success',
-                'ip_address' => request()->ip(),
+            // 3. Récupération des carnets actifs
+            $carnets = Carnet::whereIn('client_id', $clientIds)
+                ->where('statut', 'actif')
+                ->where('type', 'tontine')
+                ->get();
+            
+            $carnetIds = $carnets->pluck('id');
+
+            // 4. Récupération des cycles avec calcul du solde restant net
+            $cycles = Cycle::whereIn('carnet_id', $carnetIds)
+                ->where('agent_id', $agent->id)
+                ->visibleForAgentSync()
+                ->with(['collectes', 'retraits']) // Eager loading pour les calculs
+                ->get()
+                ->map(function ($cycle) {
+                    $cycle->cycle_uid = $cycle->cycle_uid ?: (string) $cycle->id;
+                    
+                    // Calcul du solde net (Collectes - Commission - Retraits)
+                    $totalColl = (float) $cycle->collectes->sum('montant');
+                    $totalRetr = (float) $cycle->retraits->sum('montant_net');
+                    $commission = (float) ($cycle->montant_journalier ?? 0);
+                    
+                    $cycle->solde_restant_net = max(0, $totalColl - $commission - $totalRetr);
+                    
+                    // On injecte le cycle_uid dans les retraits pour Dexie
+                    $cycle->retraits->each(function($r) use ($cycle) {
+                        $r->cycle_uid = $cycle->cycle_uid;
+                        $r->synced = 1;
+                    });
+
+                    return $cycle;
+                });
+
+            // 5. Extraction des données à plat (Collectes et Retraits)
+            $cycleUidMap = $cycles->pluck('cycle_uid', 'id');
+
+            $collectes = $cycles->pluck('collectes')->flatten()->map(function ($c) use ($cycleUidMap) {
+                $c->cycle_id = (string) ($cycleUidMap[$c->cycle_id] ?? $c->cycle_id);
+                $c->synced = 1;
+                return $c;
+            });
+
+            $retraits = $cycles->pluck('retraits')->flatten();
+
+            // 6. Historique de synchro
+            $existingSync = SyncHistory::where('agent_id', $agent->id)
+                ->where('sync_uuid', 'like', 'initial-sync-' . $agent->id . '-%')
+                ->exists();
+
+            if (!$existingSync) {
+                SyncHistory::create([
+                    'agent_id' => $agent->id,
+                    'sync_uuid' => 'initial-sync-' . $agent->id . '-' . now()->timestamp,
+                    'nb_collectes' => $collectes->count(),
+                    'nb_cycles' => $cycles->count(),
+                    'total_montant' => 0,
+                    'status' => 'success',
+                    'ip_address' => request()->ip(),
+                ]);
+            }
+
+            // 7. Verrouillage et réponse
+            $agent->update(['can_sync' => false]); 
+
+            return response()->json([
+                'success' => true,
+                'agent' => [
+                    'id' => $agent->id,
+                    'nom' => $agent->nom ?? $user->name,
+                    'matricule' => $user->username,
+                    'pin_hash' => $agent->pin_hash, // CRITIQUE pour le mode offline
+                    'photo' => $agent->image ? (filter_var($agent->image, FILTER_VALIDATE_URL) ? $agent->image : asset('storage/' . $agent->image)) : null,
+                ],
+                'clients' => $clients,
+                'carnets' => $carnets,
+                'cycles' => $cycles->makeHidden(['collectes', 'retraits']), // On cache les relations pour alléger
+                'collectes' => $collectes,
+                'retraits' => $retraits, // Ajouté pour ton traitement JS
+                'server_date' => now()->format('Y-m-d'),
             ]);
-             
-        }
 
-        $cycleUidMap = $cycles->mapWithKeys(function ($cycle) {
-            return [$cycle->id => $cycle->cycle_uid];
-        });
-
-        $collectes = Collecte::whereIn('cycle_id', $cycles->pluck('id'))
-            ->get()
-            ->map(function ($collecte) use ($cycleUidMap) {
-                $collecte->cycle_id = (string) ($cycleUidMap[$collecte->cycle_id] ?? $collecte->cycle_id);
-                return $collecte;
-            })
-            ->values();
-
-        return response()->json([
-            'success' => true,
-            'agent' => [
-                'nom' => $agent->nom ?? $user->name,
-                'matricule' => $user->username,
-                'photo' => $agent->image ? (filter_var($agent->image, FILTER_VALIDATE_URL) ? $agent->image : asset('storage/' . $agent->image))
-                : null,
-            ],
-            'clients' => $clients,
-            'carnets' => $carnets,
-            'cycles' => $cycles,
-            'collectes' => $collectes,
-            'server_date' => now()->format('Y-m-d'),
-        ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
             ], 500);
         }
-        
     }
 
+    public function updatePinHash(Request $request)
+    {
+        $request->validate([
+            'matricule' => 'required|string',
+            'pin_hash' => 'required|string',
+        ]);
+
+        // On cherche l'utilisateur via son matricule (champ username)
+        $user = \App\Models\User::where('username', $request->matricule)->first();
+
+        if ($user && $user->agent) {
+            $user->agent->update([
+                'pin_hash' => $request->pin_hash
+            ]);
+
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false], 404);
+    }
     public function lockSync(Request $request)
     {
         $user = Auth::user();
@@ -193,9 +228,6 @@ class PwaController extends Controller
     
     public function showSyncPage()
     {
-        // Sécurité : si l'agent a déjà synchronisé, on le renvoie au dashboard
-
-        // L'écran de synchro reste accessible pour les envois manuels.
         return view('pwa.sync'); 
     }
     public function cyclesList()
@@ -205,6 +237,31 @@ class PwaController extends Controller
     public function collectesList()
     { 
         return view('pwa.collectes-list'); 
+    }
+
+    public function checkAgentStatus($matricule)
+    {
+        try {
+            // On cherche l'agent par son matricule
+            $agent = Agent::where('code_agent', $matricule)->first();
+
+            if (!$agent) {
+                return response()->json([
+                    'actif' => false,
+                    'message' => 'Agent introuvable.'
+                ], 404);
+            }
+
+            // On retourne l'état de la colonne 'is_active' ou 'status'
+            // Adapte 'statut' selon le nom de ta colonne en base de données
+            return response()->json([
+                'actif' => (bool) $agent->actif, 
+                'nom' => $agent->nom
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erreur serveur'], 500);
+        }
     }
 
     public function checkSyncPermission() 
@@ -226,6 +283,11 @@ class PwaController extends Controller
     public function checkPermission()
     {
         return $this->checkSyncPermission();
+    }
+
+    public function showSecurityPin()
+    {
+        return view('pwa.pin');
     }
     
 }

@@ -1,4 +1,4 @@
-@extends('admin.layouts.sidebar')
+@extends('admin.layouts.app')
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -18,7 +18,7 @@
             @can('Activer/Désactiver')
             <th class="text-center">Actif</th>
             @endcan
-            @can('Gérer Sync')  
+            @can('Gérer Synchros')  
             <th class="text-center">Synchro</th>
             @endcan
             <th>Action</th>
@@ -83,7 +83,9 @@
     </tbody>
 </table>
 
-{{ $agents->links() }}
+<div class="mt-3">
+    {{ $agents->links('pagination::bootstrap-5') }}
+</div>
 
 <div class="modal fade" id="syncModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -150,35 +152,7 @@
 <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
     
 </div>
-<script src="{{ mix('js/app.js') }}"></script>
-@stack('scripts')
-<script>
-    // On attend que tout soit chargé, y compris Inertia et Echo
-    document.addEventListener('DOMContentLoaded', () => {
-        initAgentEcho();
-    });
 
-    function initAgentEcho() {
-        // On vérifie window.Echo car Inertia l'attache à l'objet global window
-        if (window.Echo) {
-            window.Echo.channel('agents-channel')
-                .listen('.AgentSynced', (e) => {
-                    const agent = e.agent;
-                    const syncBtn = document.getElementById(`btn-sync-${agent.id}`);
-                    
-                    if (syncBtn) {
-                        syncBtn.innerHTML = '<i class="bi bi-cloud-slash text-muted fs-4"></i>';
-                        const safeName = agent.nom.replace(/'/g, "\\'");
-                        syncBtn.setAttribute('onclick', `confirmSync(${agent.id}, false, '${safeName}')`);
-                        showToast(`Synchro terminée pour ${agent.nom}`);
-                    }
-                });
-        } else {
-            // Petit délai de sécurité si le JS est encore en train de compiler
-            setTimeout(initAgentEcho, 500);
-        }
-    }
-</script>
 <script>
     let currentAgentId = null;
     let currentSyncState = null;
@@ -358,5 +332,20 @@
         }
     }
 
+    function updateAgentSyncButton(agent) {
+        const rowBtn = document.getElementById(`btn-sync-${agent.id}`);
+        if (!rowBtn) {
+            return;
+        }
+
+        const isNowSynced = Boolean(agent.can_sync);
+        rowBtn.innerHTML = isNowSynced
+            ? '<i class="bi bi-cloud-check-fill text-primary" style="font-size: 1.5rem;"></i>'
+            : '<i class="bi bi-cloud-slash text-muted" style="font-size: 1.5rem;"></i>';
+        rowBtn.setAttribute('onclick', `confirmSync(${agent.id}, ${isNowSynced}, '${String(agent.nom).replace(/'/g, "\\'")}')`);
+    }
+
+    // La synchronisation en temps réel via Laravel Echo a été désactivée.
+    // Si tu veux réactiver plus tard, implémente un autre mécanisme de websocket ou SSE.
 </script>
 @endsection

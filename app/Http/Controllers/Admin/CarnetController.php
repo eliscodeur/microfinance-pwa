@@ -20,7 +20,6 @@ class CarnetController extends Controller
     public function index(Request $request)
     {
         try {
-            // 1. Initialisation de la requête
             $query = Carnet::with([
                 'client', 
                 'categoryTontine', 
@@ -31,30 +30,21 @@ class CarnetController extends Controller
                 }          
             ])->withCount('cycles');
             
-            // --- FILTRE RECHERCHE (Numéro, Nom, Prénom ou Téléphone) ---
+            // --- RECHERCHE ---
             if ($request->filled('search')) {
                 $search = $request->search;
-                
                 $query->where(function($q) use ($search) {
-                    // Recherche par numéro de carnet
                     $q->where('numero', 'LIKE', "%$search%")
-                    // Recherche dans la relation Client
                     ->orWhereHas('client', function($sq) use ($search) {
                         $sq->where('nom', 'LIKE', "%$search%")
                             ->orWhere('prenom', 'LIKE', "%$search%")
                             ->orWhere('telephone', 'LIKE', "%$search%")
-                            // Optionnel : Recherche combinée "Nom Prénom"
                             ->orWhere(\DB::raw("CONCAT(nom, ' ', prenom)"), 'LIKE', "%$search%");
                     });
                 });
             }
 
-            // --- FILTRE TYPE ---
-            if ($request->filled('type')) {
-                $query->where('type', $request->type);
-            }
-
-            // --- FILTRE ÉTAT (Basé sur les cycles) ---
+            // --- FILTRE ÉTAT ---
             if ($request->filled('filter')) {
                 if ($request->filter == 'vierge') {
                     $query->has('cycles', '=', 0);
@@ -63,12 +53,24 @@ class CarnetController extends Controller
                 }
             }
 
-            // 2. Exécution avec pagination et conservation des paramètres de filtrage
+            // --- GESTION DES TOTAUX & ONGLETS ---
+            // On récupère le type actuel pour savoir quel onglet afficher (tontine par défaut)
+            $currentType = $request->input('type', 'tontine');
+
+            // On clone la requête pour obtenir les comptes totaux par type AVANT de paginer
+            $totalTontines = (clone $query)->where('type', 'tontine')->count();
+            $totalComptes = (clone $query)->where('type', 'compte')->count();
+            $totalGeneral = $totalTontines + $totalComptes;
+
+            // On applique le filtre de type pour la liste paginée
+            $query->where('type', $currentType);
+
+            // Exécution de la pagination
             $carnets = $query->latest()->paginate(20)->withQueryString();
 
-            // 3. Récupération des données pour les formulaires
+            // Données pour les formulaires
             $categories = CategoryTontine::all();
-            $clients = Client::orderBy('nom')->get();
+            $clients = Client::select('id', 'nom', 'prenom')->orderBy('nom')->get();
             
             $tontinesActives = Carnet::where('type', 'tontine')
                 ->where('statut', 'actif')
@@ -79,12 +81,16 @@ class CarnetController extends Controller
                 'carnets', 
                 'clients', 
                 'categories', 
-                'tontinesActives'
+                'tontinesActives',
+                'currentType',
+                'totalTontines',
+                'totalComptes',
+                'totalGeneral'
             ));
 
         } catch (\Exception $e) {
             \Log::error("Erreur base de données Carnets : " . $e->getMessage());
-            return redirect()->back()->with('error', "Une erreur est survenue lors de la récupération des données.");
+            return redirect()->back()->with('error', "Une erreur est survenue.");
         }
     }
 
@@ -184,6 +190,9 @@ class CarnetController extends Controller
     {
         try {
             $id = (int) $clientId;
+            $allCarnets = Carnet::where('client_id', $id)->where('statut', 'actif')->count();
+            \Log::info("Client {$id} has {$allCarnets} active carnets total");
+
             $carnets = Carnet::with([
                 'categoryTontine',
                 'parent',
@@ -193,7 +202,12 @@ class CarnetController extends Controller
             ])
                             ->where('client_id', $id)
                             ->where('statut', 'actif')
+                            ->whereDoesntHave('credits', function ($query) {
+                                $query->where('statut', 'active');
+                            })
                             ->get();
+
+            \Log::info("Client {$id} has " . $carnets->count() . " eligible carnets for credit");
 
             $carnets = $carnets->map(function (Carnet $carnet) {
                 $category = $carnet->categoryTontine;

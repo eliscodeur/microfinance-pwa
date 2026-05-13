@@ -12,6 +12,7 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        'agent/login-submit',
+        'pwa/update-pin-hash-setup',
     ];
 }

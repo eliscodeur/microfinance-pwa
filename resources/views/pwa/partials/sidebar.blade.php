@@ -27,7 +27,17 @@
         <a href="/pwa/collectes-liste" class="list-group-item list-group-item-action border-0 py-3">
             <i class="bi bi-cash-stack me-3 text-warning"></i> Liste des Collectes
         </a>
+
+        <a href="/pwa/stats-performances" class="list-group-item list-group-item-action border-0 py-3">
+            <i class="bi bi-graph-up-arrow me-3 text-info"></i> Bonus & Commissions
+        </a>
+
         <hr class="mx-3">
+
+        <a href="/pwa/security-pin" class="list-group-item list-group-item-action border-0 py-3">
+            <i class="bi bi-shield-lock me-3 text-secondary"></i> Changer mon Code PIN
+        </a>
+
         <a href="javascript:void(0)" onclick="deconnexion()" class="list-group-item list-group-item-action border-0 py-3 text-danger">
             <i class="bi bi-power me-3"></i> Déconnexion
         </a>

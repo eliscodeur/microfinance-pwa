@@ -25,66 +25,93 @@
 
 
 <script type="module">
-    import { db } from '/js/db-manager.js';
+    import { db, getAgentDB } from '/js/db-manager.js'; 
+    window.db = db; // Pour debug global
+    /**
+     * 1. Initialisation et vérification de la base
+     */
+    async function init() {
+        try {
+            const database = getAgentDB();
 
-    // 1. Définition de la fonction de rendu
+            if (!database.isOpen()) {
+                await database.open();
+            }
+            // Lancement du premier affichage
+            await displayClients();
+        } catch (err) {
+            console.error("Impossible d'ouvrir la base de données:", err);
+        }
+    }
+
+    /**
+     * 2. Fonction de rendu des clients
+     */
     async function displayClients(filter = "") {
         const container = document.getElementById('clientsContainer');
         if (!container) return;
 
         try {
-            // 1. Récupération des données (Trié par nom via l'index Dexie)
+            // Récupération des données en parallèle pour la performance
             const [clients, allCarnets, cycles] = await Promise.all([
                 db.clients.orderBy('nom').toArray(),
                 db.carnets.toArray(),
                 db.cycles.where('statut').equals('en_cours').toArray()
             ]);
 
+            // Map des cycles actifs pour un accès O(1)
             const activeCycles = {};
             cycles.forEach(c => activeCycles[c.carnet_id] = c);
 
+            // Comptage des carnets par client
             const carnetCounts = {};
             allCarnets.forEach(car => {
                 carnetCounts[car.client_id] = (carnetCounts[car.client_id] || 0) + 1;
             });
 
-            // 2. Filtrage intelligent (Nom, Prénom et Téléphone)
+            // Filtrage intelligent
             let filteredClients = clients;
             if (filter) {
                 const lowFilter = filter.toLowerCase();
-                const terms = lowFilter.split(/\s+/); // Gère les recherches multi-mots comme "Jean Dup"
+                const terms = lowFilter.split(/\s+/);
 
                 filteredClients = clients.filter(c => {
                     const nomComplet = `${c.nom} ${c.prenom}`.toLowerCase();
                     const prenomNom = `${c.prenom} ${c.nom}`.toLowerCase();
-                    const tel = c.telephone || "";
+                    const tel = (c.telephone || "").replace(/\s/g, "");
 
-                    // Vérifie si le filtre correspond au nom complet, à l'inverse, ou au téléphone
-                    return nomComplet.includes(lowFilter) || 
-                        prenomNom.includes(lowFilter) || 
-                        tel.includes(filter);
+                    // Match si TOUS les termes de recherche sont trouvés dans le nom ou tel
+                    return terms.every(term => 
+                        nomComplet.includes(term) || 
+                        prenomNom.includes(term) || 
+                        tel.includes(term)
+                    );
                 });
             }
 
-            // 3. Rendu HTML
+            // Rendu HTML
             if (filteredClients.length === 0) {
-                container.innerHTML = `<div class="text-center py-5 text-muted small">Aucun client trouvé pour "${filter}".</div>`;
+                container.innerHTML = `
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-search mb-2" style="font-size: 2rem;"></i>
+                        <p class="small">Aucun client trouvé pour "${filter}"</p>
+                    </div>`;
                 return;
             }
 
             container.innerHTML = filteredClients.map(client => {
-                const hasActiveCycle = allCarnets.some(car => car.client_id === client.id && activeCycles[car.id]); 
+                // Un client est considéré "En cours" s'il a au moins un carnet avec un cycle actif
+                const clientHasActive = allCarnets.some(car => car.client_id === client.id && activeCycles[car.id]); 
                 const nbCarnets = carnetCounts[client.id] || 0;
                 
-                // Sécurité pour les initiales de l'avatar
                 const initiales = `${(client.nom || "?").charAt(0)}${(client.prenom || "?").charAt(0)}`.toUpperCase();
 
                 return `
                 <div class="col-12">
-                    <div class="card border-0 shadow-sm rounded-4 mb-2 p-2 client-card ${hasActiveCycle ? 'border-start border-primary border-4' : ''}" 
-                        onclick="openCarnet(${client.id})">
+                    <div class="card border-0 shadow-sm rounded-4 mb-2 p-2 client-card ${clientHasActive ? 'border-start border-primary border-4' : ''}" 
+                         onclick="window.openCarnet(${client.id})">
                         <div class="d-flex align-items-center">
-                            <div class="avatar-circle ${hasActiveCycle ? 'bg-primary text-white' : 'bg-light text-muted'}">
+                            <div class="avatar-circle ${clientHasActive ? 'bg-primary text-white' : 'bg-light text-muted'}">
                                 ${initiales}
                             </div>
                             <div class="flex-grow-1 ms-3">
@@ -96,7 +123,7 @@
                                 </div>
                                 <div class="mt-1">
                                     <small class="text-muted me-3"><i class="bi bi-telephone me-1"></i>${client.telephone || '---'}</small>
-                                    ${hasActiveCycle 
+                                    ${clientHasActive 
                                         ? `<small class="text-primary fw-bold"><i class="bi bi-check-circle-fill me-1"></i>En cours</small>` 
                                         : `<small class="text-muted"><i class="bi bi-slash-circle me-1"></i>En attente</small>`
                                     }
@@ -112,23 +139,29 @@
 
         } catch (err) {
             console.error("Erreur d'affichage des clients:", err);
-            container.innerHTML = `<div class="alert alert-danger">Erreur de chargement des données.</div>`;
+            container.innerHTML = `<div class="alert alert-danger mx-2">Erreur de chargement des données.</div>`;
         }
     }
 
-    // 2. Bridge Window pour le onclick du HTML
+    /**
+     * 3. Bridge global et Événements
+     */
     window.openCarnet = function(clientId) {
         window.location.href = `/pwa/carnet?client_id=${clientId}`;
     }
 
-    // 3. Événements
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => displayClients(e.target.value));
+        // On utilise un petit délai (debounce) pour ne pas rafraîchir à chaque micro-frappe
+        let timeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => displayClients(e.target.value), 200);
+        });
     }
 
-    // 4. Lancement immédiat (pas besoin de DOMContentLoaded dans un module)
-    displayClients();
+    // Lancement
+    init();
 </script>
 
 <style>

@@ -10,6 +10,8 @@ return [
         'Gérer Utilisateurs',
         'Gérer Collectes',
         'Gérer Commissions',
+        'Gérer Crédits',
+        'Gérer Carnets',
         'Valider Synchros',
         'Voir Rapports',
         'Modifier données',

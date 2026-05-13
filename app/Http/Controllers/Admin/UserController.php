@@ -64,27 +64,28 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
-        // 1. Validation stricte
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'email'    => 'required|string|email|unique:users,email',
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
             'role_id'  => 'required|exists:roles,id',
         ]);
 
-        // 2. Création de l'utilisateur
-        User::create([
+        $user = User::create([
             'name'      => $validated['name'],
             'email'     => $validated['email'],
-            'password'  => Hash::make($validated['password']), // Hachage du mot de passe
-            'type'      => 'admin', // 'admin' envoyé par le champ hidden
+            'username'  => explode('@', $validated['email'])[0] . '_' . rand(100, 999),
+            'password'  => \Illuminate\Support\Facades\Hash::make($validated['password']),
+            'type'      => 'admin', 
             'is_active' => true,
             'role_id'   => $validated['role_id'],
         ]);
 
-        return redirect()->route('admin.users.index')
-                         ->with('success', 'Administrateur créé avec succès.');
+        if ($request->ajax()) {
+            return response()->json(['message' => 'Administrateur créé avec succès.'], 201);
+        }
+
+        return redirect()->back()->with('success', 'Administrateur créé.');
     }
 
     public function update(Request $request, User $user)

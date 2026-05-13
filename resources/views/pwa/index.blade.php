@@ -42,24 +42,30 @@
 </style>
 
 <script type="module">
-    import { db } from '/js/db-manager.js'; 
+    import { db, getAgentDB } from '/js/db-manager.js'; 
 
-    window.addEventListener('load', async () => {
-        if (!db.isOpen()) await db.open();
-        // 1. On vérifie si on a des clients en base (preuve de données réelles)
-        const clientCount = await db.clients.count();
+    try {
+        // On récupère l'instance réelle pour vérifier l'ouverture
+        const database = getAgentDB(); 
+        if (!database) {
+            window.location.replace("{{ route('agent.login') }}");
+        }
+
+        if (!database.isOpen()) await database.open();
+
+        const clientCount = await database.clients.count();;
         const hasLastSync = localStorage.getItem('last_sync');
 
-        // 2. Si RIEN en base OU pas de flag de synchro
         if (clientCount === 0 || !hasLastSync) {
-            // On ne redirige QUE si on a internet, sinon on affiche un message d'erreur sur l'accueil
-           
-            window.location.replace("{{ route('pwa.sync') }}?init=1");
-            return;     
+            window.location.replace("{{ route('pwa.sync') }}?init=1");    
         }
-        // 3. Si tout est OK, on rafraîchit l'interface
+
         await rafraichirStatsInterface();
-    });
+    } catch (err) {
+        console.error("Erreur au chargement de l'index:", err);
+        // Si la base est corrompue, on redirige vers la synchro pour réparer
+        window.location.replace("{{ route('pwa.sync') }}?init=1");
+    }
     // 1. STATS DU JOUR (Filtrage intelligent)
     async function rafraichirStatsInterface() {
         try {

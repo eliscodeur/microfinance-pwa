@@ -38,61 +38,48 @@ class LoginController extends Controller
 
     // Connexion Agent (Matricule)
    // Connexion Agent (Matricule)
-public function agentLogin(Request $request) {
-    $credentials = $request->validate([
-        'username' => ['required'], 
-        'password' => ['required'],
-    ]);
+    public function agentLogin(Request $request) {
+        $credentials = $request->validate([
+            'username' => ['required'], 
+            'password' => ['required'],
+        ]);
 
-    if (Auth::attempt($credentials, $request->remember)) {
-        $user = Auth::user();
+        if (Auth::attempt($credentials, $request->remember)) {
+            $user = Auth::user();
+            
+            if ($user->type === 'agent') {
+                $request->session()->regenerate();
+
+                if ($request->expectsJson()) {
+                    // 1. Récupérer l'agent
+                    $agent = \App\Models\Agent::where('user_id', $user->id)->first();
+                    
+                    return response()->json([
+                        'agent' => [
+                            'id' => $agent->id,
+                            'nom' => $agent->nom,
+                            'matricule' => $agent->code_agent,
+                            'photo' => $agent->image,
+                            'actif' => $agent->actif,
+                            'sync' => $agent->can_sync,
+                            'pin_hash' => $agent->pin_hash, // CRITIQUE pour le mode offline
+                        ],
         
-        if ($user->type === 'agent') {
-            $request->session()->regenerate();
+                    ], 200);
+                }
 
-            if ($request->expectsJson()) {
-                // 1. Récupérer l'agent
-                $agent = \App\Models\Agent::where('user_id', $user->id)->first();
-                
-                // 2. Récupérer les clients de cet agent
-                $clients = \App\Models\Client::where('agent_id', $user->id)->get();
-                $clientIds = $clients->pluck('id');
-
-                // 3. Récupérer les carnets de ces clients
-                $carnets = \App\Models\Carnet::whereIn('client_id', $clientIds)->get();
-                
-                // 4. RÉCUPÉRER LES CYCLES ACTIFS (Crucial pour le pointage rapide !)
-                $cycles = \App\Models\Cycle::whereIn('carnet_id', $carnets->pluck('id'))
-                                        ->where('statut', 'actif')
-                                        ->get();
-
-                return response()->json([
-                    'agent' => [
-                        'id' => $agent->id,
-                        'nom' => $agent->nom,
-                        'matricule' => $agent->code_agent,
-                        'photo' => $agent->image,
-                        'actif' => $agent->actif,
-                        'sync' => $agent->can_sync
-                    ],
-                    'clients' => $clients,
-                    'carnets' => $carnets,
-                    'cycles'  => $cycles // On envoie les cycles pour que Dexie sache quoi afficher
-                ], 200);
+                return redirect()->route('pwa.index');
             }
-
-            return redirect()->route('pwa.index');
+            Auth::logout();
+            return $request->expectsJson() 
+                ? response()->json(['message' => 'Accès réservé aux agents.'], 403)
+                : back()->withErrors(['username' => 'Accès réservé aux agents.']);
         }
-        Auth::logout();
-        return $request->expectsJson() 
-            ? response()->json(['message' => 'Accès réservé aux agents.'], 403)
-            : back()->withErrors(['username' => 'Accès réservé aux agents.']);
-    }
 
-    return $request->expectsJson()
-        ? response()->json(['message' => 'Matricule ou mot de passe incorrect.'], 422)
-        : back()->withErrors(['username' => 'Matricule ou mot de passe incorrect.']);
-}
+        return $request->expectsJson()
+            ? response()->json(['message' => 'Matricule ou mot de passe incorrect.'], 422)
+            : back()->withErrors(['username' => 'Matricule ou mot de passe incorrect.']);
+    }
 
     // Déconnexion
     public function logout(Request $request) {

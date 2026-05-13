@@ -44,8 +44,6 @@ class AgentController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
-        // return;
         $request->validate([
             'nom' => 'required|string|max:255',
             'telephone' => 'required',
@@ -59,10 +57,7 @@ class AgentController extends Controller
             $imagePath = $request->file('image')->store('agents', 'public');
         }
         // 2. Génération du code NEC automatique
-        $count = Agent::count() + 1;
-        $code = 'NEC-' . str_pad($count, 5, '0', STR_PAD_LEFT);
-
-
+        $code = Agent::generateNecCode();
        // 3. Création de l'Utilisateur (Authentification)
         DB::transaction(function () use ($request, $code, $imagePath) {
             
@@ -79,7 +74,7 @@ class AgentController extends Controller
 
             // Création du profil agent
             Agent::create([
-                'user_id'    => $user->id, // Le lien magique entre les deux tables
+                'user_id'    => $user->id, 
                 'code_agent' => $code,
                 'nom'        => $request->nom,
                 'telephone'  => $request->telephone,
@@ -275,6 +270,23 @@ class AgentController extends Controller
         return redirect()->back()->with('success', 'Commissions calculées et ajoutées.');
     }
 
+    public function resetPin(Agent $agent)
+    {
+        try {
+            // On met le pin_hash à null
+            $agent->update(['pin_hash' => null]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Le code PIN de l\'agent a été réinitialisé.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la réinitialisation.'
+            ], 500);
+        }
+    }
     public function export($format)
     {
         $agents = Agent::all();

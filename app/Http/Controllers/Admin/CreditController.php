@@ -81,7 +81,14 @@ class CreditController extends Controller
             if (!$carnet) {
                 return back()->withInput()->with('error', 'Le carnet sélectionné est invalide ou n’appartient pas au client.');
             }
+            // Vérifier que le carnet n'a pas déjà un crédit en cours
+            $carnetHasActiveCredit = Credit::where('carnet_id', $request->carnet_id)
+                ->whereIn('statut', ['pending', 'approved', 'active', 'in_arrears'])
+                ->exists();
 
+            if ($carnetHasActiveCredit) {
+                return back()->withInput()->with('error', 'Ce carnet a déjà un crédit en cours. Veuillez sélectionner un autre carnet.');
+            }
             if ($request->type === 'compte' && $carnet->type !== 'compte') {
                 return back()->withInput()->with('error', 'Le carnet sélectionné doit être un compte actif.');
             }

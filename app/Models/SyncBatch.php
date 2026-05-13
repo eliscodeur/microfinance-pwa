@@ -12,6 +12,7 @@ class SyncBatch extends Model
     protected $fillable = [
         'agent_id',
         'sync_uuid',
+        'agents',
         'status',
         'nb_collectes',
         'nb_cycles',
@@ -23,6 +24,7 @@ class SyncBatch extends Model
     ];
 
     protected $casts = [
+        'agents' => 'array',
         'reviewed_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'total_montant' => 'decimal:2',

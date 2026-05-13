@@ -123,7 +123,9 @@
 
     // CONDITION 2 : Est-ce que l'admin l'autorise ?
     try {
-        const response = await fetch("{{ route('pwa.check-sync-permission') }}");
+        const response = await fetch("{{ route('pwa.check-sync-permission') }}", {
+            credentials: 'same-origin'
+        });
         const data = await response.json();
 
         if (data.can_sync) {

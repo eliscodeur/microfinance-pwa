@@ -1,4 +1,4 @@
-@extends('admin.layouts.sidebar')
+@extends('admin.layouts.app')
 
 @section('content')
 <style>

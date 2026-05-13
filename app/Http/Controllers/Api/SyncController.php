@@ -73,6 +73,7 @@ class SyncController extends Controller
             $batch = SyncBatch::create([
                 'agent_id' => $agent->id,
                 'sync_uuid' => $syncUuid,
+                'agents' => $request->input('agents'),
                 'status' => 'pending_review',
                 'nb_collectes' => count($request->collectes ?? []),
                 'nb_cycles' => count($request->cycles ?? []),
@@ -132,163 +133,157 @@ class SyncController extends Controller
     public function finalizeBatch(SyncBatch $batch, ?int $adminId = null): void
     {
         $adminId = $adminId ?: auth()->id();
+        
+        // Sécurité : on ne traite que les batches en attente
         if ($batch->status !== 'pending_review') return;
 
         DB::transaction(function () use ($batch, $adminId) {
             $now = now();
             $mappedCycleIds = [];
 
-            // --- ÉTAPE 1 : CYCLES ---
-            foreach ($batch->cycles as $bCycle) {
-                $cycle = Cycle::updateOrCreate(
-                    ['cycle_uid' => $bCycle->cycle_uid],
-                    [
-                        'carnet_id' => $bCycle->carnet_id,
-                        'agent_id' => $bCycle->agent_id,
-                        'client_id' => $bCycle->client_id,
-                        'montant_journalier' => $bCycle->montant_journalier,
-                        'nombre_jours_objectif' => $bCycle->nombre_jours_objectif,
-                        'statut' => $bCycle->statut,
-                        'date_debut' => Carbon::parse($bCycle->date_debut)->toDateString(),
-                        'date_fin_prevue' => $bCycle->date_fin_prevue ? Carbon::parse($bCycle->date_fin_prevue)->toDateString() : null,
-                    ]
-                );
-                $mappedCycleIds[$bCycle->cycle_uid] = $cycle->id;
-                // --- DÉTECTION ET GÉNÉRATION DE COMMISSION ---
-                // On vérifie si le cycle vient de passer à 'termine' et n'a pas encore été traité
-                // --- DÉTECTION ET GÉNÉRATION DE COMMISSION ---
-                if ($cycle->statut === 'termine' && !$cycle->commission_genere) {
-                    // On charge explicitement la relation carnet pour avoir accès au montant
-                    $cycle->load('carnet'); 
+            // --- MISE À JOUR DU PIN_HASH APRÈS APPROBATION ---
+            if (!empty($batch->agents) && is_array($batch->agents)) {
+                foreach ($batch->agents as $agentData) {
+                    $id = data_get($agentData, 'id');
+                    $hash = data_get($agentData, 'pin_hash');
 
-                    if ($cycle->carnet) {
-                        \App\Models\Bonus::create([
-                            'agent_id'          => $cycle->agent_id,
-                            'cycle_id'          => $cycle->id, 
-                            'montant'           => $cycle->montant_journalier ?? 0, 
-                            'motif'             => "Commission Automatique - Cycle #" . $cycle->id, 
-                            'date_attribution'  => $now,
-                            'commission_genere' => false,
-                            'validated_by'      => null, 
-                            'admin_id'          => null
+                    if ($id && $hash) {
+                        \App\Models\Agent::where('id', $id)->update([
+                            'pin_hash' => $hash,
+                            'updated_at' => $now
                         ]);
+                    }
+                }
+            }
+            // --- 2. TRAITEMENT DES CYCLES ---
+            $cyclesDataFromBatch = data_get($batch, 'cycles', []);
+            if (!empty($cyclesDataFromBatch) && is_iterable($cyclesDataFromBatch)) {
+                foreach ($cyclesDataFromBatch as $bCycle) {
+                    $cycleUid = data_get($bCycle, 'cycle_uid');
+                    if (!$cycleUid) continue;
 
-                        $cycle->update(['commission_genere' => true]);
+                    $cycle = Cycle::updateOrCreate(
+                        ['cycle_uid' => $cycleUid],
+                        [
+                            'carnet_id'             => data_get($bCycle, 'carnet_id'),
+                            'agent_id'              => data_get($bCycle, 'agent_id'),
+                            'client_id'             => data_get($bCycle, 'client_id'),
+                            'montant_journalier'    => data_get($bCycle, 'montant_journalier'),
+                            'nombre_jours_objectif' => data_get($bCycle, 'nombre_jours_objectif'),
+                            'statut'                => data_get($bCycle, 'statut'),
+                            'date_debut'            => Carbon::parse(data_get($bCycle, 'date_debut'))->toDateString(),
+                            'date_fin_prevue'       => data_get($bCycle, 'date_fin_prevue') 
+                                                        ? Carbon::parse(data_get($bCycle, 'date_fin_prevue'))->toDateString() 
+                                                        : null,
+                        ]
+                    );
+
+                    // On stocke l'ID interne pour l'étape des collectes
+                    $mappedCycleIds[$cycleUid] = $cycle->id;
+
+                    // --- DÉTECTION ET GÉNÉRATION DE COMMISSION ---
+                    if ($cycle->statut === 'termine' && !$cycle->commission_genere) {
+                        $cycle->load('carnet'); 
+                        if ($cycle->carnet) {
+                            \App\Models\Bonus::create([
+                                'agent_id'         => $cycle->agent_id,
+                                'cycle_id'         => $cycle->id, 
+                                'montant'          => $cycle->montant_journalier ?? 0, 
+                                'motif'            => "Commission Automatique - Cycle #" . $cycle->id, 
+                                'date_attribution' => $now,
+                                'commission_genere'=> false,
+                            ]);
+                            $cycle->update(['commission_genere' => true]);
+                        }
                     }
                 }
             }
 
-            // --- ÉTAPE 2 : COLLECTES ---
-          
-            
-        // foreach ($batch->collectes as $bCol) {
-        //     // 1. UTILISER LE cycle_uid DU DUMP (celui qui commence par f8db89b9...)
-        //     $uidAchercher = $bCol->cycle_uid; 
+            // --- 3. TRAITEMENT DES COLLECTES (Bulk Upsert) ---
+            $collectesDataFromBatch = data_get($batch, 'collectes', []);
+            $insertData = [];
 
-        //     // 2. Chercher l'ID interne MySQL
-        //     $cycleId = Cycle::where('cycle_uid', $uidAchercher)->value('id');
+            if (!empty($collectesDataFromBatch) && is_iterable($collectesDataFromBatch)) {
+                foreach ($collectesDataFromBatch as $bCol) {
+                    $uidAchercher = data_get($bCol, 'cycle_uid');
+                    
+                    // On cherche l'ID soit dans la map qu'on vient de créer, soit en DB
+                    $cycleId = $mappedCycleIds[$uidAchercher] ?? Cycle::where('cycle_uid', $uidAchercher)->value('id');
 
-        //     // 3. LOG DE SÉCURITÉ (si ça ne marche toujours pas, tu verras pourquoi)
-        //     if (!$cycleId) {
-        //         \Log::error("Cycle introuvable pour l'UID : " . $uidAchercher);
-        //         continue;
-        //     }
+                    if (!$cycleId) {
+                        \Log::error("Cycle introuvable pour l'UID : " . $uidAchercher);
+                        continue;
+                    }
 
-        //     // 4. INSERTION FINALE
-        //     Collecte::updateOrCreate(
-        //         ['collecte_uid' => $bCol->collecte_uid],
-        //         [
-        //             'cycle_id'    => $cycleId, 
-        //             'cycle_uid'   => $uidAchercher, 
-        //             'client_id'   => $bCol->client_id,
-        //             'agent_id'    => $bCol->agent_id,
-        //             'montant'     => $bCol->montant,
-        //             'pointage'    => $bCol->pointage,
-        //             'date_saisie' => $bCol->date_saisie,
-        //             'sync_uuid'   => $batch->sync_uuid,
-        //         ]
-        //     );
-        // }
-            // --- ÉTAPE 2 : COLLECTES (Optimisée en Bulk) ---
-            $collectesData = [];
-            $now = now();
-
-            foreach ($batch->collectes as $bCol) {
-                $uidAchercher = $bCol->cycle_uid;
-                $cycleId = $mappedCycleIds[$uidAchercher] ?? Cycle::where('cycle_uid', $uidAchercher)->value('id');
-
-                if (!$cycleId) {
-                    Log::error("Cycle introuvable pour l'UID : " . $uidAchercher);
-                    continue;
+                    $insertData[] = [
+                        'collecte_uid' => data_get($bCol, 'collecte_uid'),
+                        'cycle_id'     => $cycleId,
+                        'cycle_uid'    => $uidAchercher,
+                        'client_id'    => data_get($bCol, 'client_id'),
+                        'agent_id'     => data_get($bCol, 'agent_id'),
+                        'montant'      => data_get($bCol, 'montant'),
+                        'pointage'     => data_get($bCol, 'pointage'),
+                        'date_saisie'  => data_get($bCol, 'date_saisie'),
+                        'sync_uuid'    => $batch->sync_uuid,
+                        'created_at'   => $now,
+                        'updated_at'   => $now,
+                    ];
                 }
-
-                // On prépare le tableau pour l'insertion massive
-                $collectesData[] = [
-                    'collecte_uid' => $bCol->collecte_uid,
-                    'cycle_id'     => $cycleId,
-                    'cycle_uid'    => $uidAchercher,
-                    'client_id'    => $bCol->client_id,
-                    'agent_id'     => $bCol->agent_id,
-                    'montant'      => $bCol->montant,
-                    'pointage'     => $bCol->pointage,
-                    'date_saisie'  => $bCol->date_saisie,
-                    'sync_uuid'    => $batch->sync_uuid,
-                    'created_at'   => $now,
-                    'updated_at'   => $now,
-                ];
             }
 
-            // Insertion en une seule fois (par paquets de 50 pour la sécurité)
-            if (!empty($collectesData)) {
+            if (!empty($insertData)) {
+                // Upsert gère les doublons automatiquement sur la colonne 'collecte_uid'
                 Collecte::upsert(
-                    $collectesData, 
-                    ['collecte_uid'], // Colonne d'unicité
-                    ['montant', 'pointage', 'updated_at'] // Colonnes à mettre à jour si doublon
+                    $insertData, 
+                    ['collecte_uid'], 
+                    ['montant', 'pointage', 'updated_at']
                 );
             }
-            // --- ÉTAPE 3 : HISTORIQUE ET STATUT ---
+
+            // --- 4. HISTORIQUE ET FINALISATION ---
             SyncHistory::create([
-                'agent_id' => $batch->agent_id,
-                'sync_uuid' => $batch->sync_uuid,
-                'nb_collectes' => $batch->nb_collectes,
-                'nb_cycles' => $batch->nb_cycles,
+                'agent_id'      => $batch->agent_id,
+                'sync_uuid'     => $batch->sync_uuid,
+                'nb_collectes'  => $batch->nb_collectes,
+                'nb_cycles'     => $batch->nb_cycles,
                 'total_montant' => $batch->total_montant,
-                'status' => 'success',
+                'status'        => 'success',
             ]);
 
             $batch->update([
-                'status' => 'approved',
+                'status'       => 'approved',
                 'validated_at' => $now,
                 'validated_by' => $adminId
             ]);
 
-            $batch->agent->update(['can_sync' => true]);
-            broadcast(new \App\Events\AgentSynced($agent));
+            // On libère l'agent pour sa prochaine synchronisation
+            if ($batch->agent) {
+                $batch->agent->update(['can_sync' => true]);
+            }
         });
     }
 
     private function buildSyncPayload($agent): array
     {
-        // 1. Récupérer les clients de l'agent
+        // 1. Récupération des clients (Optimisé avec Eager Loading)
         $clients = Client::where('agent_id', $agent->id)
             ->whereHas('carnets', function($query) {
-                $query->where('statut', 'actif')
-                ->where('type', 'tontine');
+                $query->where('statut', 'actif')->where('type', 'tontine');
             })
             ->get();
 
         $clientIds = $clients->pluck('id');
 
+        // 2. Récupération des carnets
         $carnets = Carnet::whereIn('client_id', $clientIds)
             ->where('statut', 'actif')
-            ->where('type', 'tontine') // Filtre pour ne garder que la tontine
+            ->where('type', 'tontine')
             ->withCount(['cycles as total_cycles_termines' => function($query) {
                 $query->where('statut', 'termine');
             }])
             ->get();
 
-        
-        // 3. Récupération des cycles pour l'agent
+        // 3. Récupération des cycles avec relations nécessaires
         $cycles = Cycle::whereIn('carnet_id', $carnets->pluck('id'))
             ->where(function($query) {
                 $query->where('statut', 'en_cours')
@@ -297,38 +292,48 @@ class SyncController extends Controller
                         ->whereNull('retire_at'); 
                     });
             })
-            ->with(['collectes', 'retraits']) // On charge les retraits faits par l'admin
+            ->with(['collectes', 'retraits'])
             ->get()
             ->map(function($cycle) {
-                
-                // Calcul du Net disponible (Brut - Commission - Déjà retiré par l'admin)
+                // Calcul du Net disponible
                 $totalCollectes = (float) $cycle->collectes->sum('montant');
                 $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
                 $commission = (float) ($cycle->montant_journalier ?? 0);
 
-                // On crée une propriété "solde_restant_net" que Dexie va stocker
                 $cycle->solde_restant_net = max(0, $totalCollectes - $commission - $totalDejaRetire);
                 
-                return $cycle;
-        });
+                // INDISPENSABLE : On injecte le cycle_uid dans chaque retrait 
+                // pour faciliter le filtrage côté JavaScript dans Dexie
+                $cycle->retraits->each(function($retrait) use ($cycle) {
+                    $retrait->cycle_uid = $cycle->cycle_uid;
+                    $retrait->synced = 1; 
+                });
 
-        // 4. Extraction des collectes à plat pour Dexie
+                return $cycle;
+            });
+
+        // 4. Extraction à plat pour Dexie
         $collectes = $cycles->pluck('collectes')->flatten()->map(function($col) {
             $col->synced = 1; 
             return $col;
         });
 
+        // On récupère les retraits déjà marqués avec synced et cycle_uid
+        $retraits = $cycles->pluck('retraits')->flatten(); 
+
         return [
             'success' => true,
             'agent' => [
-                'nom' => $agent->nom, 
-                'id' => $agent->id
+                'id'       => $agent->id,
+                'nom'      => $agent->nom,
+                'pin_hash' => $agent->pin_hash,
             ],
             'clients'     => $clients,
             'carnets'     => $carnets,
-            // On masque la relation pour ne pas doubler le poids du JSON
-            'cycles'      => $cycles->makeHidden('collectes'), 
+            // makeHidden libère de la bande passante en évitant les doublons imbriqués
+            'cycles'      => $cycles->makeHidden(['collectes', 'retraits']), 
             'collectes'   => $collectes,
+            'retraits'    => $retraits, 
             'server_date' => now()->format('Y-m-d'),
         ];
     }

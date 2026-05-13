@@ -2,7 +2,6 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Connexion Agent - NANA Eco Consulting</title>
@@ -10,7 +9,6 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bootstrap-icons.css') }}">
-     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/crypto-js.min.js') }}"></script>
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}" defer></script>
    
@@ -57,11 +55,11 @@
 <body>
 
     <!-- Bannière d'installation PWA -->
-    <!-- <div id="install-banner" class="shadow-sm">
+    <div id="install-banner" class="shadow-sm">
         <i class="bi bi-cloud-arrow-down-fill me-2"></i>
         <span>Accéder au mode hors-ligne</span>
         <button id="btn-install-now" class="btn btn-light btn-sm fw-bold ms-3" style="border-radius: 8px;">Installer</button>
-    </div> -->
+    </div>
 
     <div class="container my-auto">
         <div class="row justify-content-center">
@@ -191,20 +189,7 @@
             });
         }
     });
-    async function refreshToken() {
-        try {
-            const response = await fetch('/refresh-csrf');
-            const data = await response.json();
-            // On met à jour la balise meta (assure-toi qu'elle existe dans ton <head>)
-            let meta = document.querySelector('meta[name="csrf-token"]');
-            if (meta) {
-                meta.setAttribute('content', data.token);
-            }
-            return data.token;
-        } catch (e) {
-            console.error("Échec du rafraîchissement CSRF", e);
-        }
-    }
+
     document.getElementById('pwa-login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -214,184 +199,161 @@
             alertBox: document.getElementById('error-alert'),
             btn: document.getElementById('btn-submit'),
             btnText: document.getElementById('btn-text'),
-            spinner: document.getElementById('btn-spinner')
+            spinner: document.getElementById('btn-spinner'),
+            icon: document.getElementById('btn-icon')
         };
 
         const setUIState = (loading, text = "Vérification...") => {
             elements.btn.disabled = loading;
             elements.btnText.innerText = text;
             elements.spinner.classList.toggle('d-none', !loading);
+            elements.icon.classList.toggle('d-none', loading);
             if (loading) elements.alertBox.classList.add('d-none');
         };
 
         try {
-            if (typeof CryptoJS === 'undefined') throw new Error("Erreur : Bibliothèque de sécurité manquante.");
+            // Vérification de la présence de CryptoJS
+            if (typeof CryptoJS === 'undefined') {
+                throw new Error("Erreur système : Bibliothèque de sécurité manquante.");
+            }
 
             const agentKey = `auth_v1_${elements.matricule}`;
             const localAuth = JSON.parse(localStorage.getItem(agentKey));
 
-            // --- CAS 1 : CONNEXION OFFLINE (Local) ---
+            // -------------------------------------------------------
+            // CAS 1 : CONNEXION OFFLINE (AGENT DÉJA ENREGISTRÉ)
+            // -------------------------------------------------------
             if (localAuth && localAuth.pin_hash) {
                 const inputHash = CryptoJS.SHA256(elements.password + elements.matricule + PIN_SALT).toString();
 
                 if (inputHash === localAuth.pin_hash) {
+                    setUIState(true, "Accès local...");
+                    
+                    // Vérification furtive du statut si on a du réseau
                     if (navigator.onLine) {
-                       checkStatus(elements.matricule)
+                        try {
+                            const check = await fetch(`/api/agent/check-status/${elements.matricule}`, {
+                                credentials: 'same-origin'
+                            });
+                            const status = await check.json();
+                            if (status.is_active === false) {
+                                localStorage.removeItem(agentKey);
+                                throw new Error("Compte désactivé par l'admin.");
+                            }
+                        } catch (e) { /* On ignore l'erreur de check pour laisser passer l'offline */ }
                     }
-                    setUIState(true, "Accès autorisé...");
+
                     localStorage.setItem('current_agent_matricule', elements.matricule);
                     localStorage.setItem('session_active', true);
                     window.location.href = "/pwa/dashboard";
-                    return; 
+                    return;
                 } else {
-                    throw new Error("Code PIN incorrect pour ce compte.");
+                    throw new Error("Code PIN incorrect.");
                 }
             }
 
-            // --- CAS 2 : CONNEXION ONLINE (Initialisation) ---
-            if (!navigator.onLine) throw new Error("Internet requis pour configurer cet appareil.");
+            // -------------------------------------------------------
+            // CAS 2 : PREMIÈRE CONNEXION (ONLINE OBLIGATOIRE)
+            // -------------------------------------------------------
+            if (!navigator.onLine) {
+                throw new Error("⚠️ Première connexion impossible sans internet.");
+            }
 
             setUIState(true, "Vérification serveur...");
-            
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
             const response = await fetch("{{ route('agent.login.submit') }}", {
                 method: 'POST',
-                headers: { 
+                credentials: 'same-origin',
+                headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken 
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({ username: elements.matricule, password: elements.password })
             });
 
             const data = await response.json();
-   
+
             if (!response.ok) throw new Error(data.message || "Identifiants invalides.");
-            if(data.agent.actif == false) throw new Error("Votre compte a été révoqué");
-            if(data.agent.sync == false) throw new Error("Votre compte n'est pas autorisé à synchroniser les données");
-            // Récupération du PIN_HASH serveur
-            const serverPinHash = data.agent.pin_hash; 
-            
-            // On remet le bouton à l'état normal car Swal va prendre la main
+            if (data.agent.actif === false) throw new Error("Compte désactivé.");
+            if (data.agent.sync === 0) throw new Error("Synchronisation non autorisée.");
+
+            // Préparation des données pour le PIN
+            const tempAuth = {
+                id: data.agent.id,
+                nom: data.agent.nom,
+                matricule: elements.matricule,
+                photo: data.agent.photo || ''
+            };
+
             setUIState(false, "Se connecter");
-
-            if (serverPinHash) {
-                // --- ÉTAPE : VÉRIFICATION DU PIN EXISTANT (Recovery) ---
-                const { value: pinSaisi } = await Swal.fire({
-                    title: 'Vérification du code PIN',
-                    text: 'Entrez votre PIN à 4 chiffres pour valider cet appareil.',
-                    input: 'password',
-                    inputAttributes: { maxlength: 4, inputmode: 'numeric', pattern: '[0-9]*' },
-                    showCancelButton: true,
-                    confirmButtonText: 'Valider',
-                    cancelButtonText: 'Annuler',
-                    allowOutsideClick: false
-                });
-
-                if (!pinSaisi) return; // Annulation de l'agent
-
-                const inputHash = CryptoJS.SHA256(pinSaisi + elements.matricule + PIN_SALT).toString();
-
-                if (inputHash === serverPinHash) {
-                     setUIState(true, "Initialisation...");
-                    // SUCCESS : On finalise avec le hash serveur
-                    return finalizeLogin(null, data.agent, elements.matricule, data.token, true, serverPinHash);
-                } else {
-                    // ÉCHEC : Message d'erreur et on reste sur le login
-                    await Swal.fire({
-                        icon: 'error',
-                        title: 'Code PIN incorrect',
-                        text: 'Le code saisi ne correspond pas à celui enregistré sur votre compte.',
-                        confirmButtonText: 'Réessayer'
-                    });
-                    return; 
-                }
-
+            
+            // Affichage du modal PIN
+            if (pinModalInstance) {
+                pinModalInstance.show();
             } else {
-                // --- ÉTAPE : CRÉATION DU PREMIER PIN ---
-                const { value: newPin, isDismissed } = await Swal.fire({
-                    title: 'Nouveau Code PIN',
-                    text: 'Choisissez 4 chiffres pour sécuriser vos collectes offline.',
-                    input: 'password',
-                    inputAttributes: { 
-                        maxlength: 4, 
-                        inputmode: 'numeric', 
-                        pattern: '[0-9]*', // Aide certains navigateurs mobiles à afficher le pavé numérique
-                        autocomplete: 'new-password'
-                    },
-                    showCancelButton: true,
-                    confirmButtonText: 'Enregistrer',
-                    cancelButtonText: 'Annuler',
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#6c757d',
-                    allowOutsideClick: false, // Toujours conseillé pour les actions sensibles
-                    preConfirm: (v) => {
-                        if (!/^\d{4}$/.test(v)) {
-                            return Swal.showValidationMessage('Veuillez saisir exactement 4 chiffres');
-                        }
-                        return v;
-                    }
-                });
-
-                // Gestion de la suite
-                if (isDismissed) {
-                    console.log("L'agent a annulé le changement de PIN.");
-                    return; // On arrête l'exécution ici
-                }
-
-
-
-                if (newPin) {
-                     setUIState(true, "Initialisation...");
-                    return finalizeLogin(newPin, data.agent, elements.matricule, data.token, false);
-                }
+                // Fallback si Bootstrap a un souci
+                const pin = prompt("Créez votre code PIN à 4 chiffres :");
+                if(pin) finalizeLogin(pin, tempAuth, elements.matricule, data.token);
             }
+
+            // Gestion du clic sur confirmer PIN
+            document.getElementById('confirm-pin-btn').onclick = async () => {
+                const pinSaisi = document.getElementById('new-pin').value;
+                if (pinSaisi.length < 4) {
+                    alert("4 chiffres minimum.");
+                    return;
+                }
+                finalizeLogin(pinSaisi, tempAuth, elements.matricule, data.token);
+            };
 
         } catch (error) {
-            if (error.message.includes('CSRF') || error.message.includes('419')) {
-                await refreshToken();
-            }
+            console.error("Erreur Auth:", error);
             elements.alertBox.textContent = error.message;
             elements.alertBox.classList.remove('d-none');
             setUIState(false, "Se connecter");
         }
     });
 
-    /**
-     * Cette fonction n'est appelée QUE si le PIN est correct ou créé avec succès.
-     */
-    // On ajoute des valeurs par défaut aux nouveaux paramètres pour ne pas casser l'appel à 4 paramètres
-    async function finalizeLogin(pin, authObj, matricule, token, isRecovery = false, existingHash = null) {
+    
+    async function finalizeLogin(pin, authObj, matricule, token) {
+        // Clé unique par agent pour éviter d'écraser les données d'un collègue
         const agentKey = `auth_v1_${matricule}`;
         
-        // 1. Logique du Hash : soit on le calcule, soit on prend celui du serveur
-        let finalHash = existingHash; 
+        // 1. Calcul du hash (le matricule est inclus pour rendre le hash unique par agent)
+        const generatedHash = CryptoJS.SHA256(pin + matricule + PIN_SALT).toString();
+        authObj.pin_hash = generatedHash;
 
-        if (!isRecovery) {
-            // Cas création : on calcule le hash à partir du nouveau PIN
-            finalHash = CryptoJS.SHA256(pin + matricule + PIN_SALT).toString();
+        try {
+            // 2. Envoi au serveur sur la route protégée du PwaController
+            // Utilisation de la route nommée via Blade pour plus de sécurité
+            const response = await fetch("{{ route('pwa.pin.update') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    // On peut envoyer le matricule pour vérification, 
+                    // mais le serveur identifiera l'agent via auth()->user()
+                    matricule: matricule, 
+                    pin_hash: generatedHash
+                })
+            });
 
-            // Sauvegarde sur le serveur uniquement si c'est une création
-            try {
-                await fetch("{{ route('pwa.pin.update') }}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({ matricule: matricule, pin_hash: finalHash })
-                });
-            } catch (error) {
-                console.warn("Échec synchro serveur, on continue en local.");
+            if (!response.ok) {
+                console.warn("Stockage serveur échoué, priorité au mode local.");
             }
+        } catch (error) {
+            console.error("Erreur réseau (possible mode offline) :", error);
         }
 
-        // 2. Mise à jour de l'objet auth avec le bon hash
-        authObj.pin_hash = finalHash;
-
-        // 3. Stockage local identique à ta version qui marche
+        // 3. Stockage local isolé par agent
+        // On sauvegarde l'objet auth complet (nom, photo, hash) pour cet agent précis
         localStorage.setItem(agentKey, JSON.stringify(authObj));
+        
+        // On définit l'agent qui vient de se connecter comme l'utilisateur actif
         localStorage.setItem('current_agent_matricule', matricule);
         localStorage.setItem('session_active', 'true');
         
@@ -399,79 +361,35 @@
             localStorage.setItem('auth_token', token);
         }
 
-        // 4. Redirection
+        // 4. Redirection vers la synchronisation
         window.location.href = "/pwa/sync";
     }
-        
-    async function checkStatus(matricule){
-        alert(matricule)
-        try {
-            const check = await fetch(`/pwa/check-status/${matricule}`, {
-                credentials: 'same-origin'
-            });
-            const status = await check.json();
-            if (status.actif === false) {
-                localStorage.removeItem(agentKey);
-                throw new Error("Compte désactivé par l'admin.");
-            }
-        } catch (e) { /* On ignore l'erreur de check pour laisser passer l'offline */ }
-    }
+
     // --- SERVICE WORKER & INSTALLATION ---
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW Error', err));
     }
 
-
     let deferredPrompt;
-
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        showInstallPromotion();
+        const banner = document.getElementById('install-banner');
+        if (banner) banner.classList.remove('d-none'); // Utilise d-none de bootstrap
     });
 
-    async function showInstallPromotion() {
-        const { isConfirmed } = await Swal.fire({
-            title: 'Installation Requise',
-            text: "Pour utiliser l'outil de collecte en mode sécurisé et hors-ligne, vous devez l'installer sur votre écran d'accueil.",
-            icon: 'info',
-            showCancelButton: false,
-            confirmButtonText: 'Installer maintenant',
-            confirmButtonColor: '#3085d6',
-            allowOutsideClick: false, // Force l'utilisateur à interagir
-            allowEscapeKey: false
-        });
-
-        if (isConfirmed && deferredPrompt) {
-            // Afficher la boîte de dialogue d'installation système
+    const installBtn = document.getElementById('btn-install-now');
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
             deferredPrompt.prompt();
-
-            // Attendre le choix de l'utilisateur
             const { outcome } = await deferredPrompt.userChoice;
-            
             if (outcome === 'accepted') {
-                console.log('L\'agent a installé la PWA');
-                Swal.fire({
-                    title: 'Parfait !',
-                    text: 'L\'application est en cours d\'installation.',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            } else {
-                // Si l'utilisateur refuse, on relance l'alerte pour "forcer" l'installation
-                showInstallPromotion();
+                document.getElementById('install-banner').classList.add('d-none');
             }
             deferredPrompt = null;
-        }
+        });
     }
-
-    // Optionnel : Détecter si l'application est déjà lancée en mode installé (Standalone)
-    window.addEventListener('appinstalled', () => {
-        console.log('PWA installée avec succès');
-        // On peut ici masquer des éléments spécifiques au navigateur
-    });
-
 </script>
 </body>
 </html>

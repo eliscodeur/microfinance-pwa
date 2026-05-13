@@ -9,12 +9,16 @@ const ASSETS_TO_CACHE = [
     '/pwa/cycles-liste',
     '/pwa/collectes-liste',
     '/pwa/sync',
+    '/pwa/security-pin',
     // Bibliothèques  
     '/js/dexie.js',
     '/js/db-manager.js',
     '/js/bootstrap.bundle.min.js',
+    '/js/sweetalert2.all.min.js',
+    '/js/crypto-js.min.js',
     '/css/bootstrap.min.css',
     '/css/bootstrap-icons.css', 
+    '/css/animate.min.css',
     '/fonts/bootstrap-icons.woff',
     '/fonts/bootstrap-icons.woff2',
     '/images/default-avatar.png'

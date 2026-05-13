@@ -1,4 +1,4 @@
-@extends('admin.layouts.sidebar')
+@extends('admin.layouts.app')
 
 @section('content')
 @php
@@ -15,7 +15,7 @@
 
     <div class="row g-4 align-items-start">
         {{-- Formulaire création / édition --}}
-        <div class="col-12 col-xl-5">
+        <div class="col-12 col-xl-6">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white py-3 border-bottom">
                     <h3 class="h6 fw-bold mb-0 text-primary">
@@ -68,7 +68,7 @@
         </div>
 
         {{-- Liste --}}
-        <div class="col-12 col-xl-7">
+        <div class="col-12 col-xl-6">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white py-3 border-bottom">
                     <h3 class="h6 fw-bold mb-0 text-dark">

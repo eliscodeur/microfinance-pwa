@@ -185,7 +185,7 @@ export default function Show({ credit }) {
                         <Link href="/admin/credits" className="btn btn-outline-secondary me-2">
                             Retour
                         </Link>
-                        {credit.statut === 'pending' && (
+                        {credit.statut !== 'approved' && credit.statut !== 'active' && credit.statut !== 'rejected' && credit.statut !== 'closed' && credit.statut === 'pending' && (
                             <button className="btn btn-success" onClick={approve}>
                                 Approuver
                             </button>
@@ -320,7 +320,7 @@ export default function Show({ credit }) {
                                             <td>{formatCurrency(payment.montant_total)}</td>
                                             <td>
                                                 {payment.status !== 'paid' ? (
-                                                    <div className="input-group input-group-sm">
+                                                    <div className="input-group">
                                                         <input
                                                             type="number"
                                                             step="0.01"
@@ -351,7 +351,7 @@ export default function Show({ credit }) {
                                             <td>
                                                 {payment.status !== 'paid' ? (
                                                     <div className="d-flex gap-2 align-items-center">
-                                                        <div className="input-group input-group-sm">
+                                                        <div className="input-group">
                                                             <input
                                                                 type="number"
                                                                 step="0.01"
