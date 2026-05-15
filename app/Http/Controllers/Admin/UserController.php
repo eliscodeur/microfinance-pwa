@@ -90,20 +90,21 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        
-        $user = User::findOrFail($user->id);
+        // Pas besoin de findOrFail si tu utilises déjà l'injection de modèle (User $user)
         $request->validate([
             'name'    => 'required|string|max:255',
             'email'   => 'required|email|unique:users,email,' . $user->id,
             'role_id' => 'required|exists:roles,id',
         ]);
 
-        // SÉCURITÉ : On ne récupère QUE les champs autorisés.
-        // Même si un utilisateur "force" l'envoi d'un password en JS, 
-        // Laravel l'ignorera car il n'est pas dans cette liste.
+        // Mise à jour des champs autorisés
         $user->update($request->only(['name', 'email', 'role_id']));
 
-        return redirect()->route('admin.users.index')->with('success', 'Administrateur mis à jour.');
+        // MODIFICATION ICI : Retourner du JSON au lieu d'une redirection
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Administrateur mis à jour avec succès.'
+        ]);
     }
     public function edit($id)
     {

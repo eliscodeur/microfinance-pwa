@@ -46,7 +46,6 @@
 
             for (const carnet of carnets) {
                 const cyclesDuCarnet = await db.cycles.where('carnet_id').equals(carnet.id).toArray() || [];
-                // console.log(cyclesDuCarnet);
                 const soldeNet = cyclesDuCarnet[0]?.solde_restant_net || 0;
                 const cycleActif = cyclesDuCarnet.find(cy => cy.statut === 'en_cours');
                 const cyclesAencaisser = cyclesDuCarnet.filter(cy => cy.statut === 'termine' && !cy.retire_at);

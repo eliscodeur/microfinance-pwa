@@ -166,6 +166,11 @@
         const matricule = localStorage.getItem('current_agent_matricule'); // Contient l'URL entière ou le chemin
         const auth = "auth_v1_" + matricule;
         const authAgent = JSON.parse(localStorage.getItem(auth));
+        const nom = (authAgent.nom || '').toUpperCase();
+        const nameEl = document.getElementById('agent');
+        if (nameEl) {  
+            nameEl.innerText = `${nom}`.trim();
+        }
         const elPhoto = document.getElementById('agent-photo');
        
         // 1. On prépare les chemins

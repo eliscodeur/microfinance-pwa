@@ -171,9 +171,10 @@
         const activeDB = getAgentDB();
         window.scrollTo(0, 0); 
         const container = document.getElementById('cycles-master-container');
-        const search = document.getElementById('inputSearch').value.toLowerCase();
+        const search = document.getElementById('inputSearch').value.toLowerCase().trim();
         container.innerHTML = '';
 
+        // Chargement global des données
         const [clients, carnets, cycles, collectes] = await Promise.all([
             activeDB.clients.toArray(),
             activeDB.carnets.toArray(),
@@ -181,12 +182,24 @@
             activeDB.collectes.toArray()
         ]);
 
-        const cyclesTries = cycles.sort((a, b) => new Date(b.date_debut) - new Date(a.date_debut));
+        // 1. TRI GLOBAL : Par Nom puis par Prénom (Alphabétique A-Z)
+        const clientsTries = clients.sort((a, b) => {
+            const nomCompletA = `${a.nom} ${a.prenom}`.toLowerCase();
+            const nomCompletB = `${b.nom} ${b.prenom}`.toLowerCase();
+            return nomCompletA.localeCompare(nomCompletB);
+        });
 
-        clients.forEach(client => {
-            const matchClient = client.nom.toLowerCase().includes(search);
+        // Tri des cycles par date (les plus récents en premier)
+        const cyclesChronologiques = cycles.sort((a, b) => new Date(b.date_debut) - new Date(a.date_debut));
+
+        clientsTries.forEach(client => {
+            // 2. RECHERCHE : On vérifie si le terme est dans le Nom ou le Prénom
+            const matchClient = client.nom.toLowerCase().includes(search) || 
+                                client.prenom.toLowerCase().includes(search);
+            
             const clientCarnets = carnets.filter(car => car.client_id === client.id);
             
+            // On ne traite que les clients qui ont au moins un cycle enregistré
             if (cycles.some(cy => cy.client_id === client.id)) {
                 let clientHtml = '';
                 let clientAffiche = false;
@@ -194,11 +207,10 @@
                 clientCarnets.forEach(carnet => {
                     const numCarnet = carnet.numero;
                     const matchCarnet = numCarnet.toLowerCase().includes(search);
-                    const carnetCycles = cyclesTries.filter(cy => cy.carnet_id === carnet.id);
-
+                    const carnetCycles = cyclesChronologiques.filter(cy => cy.carnet_id === carnet.id);
+                    
+                    // Affichage si le client match OU si le numéro de carnet match
                     if (carnetCycles.length > 0 && (matchClient || matchCarnet)) {
-                        // console.log(carnetCycles[0].solde_restant_net);
-                        const soldeNet = carnetCycles[0].solde_restant_net || 0;
                         clientAffiche = true;
                         clientHtml += `
                             <div class="card border-0 shadow-sm mb-3" style="border-radius: 15px; overflow: hidden;">
@@ -210,26 +222,23 @@
                                 <div class="card-body p-0">
                         `;
 
-                        carnetCycles.forEach(cycle => {
+                        carnetCycles.forEach((cycle, index) => {
                             const collectesCycle = collectes.filter(col => col.cycle_id === cycle.id);
-                        
                             
-                            // --- NOUVELLE LOGIQUE : SOMME DES POINTAGES ---
+                            // Calculs de progression
                             const nbrPointages = collectesCycle.reduce((sum, col) => sum + parseInt(col.pointage || 0), 0);
-                            
                             const progression = Math.min(Math.round((nbrPointages / 31) * 100), 100);
                             const brut = collectesCycle.reduce((sum, col) => sum + parseFloat(col.montant || 0), 0);
                             const mise = parseFloat(cycle.montant_journalier || 0);
-                            // const net = brut > mise ? brut - mise : brut; 
 
+                            // États du cycle
                             const estTermine = cycle.statut === 'termine' || nbrPointages >= 31;
                             const estSynchro = cycle.synced === 1;
                             const afficherSomme = estTermine && (!cycle.retire_at || cycle.retire_at === "null");
-                            
                             const peutAgir = (nbrPointages === 0);
 
                             clientHtml += `
-                                <div class="px-3 py-3 ${carnetCycles.indexOf(cycle) !== carnetCycles.length - 1 ? 'border-bottom' : ''}">
+                                <div class="px-3 py-3 ${index !== carnetCycles.length - 1 ? 'border-bottom' : ''}">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div style="flex: 1;">
                                             <div class="d-flex align-items-center gap-2">
@@ -240,10 +249,7 @@
                                                     ? '<span class="badge bg-success" style="font-size: 0.55rem;">Terminé (31/31)</span>' 
                                                     : `<span class="badge bg-light text-primary border" style="font-size: 0.55rem;">${nbrPointages} / 31 pts</span>`
                                                 }
-                                                ${estSynchro 
-                                                    ? '<i class="bi bi-cloud-check-fill text-info" style="font-size: 0.8rem;"></i>' 
-                                                    : '<i class="bi bi-cloud-arrow-up text-warning" style="font-size: 0.8rem;"></i>'
-                                                }
+                                                <i class="bi ${estSynchro ? 'bi-cloud-check-fill text-info' : 'bi-cloud-arrow-up text-warning'}" style="font-size: 0.8rem;"></i>
                                             </div>
                                             <div class="text-muted mt-1" style="font-size: 0.7rem;">
                                                 <i class="bi bi-cash-stack me-1"></i>Cumul: <strong>${brut} F</strong>
@@ -252,7 +258,7 @@
 
                                         <div class="text-end">
                                             ${afficherSomme ? `
-                                                <div class="bg-primary text-white px-2 py-1 rounded-3 mb-1" style="font-size: 0.8rem; font-weight: 700;">Net: ${soldeNet} F</div>
+                                                <div class="bg-primary text-white px-2 py-1 rounded-3 mb-1" style="font-size: 0.8rem; font-weight: 700;">Net: ${cycle.solde_restant_net || 0} F</div>
                                                 <div style="font-size: 0.55rem; color: #dc3545;">Com: -${mise} F</div>
                                             ` : `
                                                 <div class="d-flex gap-1 justify-content-end">
@@ -283,6 +289,7 @@
                     }
                 });
 
+                // 3. AFFICHAGE DU GROUPE CLIENT
                 if (clientAffiche) {
                     container.innerHTML += `
                         <div class="client-group mb-4 px-1">
@@ -299,8 +306,13 @@
             }
         });
 
+        // Gestion du cas "Aucun résultat"
         if (container.innerHTML === '') {
-            container.innerHTML = `<div class="text-center py-5 text-muted small">Aucun cycle trouvé</div>`;
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-search display-1 opacity-25 d-block mb-3"></i>
+                    <div class="text-muted small">Aucun cycle trouvé pour "${search}"</div>
+                </div>`;
         }
     }
 

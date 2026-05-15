@@ -404,7 +404,7 @@
     }
         
     async function checkStatus(matricule){
-        alert(matricule)
+        
         try {
             const check = await fetch(`/pwa/check-status/${matricule}`, {
                 credentials: 'same-origin'

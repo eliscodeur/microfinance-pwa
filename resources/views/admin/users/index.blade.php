@@ -37,9 +37,7 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <!-- <div class="rounded-circle bg-danger text-white d-flex justify-content-center align-items-center me-3" style="width: 35px; height: 35px; font-weight: bold;">
-                                            {{ strtoupper(substr($user->name, 0, 1)) }}
-                                        </div> -->
+                                    
                                         <span>{{ $user->name }}</span>
                                     </div>
                                 </td>
@@ -52,16 +50,14 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-2">
-                                        <button type="button" 
-                                                class="btn btn-sm btn-outline-primary shadow-sm edit-btn"
-                                                data-id="{{ $user->id }}"
-                                                data-name="{{ $user->name }}"
-                                                data-email="{{ $user->email }}"
-                                                data-role="{{ $user->role_id }}">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.5.5 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11z"/>
-                                            </svg>
-                                        </button>
+                                    <button class="btn btn-sm btn-primary edit-btn" 
+                                        data-id="{{ $user->id }}" 
+                                        data-name="{{ $user->name }}" 
+                                        data-email="{{ $user->email }}" 
+                                        data-role="{{ $user->role_id }}"
+                                        data-url="{{ route('admin.users.update', $user->id) }}"> <!-- L'URL exacte ici -->
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
 
                                         
                                         <button data-id="{{ $user->id }}" data-name="{{ $user->name }}" class="btn btn-sm btn-outline-danger shadow-sm delete-btn">
@@ -167,222 +163,186 @@
     </div>
 </div>
 <script>
-    
-    // document.addEventListener('DOMContentLoaded', function() {
-    //     // Alerte de succès
-    //     @if(session('success'))
-    //         Swal.fire({ icon: 'success', title: 'Fait !', text: "{{ session('success') }}", timer: 3000 });
-    //     @endif
-
-    //     // Alerte d'erreur fatale (catch)
-    //     @if(session('error'))
-    //         Swal.fire({ icon: 'error', title: 'Erreur', text: "{{ session('error') }}" });
-    //     @endif
-    // });
-
-    document.querySelectorAll('.edit-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            // ... (tes autres remplissages de champs) ...
-
-            // 1. CACHER le mot de passe
-            document.getElementById('password-group').classList.add('d-none');
-            document.getElementById('field-password').required = false;
-
-            // 2. Changer le titre et l'action
-            document.getElementById('form-title').innerText = "Modifier l'Administrateur";
-            document.getElementById('submit-btn').innerText = "Mettre à jour";
-            document.getElementById('cancel-edit').classList.remove('d-none');
-            
-            // Basculer l'onglet
-            new bootstrap.Tab(document.getElementById('add-tab')).show();
-        });
-    });
-
-// Bouton Annuler : On réaffiche tout
-    document.getElementById('cancel-edit').addEventListener('click', function() {
-        document.getElementById('password-group').classList.remove('d-none');
-        document.getElementById('field-password').required = true;
-        // ... (reset du reste du formulaire) ...
-    });
-    // Gérer le clic sur le bouton Annuler
-    document.getElementById('cancel-edit').addEventListener('click', function() {
-        // 1. Réinitialiser le formulaire
-        document.getElementById('admin-form').reset();
-        document.getElementById('user_id').value = '';
-        
-        // 2. Remettre les textes originaux
-        document.getElementById('form-title').innerText = "Informations du nouvel administrateur";
-        document.getElementById('submit-btn').innerHTML = '<i class="bi bi-save"></i> Enregistrer l\'administrateur';
-        document.getElementById('add-tab').innerHTML = '<i class="bi bi-person-plus-fill"></i> Ajouter un Admin';
-        
-        // 3. Remettre l'URL initiale (pour le store)
-        document.getElementById('admin-form').action = "{{ route('admin.users.store') }}";
-        document.getElementById('method-field').innerHTML = ''; // Enlever le @method('PUT')
-        
-        // 4. Masquer le bouton Annuler et remettre le mot de passe en "required"
-        this.classList.add('d-none');
-        document.getElementById('field-password').required = true;
-        document.getElementById('password-help').classList.add('d-none');
-        
-        // 5. Revenir à l'onglet liste (optionnel, selon ton choix)
-        var listTab = new bootstrap.Tab(document.getElementById('list-tab'));
-        listTab.show();
-    });
-
     document.addEventListener('DOMContentLoaded', function() {
-        // Sélectionner tous les boutons modifier
-                // Alerte de succès
+        // --- 1. ALERTES INITIALES (SESSION) ---
         @if(session('success'))
             Swal.fire({ icon: 'success', title: 'Fait !', text: "{{ session('success') }}", timer: 3000 });
         @endif
 
-        // Alerte d'erreur fatale (catch)
         @if(session('error'))
             Swal.fire({ icon: 'error', title: 'Erreur', text: "{{ session('error') }}" });
         @endif
-        const editButtons = document.querySelectorAll('.edit-btn');
 
-        editButtons.forEach(button => {
+        const adminForm = document.getElementById('admin-form');
+        const userIdInput = document.getElementById('user_id');
+        const methodField = document.getElementById('method-field');
+        const cancelBtn = document.getElementById('cancel-edit');
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+        const formTitle = document.getElementById('form-title');
+        const addTab = document.getElementById('add-tab');
+
+        // --- 2. GESTION DE LA MODIFICATION ---
+        document.querySelectorAll('.edit-btn').forEach(button => {
             button.addEventListener('click', function() {
-                // 1. Récupérer les données depuis les attributs 'data-' du bouton
+                // 1. Récupération des données (Priorité au data-url pour éviter l'erreur de route)
                 const id = this.dataset.id;
-                document.getElementById('user_id').value = id; // Stocker l'ID dans un champ caché
                 const name = this.dataset.name;
                 const email = this.dataset.email;
                 const role = this.dataset.role;
+                // Si data-url n'existe pas, on construit l'URL de secours
+                const updateUrl = this.dataset.url || `/admin/users/${id}`; 
 
-                // 2. Modifier les textes de l'interface
-                document.getElementById('form-title').innerText = "Modifier l'Administrateur";
-                document.getElementById('submit-btn').innerText = "Mettre à jour";
-                // On change aussi le texte de l'onglet lui-même
-                document.getElementById('add-tab').innerHTML = '<i class="bi bi-pencil-square"></i> Modifier';
-
-                // 3. Remplir les champs du formulaire
+                // 2. Remplissage des champs du formulaire
+                // Assurez-vous que userIdInput est bien défini dans votre DOM (ex: const userIdInput = document.getElementById('user_id');)
+                document.getElementById('user_id').value = id; 
                 document.getElementById('field-name').value = name;
                 document.getElementById('field-email').value = email;
                 document.getElementById('field-role').value = role;
 
-                // 4. Cacher le groupe mot de passe
-                document.getElementById('password-group').classList.add('d-none');
-                document.getElementById('field-password').required = false;
-
-                // 5. Modifier dynamiquement l'URL du formulaire pour pointer vers 'update'
+                // 3. Configuration de la requête vers le UserController@update
                 const form = document.getElementById('admin-form');
-                console.log("ID de l'utilisateur à modifier :", user_id.value); // Debug
-                form.action = `/admin/users/${user_id.value}`; // URL pour la mise à jour
+                form.action = updateUrl; 
                 
-                // Ajouter le champ caché _method="PUT" pour Laravel
+                // IMPORTANT: Le champ _method est crucial pour que Route::resource reconnaisse le PUT
                 document.getElementById('method-field').innerHTML = '<input type="hidden" name="_method" value="PUT">';
-                console.log("Méthode de mise à jour :", document.getElementById('method-field').innerHTML); // Debug
-
-                // 6. Afficher le bouton Annuler
+                
+                // 4. Ajustements de l'interface (UI)
+                document.getElementById('form-title').innerText = "Modifier l'Administrateur";
+                document.getElementById('btn-text').innerText = "Mettre à jour";
+                
+                const addTab = document.getElementById('add-tab');
+                addTab.innerHTML = '<i class="bi bi-pencil-square"></i> Modifier';
+                
                 document.getElementById('cancel-edit').classList.remove('d-none');
 
-                // 7. Basculer automatiquement sur l'onglet du formulaire
-                const tabTrigger = new bootstrap.Tab(document.getElementById('add-tab'));
+                // 5. Gestion spécifique du mot de passe (On ne le modifie pas via ce formulaire)
+                const passwordGroup = document.getElementById('password-group');
+                if (passwordGroup) {
+                    passwordGroup.classList.add('d-none');
+                    document.getElementById('field-password').required = false;
+                }
+
+                // 6. Basculer visuellement vers l'onglet du formulaire
+                const tabTrigger = new bootstrap.Tab(addTab);
                 tabTrigger.show();
-                const successAlert = document.getElementById('success-alert');
-        
             });
         });
 
-        // Gérer le bouton Annuler pour remettre le formulaire à zéro
-        document.getElementById('cancel-edit').addEventListener('click', function() {
-            document.getElementById('admin-form').reset();
-            document.getElementById('form-title').innerText = "Ajouter un Admin";
-            document.getElementById('submit-btn').innerText = "Enregistrer";
-            document.getElementById('add-tab').innerHTML = '<i class="bi bi-person-plus"></i> Ajouter';
-            document.getElementById('password-group').classList.remove('d-none');
-            document.getElementById('field-password').required = true;
-            document.getElementById('method-field').innerHTML = ''; // On enlève le PUT
-            document.getElementById('admin-form').action = "{{ route('admin.users.store') }}";
-            this.classList.add('d-none');
-            
-            // Revenir à l'onglet liste
+        // --- 3. GESTION DE L'ANNULATION ---
+        cancelBtn.addEventListener('click', function() {
+            resetAdminForm();
+            // Retour à la liste
             new bootstrap.Tab(document.getElementById('list-tab')).show();
         });
-    });
 
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', function() {
-        const id = this.dataset.id;
-        const name = this.dataset.name;
-        
-        // 1. Mettre à jour l'URL du formulaire de suppression
-        const deleteForm = document.getElementById('delete-form');
-        deleteForm.action = `/admin/users/${id}`; 
+        function resetAdminForm() {
+            adminForm.reset();
+            userIdInput.value = '';
+            adminForm.action = "{{ route('admin.users.store') }}";
+            methodField.innerHTML = '';
+            
+            formTitle.innerText = "Informations du nouvel administrateur";
+            btnText.innerText = "Enregistrer l'administrateur";
+            addTab.innerHTML = '<i class="bi bi-person-plus-fill"></i> Ajouter un Admin';
+            
+            cancelBtn.classList.add('d-none');
+            document.getElementById('password-group').classList.remove('d-none');
+            document.getElementById('field-password').required = true;
 
-        // 2. Optionnel : Personnaliser le texte de la modale avec le nom
-        const modalBody = document.querySelector('#deleteModal .modal-body');
-        modalBody.innerHTML = `Êtes-vous sûr de vouloir supprimer <strong>${name}</strong> ? Cette action est irréversible.`;
+            // Nettoyer les erreurs de validation précédentes
+            adminForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        }
 
-        // 3. Afficher la modale
-        const myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            myModal.show();
-        });
-    });
-    document.getElementById('admin-form').addEventListener('submit', function(e) {
-        e.preventDefault();
+        // --- 4. SUPPRESSION VIA SWEETALERT ---
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const name = this.dataset.name;
 
-        const form = this;
-        const formData = new FormData(form);
-        const submitBtn = document.getElementById('submit-btn');
-        const btnText = document.getElementById('btn-text');
-
-        // Désactiver le bouton pendant l'envoi
-        submitBtn.disabled = true;
-        btnText.innerText = "Traitement...";
-
-        // Réinitialiser les erreurs visuelles
-        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-        form.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
-
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-            }
-        })
-        .then(response => response.json().then(data => ({ status: response.status, body: data })))
-        .then(res => {
-            if (res.status === 422) {
-                // ERREURS DE VALIDATION
-                const errors = res.body.errors;
-                Object.keys(errors).forEach(key => {
-                    const input = form.querySelector(`[name="${key}"]`);
-                    const errorDiv = document.getElementById(`error-${key}`);
-                    if (input) input.classList.add('is-invalid');
-                    if (errorDiv) errorDiv.innerText = errors[key][0];
-                });
-            } else if (res.status === 200 || res.status === 201) {
-                // SUCCÈS
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Réussi !',
-                    text: res.body.message || 'Opération effectuée avec succès.',
-                    timer: 2000
-                }).then(() => {
-                    window.location.reload(); // Recharge pour voir le nouvel admin dans la liste
+                    title: 'Êtes-vous sûr ?',
+                    text: `Vous allez supprimer l'administrateur ${name}. Cette action est irréversible !`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Oui, supprimer !',
+                    cancelButtonText: 'Annuler'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Création d'un formulaire dynamique pour la suppression
+                        const f = document.createElement('form');
+                        f.action = `/admin/users/${id}`;
+                        f.method = 'POST';
+                        f.innerHTML = `
+                            @csrf
+                            @method('DELETE')
+                        `;
+                        document.body.appendChild(f);
+                        f.submit();
+                    }
                 });
-            } else {
-                // ERREUR SERVEUR
-                throw new Error(res.body.message || 'Erreur inconnue');
-            }
-        })
-        .catch(error => {
-            Swal.fire({
-                icon: 'error',
-                title: 'Erreur',
-                text: 'Une erreur est survenue : ' + error.message
             });
-        })
-        .finally(() => {
-            submitBtn.disabled = false;
-            btnText.innerText = document.getElementById('user_id').value ? "Mettre à jour" : "Enregistrer l'administrateur";
+        });
+
+        // --- 5. SOUMISSION AJAX DU FORMULAIRE ---
+        adminForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            submitBtn.disabled = true;
+            const originalText = btnText.innerText;
+            btnText.innerText = "Traitement...";
+            // Reset erreurs
+            adminForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            adminForm.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
+
+            fetch(this.action, {
+                method: 'POST', // On utilise toujours POST car FormData + Method Spoofing (PUT) géré par Laravel
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                }
+            })
+            .then(response => response.json().then(data => ({ status: response.status, body: data })))
+            .then(res => {
+                if (res.status === 422) {
+                    // Erreurs de validation
+                    const errors = res.body.errors;
+                    Object.keys(errors).forEach(key => {
+                        const input = adminForm.querySelector(`[name="${key}"]`);
+                        const errorDiv = document.getElementById(`error-${key}`);
+                        if (input) input.classList.add('is-invalid');
+                        if (errorDiv) errorDiv.innerText = errors[key][0];
+                    });
+                } else if (res.status === 200 || res.status === 201) {
+                    // Succès
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Réussi !',
+                        text: res.body.message || 'Opération effectuée avec succès.',
+                        timer: 2000
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(res.body.message || 'Erreur serveur');
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Une erreur est survenue : ' + error.message
+                });
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                btnText.innerText = originalText;
+            });
         });
     });
-
 </script>
 @endsection

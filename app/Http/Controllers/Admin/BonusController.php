@@ -18,26 +18,47 @@ class BonusController extends Controller
      */
     public function index(Request $request)
     {
-        // On récupère uniquement ce qui n'est pas lié à un paiement (paiement_id est NULL)
-        $bonusesByAgent = Bonus::whereNull('paiement_id')
-            ->with('agent')
+        // 1. Récupération des bonus/commissions non traités
+        // On filtre sur statut 'en_attente' et paiement_id NULL pour la sécurité
+        $bonusesByAgent = Bonus::where('statut', 'en_attente')
+            ->whereNull('paiement_id')
+            ->with(['agent', 'cycle']) // Eager loading pour éviter le problème N+1
             ->get()
             ->groupBy('agent_id')
             ->map(function ($group) {
+                // Extraction des informations par agent
                 return (object) [
                     'agent_id'          => $group->first()->agent_id,
                     'agent'             => $group->first()->agent,
                     'items'             => $group,
-                    'total_commissions' => $group->where('commission_genere', 1)->sum('montant'),
-                    'total_manuels'     => $group->where('commission_genere', 0)->sum('montant'),
+                    
+                    // Utilisation de cycle_id pour différencier Commissions et Bonus
+                    'total_commissions' => $group->whereNotNull('cycle_id')->sum('montant'),
+                    'total_manuels'     => $group->whereNull('cycle_id')->sum('montant'),
+                    
                     'total_global'      => $group->sum('montant'),
                     'nb_items'          => $group->count()
                 ];
-            });
+            })
+            ->sortByDesc('total_global'); // On affiche les plus gros montants en premier
 
+        // 2. Calcul des statistiques globales pour les badges d'en-tête
+        $stats = (object) [
+            'montant_total_attente' => $bonusesByAgent->sum('total_global'),
+            'nombre_agents_concernes' => $bonusesByAgent->count(),
+            'nombre_lignes_total'     => $bonusesByAgent->sum('nb_items'),
+        ];
+
+        // 3. Liste exhaustive des agents (pour un formulaire d'ajout manuel de bonus par exemple)
         $agents = Agent::orderBy('nom')->get();
 
-        return view('admin.bonuses.index', compact('bonusesByAgent', 'agents'));
+        // 4. Retour vers la vue avec toutes les données nécessaires
+        return view('admin.bonuses.index', [
+            'bonusesByAgent' => $bonusesByAgent,
+            'agents'         => $agents,
+            'stats'          => $stats,
+            'pageTitle'      => 'Gestion des Commissions et Bonus'
+        ]);
     }
 
     /**
@@ -54,15 +75,34 @@ class BonusController extends Controller
 
         $validated['admin_id'] = Auth::id();
         $validated['commission_genere'] = 0; 
+        $validated['statut'] = 'en_attente'; // Sécurité pour forcer le statut initial
 
         try {
             Bonus::create($validated);
-            return redirect()->route('admin.bonuses.index')
-                             ->with('success', 'Le bonus a été enregistré en attente de paiement.');
+
+            // 💡 Ajustement crucial pour SweetAlert2 (Requête AJAX / Fetch)
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Le bonus a été enregistré avec succès et mis en attente.'
+                ]);
+            }
+
+            // Fallback classique (si tu as encore un formulaire normal quelque part)
+            return redirect()->route('bonuses.index') // Route corrigée selon ton Route::resource
+                            ->with('success', 'Le bonus a été enregistré en attente de paiement.');
+
         } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur lors de la sauvegarde : ' . $e->getMessage()
+                ], 500);
+            }
+
             return redirect()->back()
-                             ->with('error', 'Erreur : ' . $e->getMessage())
-                             ->withInput();
+                            ->with('error', 'Erreur : ' . $e->getMessage())
+                            ->withInput();
         }
     }
 
@@ -90,6 +130,7 @@ class BonusController extends Controller
                 $paiement = Paiement::create([
                     'agent_id'      => $request->agent_id,
                     'montant_total' => $totalMontant,
+                    'type'          => 'deboursement',
                     'reference'     => 'PAY-' . strtoupper(Str::random(8)) . '-' . date('Ymd'),
                     'validated_by'  => Auth::id(),
                 ]);
@@ -97,6 +138,7 @@ class BonusController extends Controller
                 // 2. Lier les bonus au paiement et marquer la date
                 Bonus::whereIn('id', $bonusesToPay->pluck('id'))->update([
                     'paiement_id'  => $paiement->id,
+                    'statut'       => 'valide',
                     'validated_at' => now(),
                     'validated_by' => Auth::id(),
                 ]);
@@ -114,29 +156,39 @@ class BonusController extends Controller
      */
     public function approveSingle($id)
     {
+        // On récupère le bonus avec un verrou de ligne (optional mais conseillé en tontine)
         $bonus = Bonus::whereNull('paiement_id')->findOrFail($id);
 
         try {
             DB::transaction(function () use ($bonus) {
-                // 1. Créer le reçu pour cette ligne unique
+                // 1. Créer le paiement
                 $paiement = Paiement::create([
                     'agent_id'      => $bonus->agent_id,
                     'montant_total' => $bonus->montant,
+                    'type'          => 'deboursement', 
                     'reference'     => 'PAY-S-' . strtoupper(Str::random(5)) . '-' . date('Ymd'),
                     'validated_by'  => Auth::id(),
                 ]);
 
-                // 2. Mise à jour du bonus
-                $bonus->update([
-                    'paiement_id'  => $paiement->id,
-                    'validated_at' => now(),
-                    'validated_by' => Auth::id(),
-                ]);
+                // Vérification de sécurité : si l'id n'est pas généré, on stoppe
+                if (!$paiement->id) {
+                    throw new \Exception("Le paiement n'a pas pu être généré.");
+                }
+
+                // 2. Mise à jour du bonus avec l'ID tout juste créé
+                // On utilise update sur l'instance ou directement via la requête pour être sûr
+                $bonus->paiement_id = $paiement->id;
+                $bonus->statut = 'valide'; // Changement d'état : en_attente -> valide
+                $bonus->validated_at = now();
+                $bonus->validated_by = Auth::id();
+                
+                // save() est souvent plus explicite que update() quand l'objet est déjà chargé
+                $bonus->save();
             });
 
-            return back()->with('success', 'Élément payé individuellement.');
+            return back()->with('success', 'Paiement effectué et bonus mis à jour.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Erreur : ' . $e->getMessage());
+            return back()->with('error', 'Erreur lors de la validation : ' . $e->getMessage());
         }
     }
 
@@ -145,15 +197,35 @@ class BonusController extends Controller
      */
     public function rejectSingle($id)
     {
-        $bonus = Bonus::findOrFail($id);
-        
-        // Sécurité : Interdire la suppression si c'est déjà payé
-        if ($bonus->paiement_id) {
-            return back()->with('error', 'Impossible de supprimer un bonus déjà payé.');
-        }
+        // On récupère le bonus qui n'a pas encore de paiement associé
+        $bonus = Bonus::whereNull('paiement_id')->findOrFail($id);
 
-        $bonus->delete();
-        return back()->with('info', 'L\'élément a été supprimé.');
+        try {
+            DB::transaction(function () use ($bonus) {
+                // 1. Créer une ligne de "trace" dans la table paiements
+                // On met le montant à 0 car aucun argent n'est réellement décaissé
+                $paiement = Paiement::create([
+                    'agent_id'      => $bonus->agent_id,
+                    'montant_total' => 0, 
+                    'type'          => 'rejet',
+                    'reference'     => 'REJ-S-' . strtoupper(Str::random(5)) . '-' . date('Ymd'),
+                    'validated_by'  => Auth::id(),
+                ]);
+
+                // 2. Mise à jour du bonus au lieu de la suppression
+                $bonus->update([
+                    'paiement_id'  => $paiement->id,
+                    'statut'       => 'refuse', // Changement d'état : en_attente -> refuse
+                    'validated_at' => now(),
+                    'validated_by' => Auth::id(),
+                ]);
+            });
+
+            return back()->with('info', 'Le bonus a été marqué comme refusé (archivé).');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erreur lors du refus : ' . $e->getMessage());
+        }
     }
     /**
      * Affiche l'historique des paiements effectués.

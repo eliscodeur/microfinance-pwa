@@ -212,7 +212,8 @@
             Swal.fire('Déjà à jour', 'Toutes les collectes sont déjà synchronisées.', 'info');
             return;
         }
-        
+        // console.log("Données à synchroniser:", `{{ route('pwa.check-sync-permission') }}?matricule=${getMatricule()}&t=${Date.now()}`);
+        // return
         try {
             const authRes = await fetch(`{{ route('pwa.check-sync-permission') }}?matricule=${getMatricule()}&t=${Date.now()}`, {
                 method: 'GET',
@@ -222,7 +223,7 @@
             });
 
             const auth = await authRes.json();
-            
+
             if (!auth.can_sync) {
                 Swal.fire('Non autorisé', 'Votre autorisation a expiré.', 'warning');
                 return;
@@ -251,16 +252,20 @@
                 id: a.id,
                 pin_hash: a.pin_hash
             }));
-          
+
+            // 1. On récupère le matricule de l'agent (ex: "NEC-00002")
+            const agentMatricule = getMatricule(); 
+
             const syncJob = {
-                sync_uuid: `sync-${getMatricule()}-${Date.now()}`,
+                matricule: agentMatricule, // 👈 Ajout crucial pour ton Laravel mis à jour
+                sync_uuid: `sync-${agentMatricule}-${Date.now()}`,
                 cycles: cycles,
                 collectes: collectes,
                 agents: agentsPayload
             };
 
             updateStatusUI("Envoi au serveur...");
-            
+
             const response = await fetch("{{ route('pwa.sync-data-post') }}", {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -268,8 +273,10 @@
                     'Content-Type': 'application/json', 
                     'X-CSRF-TOKEN': '{{ csrf_token() }}' 
                 },
-                body: JSON.stringify(syncJob)
+                body: JSON.stringify(syncJob) // Contient maintenant le matricule
             });
+
+  
 
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "Erreur envoi");
@@ -431,6 +438,8 @@
                     updated_at: new Date().toISOString()
                 });
             }
+            // console.log("Données initiales reçues:", payload);
+            // return
             await populateDatabase(payload, { replaceAll: true });
 
             localStorage.setItem('last_sync', new Date().toISOString());

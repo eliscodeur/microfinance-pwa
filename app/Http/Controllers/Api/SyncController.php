@@ -8,6 +8,8 @@ use App\Models\Carnet;
 use App\Models\Client;
 use App\Models\Collecte;
 use App\Models\Cycle;
+use App\Models\Bonus;
+use App\Models\Paiement;
 use App\Models\SyncBatch;
 use App\Models\SyncBatchCollecte;
 use App\Models\SyncBatchCycle;
@@ -45,14 +47,19 @@ class SyncController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'sync_uuid' => 'required|string',
-            'cycles' => 'nullable|array',
-            'collectes' => 'nullable|array',
-        ]);
+                'matricule' => 'required|string',
+                'sync_uuid' => 'required|string',
+                'cycles' => 'nullable|array',
+                'collectes' => 'nullable|array',
+            ]);
 
-        $agent = auth()->user()->agent;
+        $agent = Agent::where('code_agent', $request->input('matricule'))->first();
+
         if (!$agent || !$agent->can_sync) {
-            return response()->json(['success' => false, 'message' => 'Sync interdite ou agent introuvable.'], 403);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Synchronisation interdite ou agent introuvable.'
+            ], 403);
         }
 
         $syncUuid = $request->sync_uuid;
@@ -131,7 +138,7 @@ class SyncController extends Controller
     }
 
     public function finalizeBatch(SyncBatch $batch, ?int $adminId = null): void
-    {
+ {
         $adminId = $adminId ?: auth()->id();
         
         // Sécurité : on ne traite que les batches en attente
@@ -148,7 +155,7 @@ class SyncController extends Controller
                     $hash = data_get($agentData, 'pin_hash');
 
                     if ($id && $hash) {
-                        \App\Models\Agent::where('id', $id)->update([
+                        Agent::where('id', $id)->update([
                             'pin_hash' => $hash,
                             'updated_at' => $now
                         ]);
@@ -185,10 +192,11 @@ class SyncController extends Controller
                     if ($cycle->statut === 'termine' && !$cycle->commission_genere) {
                         $cycle->load('carnet'); 
                         if ($cycle->carnet) {
-                            \App\Models\Bonus::create([
+                            Bonus::create([
                                 'agent_id'         => $cycle->agent_id,
                                 'cycle_id'         => $cycle->id, 
                                 'montant'          => $cycle->montant_journalier ?? 0, 
+                                'statut'           => 'en_attente',
                                 'motif'            => "Commission Automatique - Cycle #" . $cycle->id, 
                                 'date_attribution' => $now,
                                 'commission_genere'=> false,
@@ -311,32 +319,45 @@ class SyncController extends Controller
 
                 return $cycle;
             });
+            // 4. Bonus et Commissions en attente (Pas encore associés à un paiement)
+            $bonusEnAttente = Bonus::where('agent_id', $agent->id)
+                ->where('statut', 'en_attente')
+                ->orderBy('date_attribution', 'desc')
+                ->get();
 
-        // 4. Extraction à plat pour Dexie
-        $collectes = $cycles->pluck('collectes')->flatten()->map(function($col) {
-            $col->synced = 1; 
-            return $col;
-        });
 
-        // On récupère les retraits déjà marqués avec synced et cycle_uid
-        $retraits = $cycles->pluck('retraits')->flatten(); 
+            $historiquePaiements = Paiement::where('agent_id', $agent->id)
+                ->with(['bonuses']) // Relation pour charger les lignes de bonus payées
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get();
+            // 6. Extraction à plat pour Dexie
+            $collectes = $cycles->pluck('collectes')->flatten()->map(function($col) {
+                $col->synced = 1; 
+                return $col;
+            });
 
-        return [
-            'success' => true,
-            'agent' => [
-                'id'       => $agent->id,
-                'nom'      => $agent->nom,
-                'pin_hash' => $agent->pin_hash,
-            ],
-            'clients'     => $clients,
-            'carnets'     => $carnets,
-            // makeHidden libère de la bande passante en évitant les doublons imbriqués
-            'cycles'      => $cycles->makeHidden(['collectes', 'retraits']), 
-            'collectes'   => $collectes,
-            'retraits'    => $retraits, 
-            'server_date' => now()->format('Y-m-d'),
-        ];
-    }
+            // On récupère les retraits déjà marqués avec synced et cycle_uid
+            $retraits = $cycles->pluck('retraits')->flatten(); 
+
+            return [
+                'success' => true,
+                'agent' => [
+                    'id'       => $agent->id,
+                    'nom'      => $agent->nom,
+                    'pin_hash' => $agent->pin_hash,
+                ],
+                'clients'     => $clients,
+                'carnets'     => $carnets,
+                // makeHidden libère de la bande passante en évitant les doublons imbriqués
+                'cycles'      => $cycles->makeHidden(['collectes', 'retraits']), 
+                'collectes'   => $collectes,
+                'retraits'    => $retraits, 
+                'bonus_en_attente' => $bonusEnAttente->toArray(),
+                'historique_paiements' => $historiquePaiements->toArray(),
+                'server_date' => now()->format('Y-m-d'),
+            ];
+        }
 
     private function normalizeDateTime($value): string
     {

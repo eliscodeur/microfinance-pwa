@@ -92,15 +92,21 @@
 
 <nav class="pwa-bottom-nav">
     {{-- ACCUEIL --}}
-    <a href="{{ route('pwa.index') }}" class="nav-item-pwa {{ request()->routeIs('pwa.index') ? 'active' : '' }}" data-pending-sync-link>
+    <a href="{{ route('pwa.index') }}" class="nav-item-pwa {{ request()->routeIs('pwa.index') ? 'active' : '' }}">
         <i class="bi {{ request()->routeIs('pwa.index') ? 'bi-house-door-fill' : 'bi-house-door' }}"></i>
         <span>Accueil</span>
     </a>
 
     {{-- CLIENTS --}}
-    <a href="{{ route('pwa.clients') }}" class="nav-item-pwa {{ request()->routeIs('pwa.clients') ? 'active' : '' }}" data-pending-sync-link>
+    <a href="{{ route('pwa.clients') }}" class="nav-item-pwa {{ request()->routeIs('pwa.clients') ? 'active' : '' }}">
         <i class="bi {{ request()->routeIs('pwa.clients') ? 'bi-people-fill' : 'bi-people' }}"></i>
         <span>Clients</span>
+    </a>
+
+    {{-- GAINS (Corrigé) --}}
+    <a href="{{ route('pwa.gains') }}" class="nav-item-pwa {{ request()->routeIs('pwa.gains') || request()->is('*gains*') ? 'active' : '' }}">
+        <i class="bi {{ request()->routeIs('pwa.gains') ? 'bi-wallet-fill' : 'bi-wallet2' }}"></i>
+        <span>Gains</span>
     </a>
 
     {{-- SYNCHRONISATION --}}
@@ -113,31 +119,4 @@
     </a>
 </nav>
 
-<script>
-    async function tenterAccesSync() {
-    // CONDITION 1 : Est-ce qu'il a internet ?
-    if (!navigator.onLine) {
-        alert("Action impossible : Vous devez être connecté à Internet pour accéder à la synchronisation.");
-        return; 
-    }
 
-    // CONDITION 2 : Est-ce que l'admin l'autorise ?
-    try {
-        const response = await fetch("{{ route('pwa.check-sync-permission') }}", {
-            credentials: 'same-origin'
-        });
-        const data = await response.json();
-
-        if (data.can_sync) {
-            // SI TOUT EST OK -> On entre dans la vue
-            window.location.href = "{{ route('pwa.sync') }}";
-        } else {
-            // SI L'ADMIN A BLOQUÉ
-            alert("Synchronisation non autorisée. Veuillez contacter votre administrateur.");
-        }
-    } catch (error) {
-        console.error("Erreur lors de la vérification des droits", error);
-        alert("Erreur de communication avec le serveur.");
-    }
-}
-</script>

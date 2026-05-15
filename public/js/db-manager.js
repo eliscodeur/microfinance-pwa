@@ -33,7 +33,9 @@ export function getAgentDB() {
         clients: 'id, nom, prenom, telephone',
         carnets: 'id, client_id, numero',
         cycles: '++id, &cycle_uid, carnet_id, statut, synced',
-        collectes: '++id, &collecte_uid, cycle_uid, cycle_id, synced'
+        collectes: '++id, &collecte_uid, cycle_uid, cycle_id, synced',
+        bonus_en_attente: 'id, agent_id, type, statut, date_attribution',
+        paiements_valides: 'id, reference, montant_total, type, created_at'
     });
     
     dbInstance = db;
@@ -71,7 +73,9 @@ export async function populateDatabase(data, options = {}) {
             database.carnets, 
             database.cycles, 
             database.collectes,
-            database.agents
+            database.agents,
+            database.bonus_en_attente, 
+            database.paiements_valides  
         ], async () => {
             
             if (replaceAll) {
@@ -79,6 +83,8 @@ export async function populateDatabase(data, options = {}) {
                 await database.cycles.clear();
                 await database.carnets.clear();
                 await database.clients.clear();
+                await database.bonus_en_attente.clear(); 
+                await database.paiements_valides.clear();
             }
 
             // 1. Mise à jour de l'agent (pour le pin_hash notamment)
@@ -129,9 +135,31 @@ export async function populateDatabase(data, options = {}) {
                 }));
                 await database.collectes.bulkPut(normalizedCollectes);
             }
-        });
 
-        console.log(`✅ Base ${database.name} mise à jour. Retraits intégrés aux cycles.`);
+            if (data.bonus_en_attente) {
+                try {
+                    await database.bonus_en_attente.clear();
+                    if (data.bonus_en_attente.length > 0) {
+                        await database.bonus_en_attente.bulkPut(data.bonus_en_attente);
+                        console.log("✅ Bonus enregistrés avec succès :", data.bonus_en_attente.length);
+                    }
+                } catch (error) {
+                    console.error("❌ Erreur Dexie sur bonus_en_attente :", error);
+                }
+            }
+
+            if (data.historique_paiements) {
+                try {
+                    await database.paiements_valides.clear();
+                    if (data.historique_paiements.length > 0) {
+                        await database.paiements_valides.bulkPut(data.historique_paiements);
+                        console.log("✅ Historique paiements enregistré avec succès :", data.historique_paiements.length);
+                    }
+                } catch (error) {
+                    console.error("❌ Erreur Dexie sur historique_paiements :", error);
+                }
+            }
+        });
         return true;
     } catch (error) {
         console.error(`❌ Erreur lors du remplissage :`, error);

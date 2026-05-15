@@ -10,6 +10,8 @@ use App\Models\Carnet;
 use App\Models\Agent;               
 use App\Models\Cycle;
 use App\Models\Collecte;
+use App\Models\Bonus;
+use App\Models\Paiement;
 use App\Models\SyncHistory;
 
 class PwaController extends Controller
@@ -108,7 +110,17 @@ class PwaController extends Controller
             });
 
             $retraits = $cycles->pluck('retraits')->flatten();
+            $bonusEnAttente = Bonus::where('agent_id', $agent->id)
+                ->where('statut', 'en_attente')
+                ->orderBy('date_attribution', 'desc')
+                ->get();
 
+            // 🆕 7. Récupération de l'historique des paiements validés (Limité à 10, Nettoyés pour Dexie)
+            $historiquePaiements = Paiement::where('agent_id', $agent->id)
+                ->with(['bonuses']) // Charge les lignes associées
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get();
             // 6. Historique de synchro
             $existingSync = SyncHistory::where('agent_id', $agent->id)
                 ->where('sync_uuid', 'like', 'initial-sync-' . $agent->id . '-%')
@@ -140,9 +152,11 @@ class PwaController extends Controller
                 ],
                 'clients' => $clients,
                 'carnets' => $carnets,
-                'cycles' => $cycles->makeHidden(['collectes', 'retraits']), // On cache les relations pour alléger
+                'cycles' => $cycles->makeHidden(['collectes', 'retraits']), 
                 'collectes' => $collectes,
-                'retraits' => $retraits, // Ajouté pour ton traitement JS
+                'retraits' => $retraits, 
+                'bonus_en_attente' => $bonusEnAttente->toArray(),
+                'historique_paiements' => $historiquePaiements->toArray(),
                 'server_date' => now()->format('Y-m-d'),
             ]);
 
@@ -264,25 +278,33 @@ class PwaController extends Controller
         }
     }
 
-    public function checkSyncPermission() 
-    {
-        $user = auth()->user();
-        $agent = $user->agent;
 
+    public function checkSyncPermission(Request $request) 
+    {
+        // 1. Récupération du matricule depuis la query string (?matricule=...)
+        $matricule = $request->query('matricule');
+        // 2. Recherche de l'agent par son matricule unique
+        $agent = $matricule ? Agent::where('code_agent', $matricule)->first() : null;
+
+        // 3. Retour de la réponse au format JSON attendu par la PWA
         return response()->json([
             'can_sync' => $agent && (bool) $agent->can_sync,
             'debug' => [
-                'user_id' => $user->id,
-                'agent_id' => $agent ? $agent->id : 'null',
-                'value_in_db' => $agent ? $agent->can_sync : 'null',
+                'matricule_recu' => $matricule ?? 'non_fourni',
+                'agent_id'       => $agent ? $agent->id : null,
+                'value_in_db'    => $agent ? $agent->can_sync : null,
             ],
             'time' => now()->timestamp 
         ]);
     }
 
-    public function checkPermission()
+    /**
+     * Alias ou autre point d'entrée qui redirige vers la même vérification.
+     */
+    public function checkPermission(Request $request)
     {
-        return $this->checkSyncPermission();
+        // On passe l'objet $request pour que la query string soit lue correctement
+        return $this->checkSyncPermission($request);
     }
 
     public function showSecurityPin()

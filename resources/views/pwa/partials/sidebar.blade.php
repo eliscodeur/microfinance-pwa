@@ -12,7 +12,7 @@
             </div>
             <div class="ms-3">
                 <div class="fw-bold">Menu Agent</div>
-                <div class="small opacity-75">Nana Eco Consulting</div>
+                <div class="small opacity-75" id="agent"></div>
             </div>
         </div>
     </div>
@@ -28,7 +28,7 @@
             <i class="bi bi-cash-stack me-3 text-warning"></i> Liste des Collectes
         </a>
 
-        <a href="/pwa/stats-performances" class="list-group-item list-group-item-action border-0 py-3">
+        <a href="/pwa/gains" class="list-group-item list-group-item-action border-0 py-3">
             <i class="bi bi-graph-up-arrow me-3 text-info"></i> Bonus & Commissions
         </a>
 
@@ -43,3 +43,5 @@
         </a>
     </div>
 </div>
+
+    

@@ -10,6 +10,7 @@ const ASSETS_TO_CACHE = [
     '/pwa/collectes-liste',
     '/pwa/sync',
     '/pwa/security-pin',
+    '/pwa/gains',
     // Bibliothèques  
     '/js/dexie.js',
     '/js/db-manager.js',
