@@ -21,7 +21,7 @@
                 <!-- <p class="mt-2 text-muted">Photo</p> -->
             </div>
             <div class="col-md-8">
-                <h4 class="text-primary">{{ $agent->nom }}</h4>
+                <h4 class="text-primary">{{ \Illuminate\Support\Str::upper($agent->nom) }}</h4>
                 <hr>
                 <div class="row">
                     <div class="col-sm-6">
@@ -44,7 +44,7 @@
                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="resetPin({{ $agent->id }})">
                         <i class="bi bi-shield-lock"></i> Réinitialiser le code PIN
                     </button>
-                    <p class="small text-muted mt-1">L'agent devra définir un nouveau code à sa prochaine connexion offline.</p>
+                    <p class="small text-muted mt-1">L'agent devra définir un nouveau code à sa prochaine connexion en ligne.</p>
                 </div>
             </div>
         </div>
@@ -56,19 +56,19 @@
     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Gains et Commissions</h5>
         <div>
-            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#bonusModal">
+            <!-- <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#bonusModal">
                 <i class="bi bi-plus-circle"></i> Attribuer un bonus
-            </button>
-            <form method="POST" action="{{ route('admin.agents.calculateCommissions', $agent) }}" style="display: inline;">
+            </button> -->
+            <!-- <form method="POST" action="{{ route('admin.agents.calculateCommissions', $agent) }}" style="display: inline;">
                 @csrf
                 <button type="submit" class="btn btn-warning btn-sm ms-2">
                     <i class="bi bi-calculator"></i> Calculer Commissions
                 </button>
-            </form>
+            </form> -->
         </div>
     </div>
     <div class="card-body">
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-md-4">
                 <div class="text-center">
                     <h4 class="text-success">{{ number_format($agent->portefeuille_virtuel, 0, ',', ' ') }} F</h4>
@@ -115,15 +115,15 @@
                     @endforelse
                 </tbody>
             </table>
-        </div>
+        </div> -->
         <hr>
         <h6>Évolution des Gains (12 derniers mois)</h6>
         <canvas id="gainsChart" width="400" height="200"></canvas>
-        @if($agent->checkPlafondCaisse())
+        <!-- @if($agent->checkPlafondCaisse())
         <div class="alert alert-warning mt-3">
             <i class="bi bi-exclamation-triangle"></i> Alerte : Le portefeuille virtuel dépasse le plafond de caisse (1 000 000 F). Veuillez reverser les fonds.
-        </div>
-        @endif
+        </div> -->
+        <!-- @endif -->
     </div>
 </div>
 
@@ -145,7 +145,7 @@
             <tbody>
                 @forelse($history as $entry)
                 <tr>
-                    <td>{{ $entry->client->nom ?? 'Client supprimé' }}</td>
+                    <td>{{ $entry->client ? \Illuminate\Support\Str::upper($entry->client->nom) . ' ' . \Illuminate\Support\Str::upper($entry->client->prenom) : 'Client supprimé' }}</td>
                     <td>{{ optional($entry->assigned_at)->format('d/m/Y H:i') ?? 'N/A' }}</td>
                     <td>{{ optional($entry->unassigned_at)->format('d/m/Y H:i') ?? 'En cours' }}</td>
                     <td>
@@ -165,19 +165,29 @@
         </table>
     </div>
 </div>
-<!-- <div class="mb-3">
+<div class="mb-3">
     Statut actuel : 
     @if($agent->actif)
         <span class="badge bg-success">Actif</span>
     @else
         <span class="badge bg-danger">Inactif / Suspendu</span>
     @endif
-</div> -->
+</div>
 <div class="d-flex gap-2 mt-3">
     @can('Activer/Désactiver')
-    <button type="button" class="btn {{ $agent->actif ? 'btn-warning' : 'btn-success' }}" data-bs-toggle="modal" data-bs-target="#toggleModal">
+    <button type="button" 
+        class="btn {{ $agent->actif ? 'btn-warning' : 'btn-success' }}" 
+        onclick="confirmerToggleStatus({{ $agent->id }}, {{ $agent->actif ? 'true' : 'false' }})">
         {{ $agent->actif ? 'Désactiver' : 'Activer' }} Agent
     </button>
+
+    <form id="form-toggle-status-{{ $agent->id }}" 
+        method="POST" 
+        action="{{ route('admin.agents.toggleStatus', $agent->id) }}" 
+        style="display: none;">
+        @csrf
+        @method('PATCH')
+    </form>
     @endcan
     <a href="{{ route('admin.agents.index') }}" class="btn btn-secondary">Retour à la liste</a>
     @can('Modifier données')
@@ -210,34 +220,7 @@
     </div>
 </div>
 
-<!-- Modal pour attribuer un bonus -->
-<div class="modal fade" id="bonusModal" tabindex="-1" aria-labelledby="bonusModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="bonusModalLabel">Attribuer un Bonus à {{ $agent->nom }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ route('admin.agents.storeBonus', $agent) }}">
-                @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="montant" class="form-label">Montant (FCFA)</label>
-                        <input type="number" class="form-control" id="montant" name="montant" required min="0" step="0.01">
-                    </div>
-                    <div class="mb-3">
-                        <label for="motif" class="form-label">Motif</label>
-                        <input type="text" class="form-control" id="motif" name="motif" required maxlength="255" placeholder="Ex: Performance exceptionnelle">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-success">Attribuer le Bonus</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -302,7 +285,7 @@
     async function resetPin(agentId) {
         const { isConfirmed } = await Swal.fire({
             title: 'Réinitialiser le PIN ?',
-            text: "L'agent ne pourra plus utiliser son ancien code pour les collectes offline.",
+            text: "L'agent ne pourra plus utiliser son ancien code pour les collectes hors ligne.",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ffc107',
@@ -333,6 +316,27 @@
                 Swal.fire('Erreur', 'Impossible de contacter le serveur', 'error');
             }
         }
+    }
+    function confirmerToggleStatus(agentId, isActif) {
+        const actionText = isActif ? 'désactiver' : 'activer';
+        const confirmButtonColor = isActif ? '#ffc107' : '#198754'; // Orange-Yellow si désactivation, Vert si activation
+
+        Swal.fire({
+            title: `Êtes-vous sûr ?`,
+            text: `Vous allez ${actionText} cet agent.`,
+            icon: isActif ? 'warning' : 'info',
+            showCancelButton: true,
+            confirmButtonColor: confirmButtonColor,
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: `Oui, ${actionText} !`,
+            cancelButtonText: 'Annuler',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Soumission stricte du formulaire lié à l'agent
+                document.getElementById(`form-toggle-status-${agentId}`).submit();
+            }
+        });
     }
 </script>
 

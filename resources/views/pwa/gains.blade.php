@@ -1,13 +1,22 @@
 @extends('pwa.layouts.app')
 
-@section('content')
-<div class="container py-3" style="padding-bottom: 80px;"> {{-- Marge pour la nav du bas --}}
+@section('header')
+<div class="d-flex align-items-center w-100 bg-white py-1">
     
-    {{-- En-tête --}}
-    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
+            <i class="bi bi-list fs-3 me-3"></i>
+        </button>
+    
+    <div class="d-flex align-items-center flex-grow-1">
         <h5 class="fw-bold mb-0 text-primary"><i class="bi bi-wallet2 me-2"></i>Mes Gains</h5>
     </div>
 
+</div>
+@endsection
+
+@section('content')
+<div class="container py-3" style="padding-bottom: 80px;">
+    
     {{-- Résumé des gains (Cards Soft) --}}
     <div class="row g-2 mb-4">
         <div class="col-6">
@@ -64,6 +73,7 @@
         </div>
     </div>
 </div>
+
 
 <script type="module">
     import { getAgentDB, populateDatabase, DBManager, db } from '/js/db-manager.js';

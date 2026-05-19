@@ -115,36 +115,7 @@
 <body>
     @include('pwa.partials.sidebar')
     <header class="pwa-header shadow-sm">
-        <div class="d-flex justify-content-between align-items-center w-100">
-            <div class="d-flex align-items-center">
-                <!-- @if(View::hasSection('header_left'))
-                    <div class="me-2">@yield('header_left')</div>
-                @endif -->
-                <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
-                    <i class="bi bi-list fs-3 me-3"></i>
-                </button>
-                <!-- <div class="me-2"><i class="bi bi-list fs-3 me-3"></i></div> -->
-                <div class="logo-container">
-                    <img src="{{ asset('icons/icon-192x192.png') }}" class="logo-img" alt="Logo">
-                </div>
-                <span class="brand-text">Nana<span class="brand-subtext">Eco</span></span>
-            </div>
-
-            <div class="d-flex align-items-center">
-                <div id="status-icons" class="me-3">
-                    <i id="online-icon" class="bi bi-wifi" style="color: var(--nana-green); font-size: 1.4rem;"></i>
-                    <i id="offline-icon" class="bi bi-wifi-off animate-pulse" style="color: #dc3545; font-size: 1.4rem; display: none;"></i>
-                </div>
-
-                <!-- <button onclick="deconnexion()" class="btn btn-link text-danger p-0 border-0">
-                    <i class="bi bi-box-arrow-right fs-4"></i> 
-                </button> -->
-
-                <!-- <div class="agent-avatar-circle">
-                    <img id="agent-photo" src="/images/default-avatar.png">
-                </div> -->
-            </div>
-        </div>
+        @yield('header')
     </header>
 
     <main>
@@ -215,15 +186,11 @@
     }
 
     // --- GESTION DU STATUT ON/OFFLINE ---
-    function updateOnlineStatus() {
-        const isOnline = navigator.onLine;
-        document.getElementById('online-icon').style.display = isOnline ? 'block' : 'none';
-        document.getElementById('offline-icon').style.display = isOnline ? 'none' : 'block';
-    }
+   
 
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-    updateOnlineStatus(); // Init au chargement
+    // window.addEventListener('online', updateOnlineStatus);
+    // window.addEventListener('offline', updateOnlineStatus);
+    // updateOnlineStatus(); // Init au chargement
 
     // Écouteur pour détecter le retour de la connexion
     window.addEventListener('online', async () => {

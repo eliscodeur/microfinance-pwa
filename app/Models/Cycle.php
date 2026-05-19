@@ -71,5 +71,16 @@ class Cycle extends Model
         $commission = $this->montant_journalier ?? 0;
         return $this->solde_brut_restant - $commission;
     }
-
+    public function calculerCommission(): float
+    {
+        return (float) ($this->montant_journalier ?? 0);
+    }
+    
+    /**
+     * Calcule le total collecté sur ce cycle.
+     */
+    public function totalCollecte(): float
+    {
+        return (float) $this->collectes()->sum('montant');
+    }
 }

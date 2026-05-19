@@ -1,8 +1,27 @@
 @extends('pwa.layouts.app')
 
+@section('header')
+<div class="d-flex align-items-center w-100 bg-white py-1">
+    
+        <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
+            <i class="bi bi-list fs-3 me-3"></i>
+        </button>
+    
+    <div class="d-flex align-items-center justify-content-between flex-grow-1">
+        <span class="fw-bold text-dark fs-5">Synchronisation</span>
+        
+        <span id="network-status-badge" class="badge rounded-pill px-3 py-2 shadow-sm border small transition-status animate-fade">
+            <i class="bi bi-circle-fill me-1 small"></i> <span id="network-status-text">Vérification...</span>
+        </span>
+    </div>
+
+</div>
+@endsection
+
 @section('content')
 <div class="container-fluid p-0" style="background-color: #f8f9fa; min-height: 100vh;">
     <div class="p-4" style="padding-bottom: 180px !important;"> 
+        
         <div class="card shadow-sm border-0 mb-4" style="border-radius: 16px;">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center mb-4">
@@ -43,66 +62,68 @@
         @endif
         
         <div class="mt-5">
-    <h6 class="text-uppercase text-muted fw-bold mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">Derniers envois</h6>
-    
-    @forelse(auth()->user()->agent->syncBatches()->latest()->take(5)->get() as $batch)
-        <div class="d-flex align-items-center bg-white p-3 rounded-3 shadow-sm mb-2">
+            <h6 class="text-uppercase text-muted fw-bold mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">Derniers envois</h6>
             
-            @if($batch->status === 'approved')
-                <i class="bi bi-check-circle-fill text-success fs-5 me-3"></i>
-            @elseif($batch->status === 'rejected')
-                <i class="bi bi-x-circle-fill text-danger fs-5 me-3"></i>
-            @else
-                <i class="bi bi-clock-history text-warning fs-5 me-3"></i>
-            @endif
+            @forelse(auth()->user()->agent->syncBatches()->latest()->take(5)->get() as $batch)
+                <div class="d-flex align-items-center bg-white p-3 rounded-3 shadow-sm mb-2">
+                    
+                    @if($batch->status === 'approved')
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-3"></i>
+                    @elseif($batch->status === 'rejected')
+                        <i class="bi bi-x-circle-fill text-danger fs-5 me-3"></i>
+                    @else
+                        <i class="bi bi-clock-history text-warning fs-5 me-3"></i>
+                    @endif
 
-            <div class="flex-grow-1">
-                <small class="text-muted d-block">{{ $batch->created_at->format('d/m/Y H:i') }}</small>
-                <span class="small text-dark fw-medium">
-                    {{ $batch->nb_collectes }} collectes - {{ number_format($batch->total_montant, 0, ',', ' ') }} FCFA
-                </span>
-            </div>
+                    <div class="flex-grow-1">
+                        <small class="text-muted d-block">{{ $batch->created_at->format('d/m/Y H:i') }}</small>
+                        <span class="small text-dark fw-medium">
+                            {{ $batch->nb_collectes }} collectes - {{ number_format($batch->total_montant, 0, ',', ' ') }} FCFA
+                        </span>
+                    </div>
 
-            @if($batch->status === 'approved')
-                <span class="badge rounded-pill bg-success-subtle text-success">Validé</span>
-            @elseif($batch->status === 'rejected')
-                <span class="badge rounded-pill bg-danger-subtle text-danger">Rejeté</span>
-            @else
-                <span class="badge rounded-pill bg-warning-subtle text-warning">En attente</span>
-            @endif
+                    @if($batch->status === 'approved')
+                        <span class="badge rounded-pill bg-success-subtle text-success">Validé</span>
+                    @elseif($batch->status === 'rejected')
+                        <span class="badge rounded-pill bg-danger-subtle text-danger">Rejeté</span>
+                    @else
+                        <span class="badge rounded-pill bg-warning-subtle text-warning">En attente</span>
+                    @endif
 
+                </div>
+            @empty
+                <div class="text-center py-3 text-muted small">Aucun historique récent.</div>
+            @endforelse
         </div>
-    @empty
-        <div class="text-center py-3 text-muted small">Aucun historique récent.</div>
-    @endforelse
-</div>
     </div>
     
     <div class="bg-white border-top p-3" style="position: fixed; bottom: 60px; left: 0; right: 0; z-index: 1030;">
-        <div id="sync-progress-container" class="d-none mb-3">
-            <div class="d-flex justify-content-between mb-1">
-                <span class="text-primary small fw-bold" id="progress-label">Statut...</span>
-                <span class="text-primary small fw-bold" id="progress-percent">0%</span>
-            </div>
-            <div class="progress" style="height: 10px; border-radius: 5px;">
-                <div id="sync-bar-bottom" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-            </div>
-        </div>
-        
         <button id="btn-sync" class="btn btn-success w-100 py-3 fw-bold shadow-sm" style="border-radius: 15px;">
             <i class="bi bi-cloud-arrow-up-fill me-2"></i> SYNCHRONISER MAINTENANT
         </button>
-        <!-- <p class="text-center mt-2 mb-0" style="font-size: 0.8rem;">
-            <small id="last-sync-text" class="text-muted jam-last-sync">Dernière synchro : Calcul en cours...</small>
-        </p> -->
     </div>
 </div>
 
-
 <style>
-    /* Espacement pour éviter que le contenu ne soit caché par le Tab Bar */
+    /* Configuration structurelle et animations d'état de connexion */
     body { 
         padding-bottom: 70px; 
+    }
+
+    .transition-status {
+        transition: all 0.4s ease-in-out;
+    }
+
+    .bg-online {
+        background-color: #d1e7dd !important;
+        color: #0f5132 !important;
+        border-color: #badbcc !important;
+    }
+
+    .bg-offline {
+        background-color: #f8d7da !important;
+        color: #842029 !important;
+        border-color: #f5c2c7 !important;
     }
 
     /* Effet Skeleton Loading pour le chargement initial des compteurs */
@@ -130,19 +151,58 @@
         100% { transform: translateX(100%); } 
     }
     
-    /* Fallbacks pour les couleurs Bootstrap si version < 5.3 */
+    /* Fallbacks rétrocompatibilité Bootstrap */
     .bg-primary-subtle { background-color: #cfe2ff; }
     .text-primary { color: #0d6efd !important; }
     .bg-success-subtle { background-color: #d1e7dd; }
     .text-success { color: #198754 !important; }
     .bg-warning-subtle { background-color: #fff3cd; }
     .text-warning { color: #856404 !important; }
-
-    /* Customisation légère pour SweetAlert2 pour coller au style mobile */
-    .rounded-4 {
-        border-radius: 24px !important;
-    }
+    .rounded-4 { border-radius: 24px !important; }
 </style>
+
+<script>
+    /**
+     * Pilote l'affichage visuel de l'état de connexion de l'agent en temps réel
+     */
+    function updateNetworkStatus() {
+        const badge = document.getElementById('network-status-badge');
+        const text = document.getElementById('network-status-text');
+        const btnSync = document.getElementById('btn-sync');
+
+        if (!badge || !text) return;
+
+        if (navigator.onLine) {
+            // État En Ligne
+            badge.className = "badge rounded-pill px-3 py-2 shadow-sm border small transition-status bg-online";
+            text.innerText = "En ligne";
+            if (btnSync) {
+                btnSync.disabled = false;
+                btnSync.innerHTML = `<i class="bi bi-cloud-arrow-up-fill me-2"></i> SYNCHRONISER MAINTENANT`;
+            }
+        } else {
+            // État Hors-Ligne (Pas d'accès internet)
+            badge.className = "badge rounded-pill px-3 py-2 shadow-sm border small transition-status bg-offline";
+            text.innerText = "Hors-ligne";
+            if (btnSync) {
+                btnSync.disabled = true;
+                btnSync.innerHTML = `<i class="bi bi-wifi-off me-2"></i> CONNEXION REQUISE`;
+            }
+        }
+    }
+
+    // Écouteurs d'événements matériels système pour intercepter les coupures de réseau
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+
+    // Première exécution au chargement complet de la structure DOM
+    document.addEventListener('DOMContentLoaded', () => {
+        updateNetworkStatus();
+        
+        // --- TON SCRIPT DE SYNCHRONISATION DEXIE / API (Déjà existant) PEUT SUIVRE ICI ---
+    });
+</script>
+
 <script src="/js/dexie.js"></script>
 
 <script type="module">
@@ -199,7 +259,7 @@
         if (window.syncRequestInFlight) return;
 
         if (!navigator.onLine) {
-            Swal.fire('Hors connexion', 'Une connexion internet est requise.', 'refer');
+            Swal.fire('Hors connexion', 'Une connexion internet est requise.', 'warning');
             return;
         }
 
@@ -208,10 +268,10 @@
         const collectes = await database.collectes.where('synced').equals(0).toArray();
         const agents = await database.agents.where('synced').equals(0).toArray();
 
-        if (cycles.length === 0 && collectes.length === 0) {
-            Swal.fire('Déjà à jour', 'Toutes les collectes sont déjà synchronisées.', 'info');
-            return;
-        }
+        // if (cycles.length === 0 && collectes.length === 0) {
+        //     Swal.fire('Déjà à jour', 'Toutes les collectes sont déjà synchronisées.', 'info');
+        //     return;
+        // }
         // console.log("Données à synchroniser:", `{{ route('pwa.check-sync-permission') }}?matricule=${getMatricule()}&t=${Date.now()}`);
         // return
         try {
@@ -231,7 +291,6 @@
             lancerProcessus(cycles, collectes, agents);
 
         } catch (e) {
-            console.error("Erreur check permission:", e);
             Swal.fire('Erreur', 'Impossible de vérifier votre statut.', 'error');
         }
     };

@@ -121,12 +121,19 @@ Route::middleware(['auth', 'role:Agent'])->prefix('pwa')->name('pwa.')->group(fu
     Route::post('/store-carnet', [CarnetController::class, 'store'])->name('carnets.store');
     Route::get('/security-pin', [PwaController::class, 'showSecurityPin'])->name('pin');
     Route::get('/check-status/{matricule}', [PwaController::class, 'checkAgentStatus']);
-    Route::middleware('throttle:sync')->group(function () {
-        Route::post('/lock-sync', [PwaController::class, 'lockSync'])->name('lock-sync');
-        Route::post('/sync-data-post', [SyncController::class, 'store'])->name('sync-data-post');
-        Route::get('/sync-batches/{syncUuid}/status', [SyncController::class, 'batchStatus'])->name('sync-batches.status');
-        Route::post('/sync-batches/{syncUuid}/cancel', [SyncController::class, 'cancelBatch'])->name('sync-batches.cancel');
-    });
+   
+});
+Route::middleware('throttle:sync')->prefix('pwa')->name('pwa.')->group(function () {
+    Route::post('/lock-sync', [PwaController::class, 'lockSync'])->name('lock-sync');
+    Route::post('/sync-data-post', [SyncController::class, 'store'])->name('sync-data-post');
+    Route::get('/sync-batches/{syncUuid}/status', [SyncController::class, 'batchStatus'])->name('sync-batches.status');
+    Route::post('/sync-batches/{syncUuid}/cancel', [SyncController::class, 'cancelBatch'])->name('sync-batches.cancel');
 });
 
+// Route::middleware('throttle:sync')->group(function () {
+//     Route::post('/lock-sync', [PwaController::class, 'lockSync'])->name('lock-sync');
+//     Route::post('/sync-data-post', [SyncController::class, 'store'])->name('sync-data-post');
+//     Route::get('/sync-batches/{syncUuid}/status', [SyncController::class, 'batchStatus'])->name('sync-batches.status');
+//     Route::post('/sync-batches/{syncUuid}/cancel', [SyncController::class, 'cancelBatch'])->name('sync-batches.cancel');
+// });
 Route::middleware(['auth:sanctum', 'role:Agent', 'throttle:sync'])->post('/sync', [SyncController::class, 'synchroniser']);

@@ -1,42 +1,114 @@
 @extends('pwa.layouts.app')
 
-@section('content')
-<div class="sticky-top bg-white pt-3 pb-2 shadow-sm" style="z-index: 1020;">
-    <div class="container-fluid px-3">
-        <label class="form-label small fw-bold text-muted mb-1">Collectes par client</label>
-        <div class="position-relative">
-            <input class="form-control form-control-lg border-0 bg-light pe-5" 
+@section('header')
+<div class="d-flex align-items-center w-100 bg-white py-1">
+    
+    <div id="header-default-mode" class="d-flex align-items-center justify-content-between w-100 px-2">
+        <div class="d-flex align-items-center">
+        <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
+            <i class="bi bi-list fs-3 me-3"></i>
+        </button>
+            <span class="fw-bold text-dark fs-5 text-primary">Liste des collectes</span>
+        </div>
+        
+        <button onclick="activerModeRecherche()" class="btn btn-link text-dark p-0 border-0">
+            <i class="bi bi-search fs-4"></i>
+        </button>
+    </div>
+
+    <div id="header-search-mode" class="d-flex align-items-center w-100 d-none px-2">
+        <button onclick="desactiverModeRecherche()" class="btn btn-link text-dark p-0 me-3 border-0">
+            <i class="bi bi-arrow-left fs-3"></i>
+        </button>
+        
+        <div class="position-relative flex-grow-1">
+            <input class="form-control border-0 bg-light pe-5 custom-search-input" 
                    list="datalistClients" 
                    id="inputSearchClient" 
-                   placeholder="Nom du client..."
-                   style="border-radius: 12px; font-size: 0.95rem;"
+                   placeholder="Chercher client..."
+                   style="border-radius: 8px; font-size: 1rem; height: 45px;"
                    oninput="gererAffichageCroix(); chargerDonneesClient();">
             
             <button id="btnViderRecherche"
                     onclick="viderRecherche()" 
                     class="btn position-absolute end-0 top-50 translate-middle-y border-0 text-muted d-none" 
-                    style="z-index: 10; padding-right: 15px;">
+                    style="z-index: 10; padding-right: 12px;">
                 <i class="bi bi-x-circle-fill"></i>
             </button>
         </div>
-        <!-- Filtres de statut -->
-        <div class="container-fluid px-3 mb-2 mt-3">
-            <div class="d-flex gap-2" id="filter-group">
-                <button onclick="setFiltre('non_synchro')" id="btn-filter-non-synchro" class="btn btn-sm rounded-pill btn-primary shadow-sm flex-fill">
-                    <i class="bi bi-cloud-arrow-up"></i> À envoyer
-                </button>
-                <button onclick="setFiltre('synchro')" id="btn-filter-synchro" class="btn btn-sm rounded-pill btn-outline-secondary flex-fill">
-                    <i class="bi bi-cloud-check"></i> Synchro
-                </button>
-                <button onclick="setFiltre('tous')" id="btn-filter-tous" class="btn btn-sm rounded-pill btn-outline-secondary flex-fill">
-                    Toutes
-                </button>
-            </div>
+    </div>
+    
+    <datalist id="datalistClients"></datalist>
+
+</div>
+
+<script>
+    /**
+     * Bascule l'en-tête vers le champ de saisie actif en pleine largeur
+     */
+    function activerModeRecherche() {
+        document.getElementById('header-default-mode').classList.add('d-none');
+        const searchMode = document.getElementById('header-search-mode');
+        searchMode.classList.remove('d-none');
+        
+        const input = document.getElementById('inputSearchClient');
+        if (input) input.focus();
+    }
+
+    /**
+     * Quitte le mode recherche, nettoie les filtres et réaffiche le titre
+     */
+    function desactiverModeRecherche() {
+        document.getElementById('header-search-mode').classList.add('d-none');
+        document.getElementById('header-default-mode').classList.remove('d-none');
+        
+        if (typeof window.viderRecherche === 'function') {
+            window.viderRecherche();
+        } else {
+            const input = document.getElementById('inputSearchClient');
+            if (input) input.value = '';
+            const btnCroix = document.getElementById('btnViderRecherche');
+            if (btnCroix) btnCroix.classList.add('d-none');
+        }
+    }
+</script>
+
+<style>
+    /* Suppression radicale du contour bleu Bootstrap au clic */
+    .custom-search-input:focus {
+        background-color: #f1f3f4 !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    
+    /* Style du texte indicatif */
+    .custom-search-input::placeholder {
+        color: #757575 !important;
+        font-weight: 600 !important;
+        opacity: 1;
+    }
+</style>
+@endsection
+
+@section('content')
+<div class="sticky-top bg-white pt-3 pb-2 shadow-sm" style="z-index: 1020; top: 0;">
+    <div class="container-fluid px-3">
+        <div class="d-flex gap-2" id="filter-group">
+            <button onclick="setFiltre('non_synchro')" id="btn-filter-non-synchro" class="btn btn-sm rounded-pill btn-primary shadow-sm flex-fill">
+                <i class="bi bi-cloud-arrow-up"></i> À envoyer
+            </button>
+            <button onclick="setFiltre('synchro')" id="btn-filter-synchro" class="btn btn-sm rounded-pill btn-outline-secondary flex-fill">
+                <i class="bi bi-cloud-check"></i> Synchro
+            </button>
+            <button onclick="setFiltre('tous')" id="btn-filter-tous" class="btn btn-sm rounded-pill btn-outline-secondary flex-fill">
+                Toutes
+            </button>
         </div>
-        <datalist id="datalistClients"></datalist>
     </div>
 </div>
 
+<div class="container-fluid px-3 py-3" style="padding-bottom: 80px !important;">
     <div id="collectes-master-container">
         <div class="text-center py-5 text-muted">
             <i class="bi bi-search" style="font-size: 2rem; opacity: 0.3;"></i>
@@ -44,7 +116,6 @@
         </div>
     </div>
 </div>
-
 
 <script type="module">
     import { db, getAgentDB } from '/js/db-manager.js'; 
@@ -257,7 +328,6 @@
     async function enregistrerModif(id, pts, mise, cycleId) {
         const activeDB = getAgentDB();
         
-        // Calcul du statut du cycle
         const toutesCols = await activeDB.collectes.where('cycle_id').equals(cycleId).toArray();
         const cumulJours = toutesCols.filter(c => c.id !== id).reduce((s, c) => s + c.pointage, 0) + pts;
         const nouveauStatut = (cumulJours >= 31) ? 'termine' : 'en_cours';

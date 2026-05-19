@@ -1,5 +1,18 @@
 @extends('pwa.layouts.app')
+@section('header')
+<div class="d-flex align-items-center w-100 bg-white py-1">
+    
+        <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
+            <i class="bi bi-list fs-3 me-3"></i>
+        </button>
+    
+    <div class="d-flex align-items-center justify-content-between flex-grow-1">
+        <span class="fw-bold text-dark fs-5">Sécurité</span>
+        
+    </div>
 
+</div>
+@endsection
 @section('content')
 <div class="container py-3">
     <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px; background: linear-gradient(135deg, #6c757d, #343a40); color: white;">

@@ -53,4 +53,12 @@ class SyncBatch extends Model
     {
         return $this->belongsTo(User::class, 'validated_by');
     }
+
+    public function syncBatchCycles() {
+        return $this->hasMany(SyncBatchCycle::class);
+    }
+
+    public function syncBatchCollectes() {
+        return $this->hasMany(SyncBatchCollecte::class);
+    }
 }

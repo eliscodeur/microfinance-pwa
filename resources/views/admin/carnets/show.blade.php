@@ -1,8 +1,42 @@
 @extends('admin.layouts.app')
 
 @section('content')
+
+@php
+    $encoursCreditRestant = $carnet->credits
+        ->whereIn('statut', ['active', 'in_arrears'])
+        ->sum(function($credit) {
+            return ($credit->montant_accorde + $credit->interet_total + ($credit->penalty_amount ?? 0))
+                   - ($credit->montant_rembourse ?? 0);
+        });
+
+    $soldeDisponible = $carnet->type === 'tontine'
+        ? $carnet->solde_tontine_non_retire
+        : $carnet->solde_disponible;
+
+    $cyclesDisponibles = $carnet->type === 'tontine'
+        ? $carnet->cycles->where('statut', 'termine')->whereNull('retire_at')->values()
+        : collect();
+
+    $cyclesJs = $cyclesDisponibles->values()->map(function($cycle, $index) {
+        $cumulCollectes = $cycle->collectes->sum('montant');
+        $dejaRetire     = $cycle->retraits->sum('montant_net');
+        $soldeBrut      = $cumulCollectes - $dejaRetire;
+        $commission     = $cycle->montant_journalier ?? 0;
+        $soldeNet       = $soldeBrut - $commission;
+        return [
+            'id'         => $cycle->id,
+            'label'      => 'Cycle #' . ($index + 1) . ' — Net : ' . number_format($soldeNet, 0, ',', ' ') . ' F',
+            'solde_brut' => $soldeBrut,
+            'commission' => $commission,
+            'solde_net'  => $soldeNet,
+        ];
+    });
+@endphp
+
 <div class="container-fluid">
-    {{-- Entête avec Actions Rapides --}}
+
+    {{-- Entête --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="h4 mb-0">Détails du Carnet #{{ $carnet->numero }}</h2>
@@ -14,22 +48,26 @@
             </nav>
         </div>
         <div class="d-flex gap-2">
-            {{-- Le retrait est désormais accessible aux deux types --}}
-            <!-- <button class="btn btn-danger fw-bold" data-bs-toggle="modal" data-bs-target="#modalRetrait">
-                <i class="bi bi-box-arrow-up me-2"></i>Effectuer un Retrait
-            </button> -->
-            <button type="button" 
-                class="btn btn-primary" 
-                data-bs-toggle="modal" 
-                data-bs-target="#modalRetrait"
+            <button type="button" class="btn btn-primary fw-bold" id="btnRetrait"
                 data-type="{{ $carnet->type }}"
-                data-solde="{{ $carnet->type === 'tontine' ? $carnet->solde_tontine_non_retire : $carnet->solde_epargne }}">
-                Effectuer un Retrait
+                data-solde="{{ $soldeDisponible }}"
+                data-encours="{{ $encoursCreditRestant }}"
+                data-carnet-id="{{ $carnet->id }}"
+                data-client-id="{{ $carnet->client_id }}"
+                data-solde-global="{{ $carnet->type === 'compte' ? $carnet->solde_disponible : 0 }}"
+                data-csrf="{{ csrf_token() }}"
+                data-retrait-url="{{ route('admin.carnets.retrait') }}">
+                <i class="bi bi-box-arrow-up me-2"></i>Effectuer un Retrait
             </button>
+
             @if($carnet->type === 'compte')
-                <button class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#modalDepot">
-                    <i class="bi bi-plus-lg me-2"></i>Nouveau Dépôt
-                </button>
+            <button type="button" class="btn btn-success fw-bold" id="btnDepot"
+                data-carnet-id="{{ $carnet->id }}"
+                data-client-id="{{ $carnet->client_id }}"
+                data-csrf="{{ csrf_token() }}"
+                data-depot-url="{{ route('admin.carnets.depot') }}">
+                <i class="bi bi-plus-lg me-2"></i>Nouveau Dépôt
+            </button>
             @endif
         </div>
     </div>
@@ -42,29 +80,24 @@
                 <small class="text-primary mt-auto">{{ $carnet->client->telephone }}</small>
             </div>
         </div>
-        
         <div class="col-md-3">
             <div class="card border-0 shadow-sm p-3 border-start border-success border-4 h-100">
                 <small class="text-muted fw-bold text-uppercase">
                     {{ $carnet->type === 'tontine' ? 'Solde Tontine' : 'Solde Épargne' }}
                 </small>
                 <div class="h4 mb-0 text-success mt-1">
-                    {{ number_format($carnet->type === 'tontine' ? $carnet->solde_tontine_non_retire : $carnet->solde_disponible, 0, ',', ' ') }} F
+                    {{ number_format($soldeDisponible, 0, ',', ' ') }} F
                 </div>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="card border-0 shadow-sm p-3 border-start border-danger border-4 h-100">
                 <small class="text-muted fw-bold text-uppercase">Encours Crédit</small>
                 <div class="h4 mb-0 text-danger mt-1">
-                    {{ number_format($carnet->credits->whereIn('statut', ['active', 'in_arrears'])->sum(function($credit) {
-                        return ($credit->montant_accorde + $credit->interet_total + ($credit->penalty_amount ?? 0)) - ($credit->montant_rembourse ?? 0);
-                    }), 0, ',', ' ') }} F
+                    {{ number_format($encoursCreditRestant, 0, ',', ' ') }} F
                 </div>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="card border-0 shadow-sm p-3 border-start border-info border-4 h-100">
                 <small class="text-muted fw-bold text-uppercase">Type de Carnet</small>
@@ -73,7 +106,7 @@
         </div>
     </div>
 
-    {{-- Onglets de gestion --}}
+    {{-- Onglets --}}
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white p-0">
             <ul class="nav nav-tabs border-0" id="detailTabs" role="tablist">
@@ -102,9 +135,9 @@
                 </li>
             </ul>
         </div>
-        
+
         <div class="tab-content p-4">
-            {{-- TONTINE : CYCLES --}}
+
             @if($carnet->type === 'tontine')
             <div class="tab-pane fade show active" id="tab-cycles">
                 <table class="table align-middle">
@@ -131,19 +164,17 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <button type="button" 
-                                        class="btn btn-sm btn-outline-primary view-collectes" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#modalCollectes"
-                                        data-cycle="{{ $loop->iteration }}"
-                                        data-collectes="{{ json_encode($cycle->collectes->map(function($c) {
-                                            return [
-                                                'date' => $c->created_at->format('d/m/Y H:i'),
-                                                'montant' => number_format($c->montant, 0, ',', ' ') . ' F',
-                                                'pointage' => $c->pointage ?? 1, // On récupère le nombre de pointages
-                                                'agent' => $c->agent ? ($c->agent->nom . ' ' . $c->agent->prenom) : 'Inconnu'
-                                            ];
-                                        })) }}">
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-primary btn-voir-collectes"
+                                    data-cycle="{{ $loop->iteration }}"
+                                    data-collectes="{{ json_encode($cycle->collectes->map(function($c) {
+                                        return [
+                                            'date'     => $c->created_at->format('d/m/Y H:i'),
+                                            'montant'  => number_format($c->montant, 0, ',', ' ') . ' F',
+                                            'pointage' => $c->pointage ?? 1,
+                                            'agent'    => $c->agent ? ($c->agent->nom . ' ' . $c->agent->prenom) : 'Inconnu'
+                                        ];
+                                    })) }}">
                                     <i class="bi bi-list-check"></i> Collectes
                                 </button>
                             </td>
@@ -154,7 +185,6 @@
             </div>
             @endif
 
-            {{-- ÉPARGNE : DÉPÔTS --}}
             @if($carnet->type === 'compte')
             <div class="tab-pane fade show active" id="tab-depots">
                 <table class="table align-middle">
@@ -182,7 +212,6 @@
             </div>
             @endif
 
-            {{-- COMMUN : RETRAITS --}}
             <div class="tab-pane fade" id="tab-retraits">
                 <table class="table align-middle">
                     <thead class="table-light">
@@ -216,7 +245,6 @@
                 </table>
             </div>
 
-            {{-- COMMUN : CRÉDITS --}}
             <div class="tab-pane fade" id="tab-credits">
                 <table class="table align-middle">
                     <thead class="table-light">
@@ -255,177 +283,414 @@
     </div>
 </div>
 
-{{-- MODALS --}}
-@include('admin.carnets.partials.modal_depot')
-@include('admin.carnets.partials.modal_retrait')
-@include('admin.carnets.partials.modal_collecte')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- LOGIQUE AFFICHAGE COLLECTES (DÉJÀ EXISTANTE) ---
-        const modalCollectes = document.getElementById('modalCollectes');
-        const tableBody = document.getElementById('collectesTableBody');
-        const cycleSpan = document.getElementById('modalCycleNumber');
+const CYCLES_DATA = @json($cyclesJs);
 
-        if (modalCollectes) {
-            modalCollectes.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                let collectes = [];
-                
-                try {
-                    collectes = JSON.parse(button.getAttribute('data-collectes'));
-                    
-                    // TRI PAR DATE DÉCROISSANTE
-                    collectes.sort((a, b) => {
-                        const dateA = new Date(a.date.split('/').reverse().join('-'));
-                        const dateB = new Date(b.date.split('/').reverse().join('-'));
-                        return dateB - dateA;
-                    });
+document.addEventListener('DOMContentLoaded', function () {
 
-                } catch (e) {
-                    console.error("Erreur JSON :", e);
-                    return;
-                }
+    const fmt = n => new Intl.NumberFormat('fr-FR').format(Math.round(n));
 
-                cycleSpan.textContent = '#' + button.getAttribute('data-cycle');
-                tableBody.innerHTML = '';
+    // ══════════════════════════════════════════════════════
+    // HELPER AJAX COMMUN
+    // ══════════════════════════════════════════════════════
+    async function envoyerFormulaire(url, csrf, data, cfg) {
+        Swal.fire({
+            title: 'Traitement en cours...',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => Swal.showLoading()
+        });
 
-                if (collectes.length > 0) {
-                    collectes.forEach(collecte => {
-                        const row = `
-                            <tr>
-                                <td class="ps-3">
-                                    <div class="small fw-bold">${collecte.date.split(' ')[0]}</div>
-                                    <div class="small text-muted">${collecte.date.split(' ')[1]}</div>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-xs me-2 bg-light rounded-circle text-center" style="width: 25px; height: 25px; line-height: 25px;">
-                                            <i class="bi bi-person text-primary" style="font-size: 0.8rem;"></i>
-                                        </div>
-                                        <small class="fw-semibold text-truncate" style="max-width: 120px;">${collecte.agent}</small>
-                                    </div>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge rounded-pill bg-info-subtle text-info border border-info px-2">
-                                        ${collecte.pointage}
-                                    </span>
-                                </td>
-                                <td class="text-end pe-3">
-                                    <span class="fw-bold text-dark">${collecte.montant}</span>
-                                </td>
-                            </tr>`;
-                        tableBody.insertAdjacentHTML('beforeend', row);
-                    });
-                } else {
-                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">Aucune donnée disponible.</td></tr>';
-                }
+        const formData = new FormData();
+        formData.append('_token', csrf);
+        Object.entries(data).forEach(([k, v]) => formData.append(k, v ?? ''));
+
+        try {
+            const res  = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const json = await res.json();
+
+            if (json.success) {
+                await Swal.fire({
+                    icon: 'success',
+                    title: cfg.titreSucces,
+                    text: json.message,
+                    confirmButtonColor: cfg.couleur,
+                    timer: 2500,
+                    timerProgressBar: true,
+                    allowOutsideClick: false,
+                });
+                window.location.reload();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: json.message || 'Une erreur est survenue.',
+                    confirmButtonColor: '#e74a3b'
+                });
+            }
+        } catch (e) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur serveur',
+                text: 'Veuillez réessayer.',
+                confirmButtonColor: '#e74a3b'
             });
         }
+    }
 
-        // --- LOGIQUE RETRAIT (ADAPTÉE TONTINE & ÉPARGNE) ---
-        const carnetType = document.getElementById('carnet_type_hidden')?.value;
-        const cycleSelect = document.getElementById('cycle_select');
-        const montantInput = document.getElementById('montant_total');
-        const commissionInput = document.getElementById('commission_input');
-        const radioTotal = document.getElementById('retrait_total');
-        const radioPartiel = document.getElementById('retrait_partiel');
-        const brutView = document.getElementById('brut_view');
-        const netView = document.getElementById('net_view');
-        const submitBtn = document.getElementById('submit_retrait');
+    // ══════════════════════════════════════════════════════
+    // 1. RETRAIT
+    // ══════════════════════════════════════════════════════
+    const btnRetrait = document.getElementById('btnRetrait');
 
-        function updateCalculations() {
-            let soldeBrut = 0;
-            let commission = 0;
-            let soldeNet = 0;
+    if (btnRetrait) {
+        btnRetrait.addEventListener('click', async function () {
+            const cfg = {
+                carnetType  : this.dataset.type,
+                solde       : parseFloat(this.dataset.solde)      || 0,
+                encours     : parseFloat(this.dataset.encours)    || 0,
+                carnetId    : this.dataset.carnetId,
+                clientId    : this.dataset.clientId,
+                csrf        : this.dataset.csrf,
+                retraitUrl  : this.dataset.retraitUrl,
+                soldeGlobal : parseFloat(this.dataset.soldeGlobal) || 0,
+            };
 
-            if (carnetType === 'tontine') {
-                // CAS TONTINE : Dépend du cycle choisi
-                if (cycleSelect && cycleSelect.selectedIndex > 0) {
-                    const selected = cycleSelect.options[cycleSelect.selectedIndex];
-                    soldeBrut = parseFloat(selected.getAttribute('data-solde')) || 0;
-                    commission = parseFloat(selected.getAttribute('data-commission')) || 0;
-                    soldeNet = soldeBrut - commission;
+            // ── BLOCAGE : solde < encours ──────────────────────────
+            if (cfg.encours > 0 && cfg.solde < cfg.encours) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Retrait impossible',
+                    html: `
+                        <p class="mb-3">Le solde est insuffisant pour couvrir le crédit en cours.</p>
+                        <div class="d-flex justify-content-between px-2 mb-1">
+                            <span class="text-muted">Solde disponible</span>
+                            <strong class="text-success">${fmt(cfg.solde)} F</strong>
+                        </div>
+                        <div class="d-flex justify-content-between px-2">
+                            <span class="text-muted">Encours crédit</span>
+                            <strong class="text-danger">${fmt(cfg.encours)} F</strong>
+                        </div>`,
+                    confirmButtonText: 'Compris',
+                    confirmButtonColor: '#e74a3b',
+                });
+                return;
+            }
 
-                    // Gestion automatique du champ montant selon le type de retrait
+            // ── AVERTISSEMENT : crédit actif mais solde ok ─────────
+            if (cfg.encours > 0) {
+                const warn = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Crédit en cours',
+                    html: `
+                        <p class="mb-3">Ce client a un crédit actif. Voulez-vous continuer ?</p>
+                        <div class="d-flex justify-content-between px-2 mb-1">
+                            <span class="text-muted">Solde disponible</span>
+                            <strong class="text-success">${fmt(cfg.solde)} F</strong>
+                        </div>
+                        <div class="d-flex justify-content-between px-2">
+                            <span class="text-muted">Encours crédit</span>
+                            <strong class="text-danger">${fmt(cfg.encours)} F</strong>
+                        </div>`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Continuer',
+                    cancelButtonText: 'Annuler',
+                    confirmButtonColor: '#f6c23e',
+                    cancelButtonColor: '#858796',
+                });
+                if (!warn.isConfirmed) return;
+            }
+
+            await afficherFormulaireRetrait(cfg);
+        });
+    }
+
+    async function afficherFormulaireRetrait(cfg) {
+        const isTontine = cfg.carnetType === 'tontine';
+        const now = new Date().toISOString().slice(0, 16);
+
+        let cycleHtml = '';
+        if (isTontine) {
+            const options = CYCLES_DATA.map(c =>
+                `<option value="${c.id}" data-solde="${c.solde_brut}" data-commission="${c.commission}" data-net="${c.solde_net}">${c.label}</option>`
+            ).join('');
+            cycleHtml = `
+            <div class="mb-3 text-start">
+                <label class="form-label fw-bold small text-muted text-uppercase">Sélection du Cycle</label>
+                <select id="swal_cycle" class="form-select">
+                    <option value="" disabled selected>--- Choisir le cycle ---</option>
+                    ${options}
+                </select>
+            </div>
+            <div class="mb-3 text-start">
+                <label class="form-label fw-bold small text-muted text-uppercase text-center d-block">Type de décaissement</label>
+                <div class="btn-group w-100">
+                    <input type="radio" class="btn-check" name="swal_type_retrait" id="swal_total" value="total" checked>
+                    <label class="btn btn-outline-primary" for="swal_total">Clôture Totale</label>
+                    <input type="radio" class="btn-check" name="swal_type_retrait" id="swal_partiel" value="partiel">
+                    <label class="btn btn-outline-primary" for="swal_partiel">Retrait Partiel</label>
+                </div>
+            </div>`;
+        }
+
+        const { value: vals, isConfirmed } = await Swal.fire({
+            title: `<i class="bi bi-wallet2 me-2"></i>Retrait ${isTontine ? 'Tontine' : 'Épargne'}`,
+            width: 520,
+            html: `
+                <div class="text-start">
+                    ${cycleHtml}
+                    <div class="card border-0 bg-light mb-3">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between small mb-2">
+                                <span class="text-muted">Brut restant : <strong id="swal_brut">—</strong> F</span>
+                                <span class="text-primary">Net dispo : <strong id="swal_net">—</strong> F</span>
+                            </div>
+                            <label class="form-label fw-bold small text-muted text-uppercase">Montant à verser (F)</label>
+                            <input type="number" id="swal_montant" class="form-control form-control-lg fw-bold"
+                                placeholder="0" min="1" ${!isTontine ? `value="${Math.round(cfg.soldeGlobal)}"` : ''}>
+                            <div id="swal_err" class="text-danger small mt-1 d-none">Montant supérieur au solde disponible.</div>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Commission (F)</label>
+                            <input type="number" id="swal_commission" class="form-control bg-light" value="0" readonly>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Date d'opération</label>
+                            <input type="datetime-local" id="swal_date" class="form-control" value="${now}">
+                        </div>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Note / Motif</label>
+                        <textarea id="swal_note" class="form-control" rows="2" placeholder="Informations complémentaires..."></textarea>
+                    </div>
+                </div>`,
+            showCancelButton: true,
+            confirmButtonText: 'Valider le retrait',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#4e73df',
+            cancelButtonColor: '#858796',
+            focusConfirm: false,
+            didOpen: () => {
+                if (!isTontine) {
+                    document.getElementById('swal_brut').innerText = fmt(cfg.soldeGlobal);
+                    document.getElementById('swal_net').innerText  = fmt(cfg.soldeGlobal);
+                }
+
+                const cycleSelect   = document.getElementById('swal_cycle');
+                const montantInput  = document.getElementById('swal_montant');
+                const commissionInp = document.getElementById('swal_commission');
+                const brutEl        = document.getElementById('swal_brut');
+                const netEl         = document.getElementById('swal_net');
+                const radioTotal    = document.getElementById('swal_total');
+                const radioPartiel  = document.getElementById('swal_partiel');
+
+                function recalcul() {
+                    if (!isTontine || !cycleSelect || cycleSelect.selectedIndex <= 0) return;
+                    const opt        = cycleSelect.options[cycleSelect.selectedIndex];
+                    const soldeBrut  = parseFloat(opt.dataset.solde)     || 0;
+                    const commission = parseFloat(opt.dataset.commission) || 0;
+                    const soldeNet   = soldeBrut - commission;
+                    brutEl.innerText    = fmt(soldeBrut);
+                    netEl.innerText     = fmt(soldeNet);
+                    commissionInp.value = Math.round(commission);
                     if (radioTotal && radioTotal.checked) {
-                        montantInput.value = Math.round(soldeNet);
+                        montantInput.value    = Math.round(soldeNet);
                         montantInput.readOnly = true;
                         montantInput.classList.add('bg-light');
                     } else {
                         montantInput.readOnly = false;
                         montantInput.classList.remove('bg-light');
                     }
-                } else {
-                    // Si aucun cycle n'est encore choisi
-                    if(submitBtn) submitBtn.disabled = true;
                 }
-            } else {
-                // CAS ÉPARGNE : Utilise le solde global du carnet
-                soldeNet = parseFloat(montantInput.getAttribute('data-solde-global')) || 0;
-                soldeBrut = soldeNet;
-                commission = 0;
-                
-                montantInput.readOnly = false;
-                montantInput.classList.remove('bg-light');
-                
-                // Pré-remplir le montant pour le confort (optionnel)
-                if(montantInput.value == "" || montantInput.value == 0) {
-                    montantInput.value = soldeNet;
-                }
-            }
 
-            // Mise à jour de l'affichage
-            if (commissionInput) commissionInput.value = Math.round(commission);
-            if (brutView) brutView.innerText = new Intl.NumberFormat('fr-FR').format(soldeBrut);
-            if (netView) netView.innerText = new Intl.NumberFormat('fr-FR').format(soldeNet);
+                if (cycleSelect)  cycleSelect.addEventListener('change', recalcul);
+                if (radioTotal)   radioTotal.addEventListener('change', recalcul);
+                if (radioPartiel) radioPartiel.addEventListener('change', recalcul);
+            },
+            preConfirm: () => {
+                const montant    = parseFloat(document.getElementById('swal_montant')?.value)    || 0;
+                const date       = document.getElementById('swal_date')?.value;
+                const note       = document.getElementById('swal_note')?.value                  || '';
+                const commission = parseFloat(document.getElementById('swal_commission')?.value) || 0;
 
-            validateAmount(soldeNet);
-        }
+                let cycleId = null, typeRetrait = 'partiel', limiteNet = cfg.soldeGlobal;
 
-        function validateAmount(limit) {
-            const saisie = parseFloat(montantInput.value) || 0;
-            // On autorise une petite marge de 0.5 pour les arrondis
-            if (saisie > (limit + 0.5)) {
-                montantInput.classList.add('is-invalid');
-                if(submitBtn) submitBtn.disabled = true;
-            } else {
-                montantInput.classList.remove('is-invalid');
-                // On active le bouton seulement si le montant > 0
-                if(submitBtn) submitBtn.disabled = (saisie <= 0);
-            }
-        }
-
-        // --- ÉCOUTEURS D'ÉVÉNEMENTS ---
-
-        // Changement de cycle (Tontine uniquement)
-        if (cycleSelect) cycleSelect.addEventListener('change', updateCalculations);
-
-        // Changement de type de retrait (Tontine uniquement)
-        if (radioTotal) radioTotal.addEventListener('change', updateCalculations);
-        if (radioPartiel) radioPartiel.addEventListener('change', updateCalculations);
-
-        // Saisie manuelle du montant
-        if (montantInput) {
-            montantInput.addEventListener('input', () => {
-                let limit = 0;
-                if (carnetType === 'tontine') {
-                    if(cycleSelect && cycleSelect.selectedIndex > 0) {
-                        const sel = cycleSelect.options[cycleSelect.selectedIndex];
-                        limit = parseFloat(sel.getAttribute('data-solde')) - parseFloat(sel.getAttribute('data-commission'));
+                if (isTontine) {
+                    const cycleSelect = document.getElementById('swal_cycle');
+                    if (!cycleSelect || cycleSelect.selectedIndex <= 0) {
+                        Swal.showValidationMessage('Veuillez sélectionner un cycle.');
+                        return false;
                     }
-                } else {
-                    limit = parseFloat(montantInput.getAttribute('data-solde-global')) || 0;
+                    const opt = cycleSelect.options[cycleSelect.selectedIndex];
+                    cycleId     = opt.value;
+                    limiteNet   = parseFloat(opt.dataset.net) || 0;
+                    typeRetrait = document.getElementById('swal_total')?.checked ? 'total' : 'partiel';
                 }
-                validateAmount(limit);
-            });
-        }
 
-        // Forcer le calcul à l'ouverture du modal
-        const modalRetrait = document.getElementById('modalRetrait');
-        if (modalRetrait) {
-            modalRetrait.addEventListener('shown.bs.modal', updateCalculations);
-        }
+                if (montant <= 0) { Swal.showValidationMessage('Le montant doit être supérieur à 0.'); return false; }
+                if (montant > limiteNet + 0.5) {
+                    document.getElementById('swal_err')?.classList.remove('d-none');
+                    Swal.showValidationMessage('Montant trop élevé. Maximum : ' + fmt(limiteNet) + ' F');
+                    return false;
+                }
+                if (!date) { Swal.showValidationMessage('La date est obligatoire.'); return false; }
+
+                return { montant, date, note, commission, cycleId, typeRetrait };
+            }
+        });
+
+        if (!isConfirmed || !vals) return;
+
+        // ── CONFIRMATION FINALE ────────────────────────────────────
+        const confirm = await Swal.fire({
+            icon: 'question',
+            title: 'Confirmer le retrait ?',
+            html: `Retrait de <strong>${fmt(vals.montant)} F</strong>.<br><span class="text-muted small">Cette action est irréversible.</span>`,
+            showCancelButton: true,
+            confirmButtonText: 'Oui, valider',
+            cancelButtonText: 'Retour',
+            confirmButtonColor: '#4e73df',
+            cancelButtonColor: '#858796',
+        });
+
+        if (!confirm.isConfirmed) { await afficherFormulaireRetrait(cfg); return; }
+
+        await envoyerFormulaire(cfg.retraitUrl, cfg.csrf, {
+            carnet_id:     cfg.carnetId,
+            client_id:     cfg.clientId,
+            cycle_id:      vals.cycleId,
+            montant_total: vals.montant,
+            commission:    vals.commission,
+            date_retrait:  vals.date,
+            type_retrait:  vals.typeRetrait,
+            note:          vals.note,
+        }, { titreSucces: 'Retrait effectué !', couleur: '#4e73df' });
+    }
+
+    // ══════════════════════════════════════════════════════
+    // 2. DÉPÔT
+    // ══════════════════════════════════════════════════════
+    const btnDepot = document.getElementById('btnDepot');
+
+    if (btnDepot) {
+        btnDepot.addEventListener('click', async function () {
+            const carnetId = this.dataset.carnetId;
+            const clientId = this.dataset.clientId;
+            const csrf     = this.dataset.csrf;
+            const depotUrl = this.dataset.depotUrl;
+            const now      = new Date().toISOString().slice(0, 16);
+
+            const { value: vals, isConfirmed } = await Swal.fire({
+                title: '<i class="bi bi-piggy-bank me-2"></i>Nouveau Dépôt Épargne',
+                width: 460,
+                html: `
+                    <div class="text-start">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Montant du dépôt (F CFA)</label>
+                            <input type="number" id="swal_depot_montant" class="form-control form-control-lg fw-bold text-success" placeholder="0" min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Date de l'opération</label>
+                            <input type="datetime-local" id="swal_depot_date" class="form-control" value="${now}">
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Note / Commentaire (Optionnel)</label>
+                            <textarea id="swal_depot_note" class="form-control" rows="2" placeholder="Ex: Dépôt exceptionnel, Reliquat..."></textarea>
+                        </div>
+                    </div>`,
+                showCancelButton: true,
+                confirmButtonText: 'Confirmer le dépôt',
+                cancelButtonText: 'Annuler',
+                confirmButtonColor: '#1cc88a',
+                cancelButtonColor: '#858796',
+                focusConfirm: false,
+                didOpen: () => setTimeout(() => document.getElementById('swal_depot_montant')?.focus(), 100),
+                preConfirm: () => {
+                    const montant = parseFloat(document.getElementById('swal_depot_montant')?.value) || 0;
+                    const date    = document.getElementById('swal_depot_date')?.value;
+                    const note    = document.getElementById('swal_depot_note')?.value || '';
+                    if (montant <= 0) { Swal.showValidationMessage('Le montant doit être supérieur à 0.'); return false; }
+                    if (!date)        { Swal.showValidationMessage('La date est obligatoire.'); return false; }
+                    return { montant, date, note };
+                }
+            });
+
+            if (!isConfirmed || !vals) return;
+
+            await envoyerFormulaire(depotUrl, csrf, {
+                carnet_id:   carnetId,
+                client_id:   clientId,
+                montant:     vals.montant,
+                date_depot:  vals.date,
+                commentaire: vals.note,
+            }, { titreSucces: 'Dépôt enregistré !', couleur: '#1cc88a' });
+        });
+    }
+
+    // ══════════════════════════════════════════════════════
+    // 3. COLLECTES
+    // ══════════════════════════════════════════════════════
+    document.querySelectorAll('.btn-voir-collectes').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const cycleNum = this.dataset.cycle;
+            let collectes  = [];
+            try {
+                collectes = JSON.parse(this.dataset.collectes);
+                collectes.sort((a, b) => new Date(b.date.split('/').reverse().join('-')) - new Date(a.date.split('/').reverse().join('-')));
+            } catch (e) { return; }
+
+            const rows = collectes.length === 0
+                ? `<tr><td colspan="4" class="text-center py-4 text-muted">Aucune collecte.</td></tr>`
+                : collectes.map(c => `
+                    <tr>
+                        <td class="ps-2">
+                            <div class="small fw-bold">${c.date.split(' ')[0]}</div>
+                            <div class="small text-muted">${c.date.split(' ')[1]}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="me-2 bg-light rounded-circle text-center" style="width:25px;height:25px;line-height:25px;flex-shrink:0;">
+                                    <i class="bi bi-person text-primary" style="font-size:.8rem;"></i>
+                                </div>
+                                <small class="fw-semibold text-truncate" style="max-width:120px;">${c.agent}</small>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge rounded-pill bg-info-subtle text-info border border-info px-2">${c.pointage}</span>
+                        </td>
+                        <td class="text-end pe-2 fw-bold">${c.montant}</td>
+                    </tr>`).join('');
+
+            Swal.fire({
+                title: `<i class="bi bi-journal-check me-2"></i>Cycle #${cycleNum} — Collectes`,
+                width: 620,
+                html: `
+                    <div style="max-height:420px;overflow-y:auto;">
+                        <table class="table table-hover align-middle mb-0 text-start">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th class="ps-2">Date / Heure</th>
+                                    <th>Agent</th>
+                                    <th class="text-center">Pointage</th>
+                                    <th class="text-end pe-2">Montant</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>`,
+                confirmButtonText: 'Fermer',
+                confirmButtonColor: '#4e73df',
+            });
+        });
     });
+});
 </script>
 
 @endsection

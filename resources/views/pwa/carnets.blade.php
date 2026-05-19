@@ -1,26 +1,52 @@
-
 @extends('pwa.layouts.app')
 
-@section('content')
-<div class="container py-4">
-    <h5 class="fw-bold mb-4 text-primary" id="clientName">Chargement...</h5>
+@section('header')
+<style>
+    body { background-color: #f8f9fa; }
 
+    /* Alignement et typographie épurée pour l'en-tête client */
+    .header-client-name {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #212529;
+    }
+</style>
+
+<div class="d-flex align-items-center w-100 bg-white py-1">
+    <a href="/pwa/clients" class="btn btn-link text-dark p-0 me-3 border-0">
+        <i class="bi bi-arrow-left fs-3"></i>
+    </a>
+    
+    <div class="d-flex align-items-center justify-content-between flex-grow-1">
+        <span id="headerClientName" class="header-client-name text-truncate me-2">Chargement...</span>
+        <span id="headerClientBadge" class="badge bg-warning text-dark border small" style="display: none;">0 carnet</span>
+    </div>
+</div>
+@endsection
+
+@section('content')
+<div class="container py-4" style="padding-bottom: 80px;">
+    
+    {{-- Conteneur principal alimenté par le script --}}
     <div id="collecte-content">
         <div class="text-center py-5">
             <div class="spinner-border text-primary"></div>
+            <p class="text-muted small mt-2">Chargement des livrets...</p>
         </div>
     </div>
 </div>
 
-
 <script type="module">
-   import { db, getAgentDB } from '/js/db-manager.js'; 
-   
+    import { db, getAgentDB } from '/js/db-manager.js'; 
+    
     const urlParams = new URLSearchParams(window.location.search);
     const clientId = parseInt(urlParams.get('client_id'));
 
     async function initCollectePage() {
-        if (!clientId) return;
+        if (!clientId) {
+            document.getElementById('collecte-content').innerHTML = `<div class="alert alert-danger">Client introuvable.</div>`;
+            return;
+        }
 
         try {
             const database = getAgentDB();
@@ -28,17 +54,28 @@
             if (!database.isOpen()) {
                 await database.open();
             }
-           
+            
             const [client, carnets] = await Promise.all([
                 db.clients.get(Number(clientId)),
                 db.carnets.where('client_id').equals(Number(clientId)).toArray()
             ]);
 
             const container = document.getElementById('collecte-content');
-            if (client) document.getElementById('clientName').innerText = client.nom+ ' ' + client.prenom;
+            
+            // --- INJECTION DYNAMIQUE DANS LE HEADER (NOM + BADGE) ---
+            if (client) {
+                document.getElementById('headerClientName').innerText = `${client.nom} ${client.prenom}`;
+            }
+            
+            const totalCarnets = carnets.length;
+            const badgeElement = document.getElementById('headerClientBadge');
+            if (badgeElement) {
+                badgeElement.innerText = `${totalCarnets} carnet${totalCarnets > 1 ? 's' : ''}`;
+                badgeElement.style.display = 'inline-block'; // Rendre le badge visible après calcul
+            }
 
-            if (carnets.length === 0) {
-                container.innerHTML = `<div class="text-center py-5 text-muted">Aucun carnet trouvé.</div>`;
+            if (totalCarnets === 0) {
+                container.innerHTML = `<div class="text-center py-5 text-muted">Aucun carnet trouvé pour ce bénéficiaire.</div>`;
                 return;
             }
 
@@ -50,18 +87,6 @@
                 const cycleActif = cyclesDuCarnet.find(cy => cy.statut === 'en_cours');
                 const cyclesAencaisser = cyclesDuCarnet.filter(cy => cy.statut === 'termine' && !cy.retire_at);
                 
-                // --- CALCUL DU SOLDE DISPONIBLE ---
-                // let soldeRetirable = 0;
-                // for (const cy of cyclesAencaisser) {
-                //     const collectesDuCycle = await db.collectes.where('cycle_uid').equals(String(cy.cycle_uid)).toArray();
-                //     const totalCollectes = collectesDuCycle.reduce((sum, c) => sum + (Number(c.montant) || 0), 0);
-                //     const commission = Number(cy.montant_journalier || 0);
-                    
-                //     if (totalCollectes > 0) {
-                //         soldeRetirable += Math.max(0, totalCollectes - commission);
-                //     }
-                // }
-
                 // --- CALCUL DE L'ÉPARGNE DU CYCLE EN COURS ---
                 let epargneEnCours = 0;
                 let pourcentage = 0;
@@ -70,22 +95,18 @@
                     const collectesActives = await db.collectes.where('cycle_uid').equals(String(cycleActif.cycle_uid)).toArray();
                     epargneEnCours = collectesActives.reduce((sum, item) => sum + (Number(item.montant) || 0), 0);
                     
-                    // Utilisation de la somme des pointages pour la barre de progression (plus précis)
                     const nbrPointages = collectesActives.reduce((sum, item) => sum + (Number(item.pointage) || 0), 0);
                     pourcentage = Math.min(100, (nbrPointages / 31) * 100);
                 }
                 
-                // --- LOGIQUE DEMANDÉE : CALCUL DES STATS ---
-                // On prend le total historique du carnet (serveur)
+                // --- CALCUL DES STATISTIQUES DES CYCLES ---
                 const totalHistorique = Number(carnet.total_cycles_termines || 0);
                 const terminauxEnAttente = cyclesAencaisser.length;
-                
-                // Les payés = Total historique - ceux qui attendent encore d'être payés
                 const terminauxPayes = Math.max(0, totalHistorique - terminauxEnAttente);
 
                 html += `
                 <div class="card mb-4 shadow-sm border-0" 
-                    style="border-radius: 25px; background: #fff; overflow: hidden;"
+                    style="border-radius: 25px; background: #fff; overflow: hidden; cursor: pointer;"
                     onclick="window.goToPointage(${carnet.id})">
                     
                     <div class="p-3 d-flex justify-content-between align-items-center" style="background: rgba(13, 110, 253, 0.05);">
@@ -140,7 +161,7 @@
 
         } catch (error) {
             console.error("Erreur Init Livret:", error);
-            document.getElementById('collecte-content').innerHTML = `<div class="alert alert-danger">Erreur de chargement.</div>`;
+            document.getElementById('collecte-content').innerHTML = `<div class="alert alert-danger">Erreur lors du traitement local des données.</div>`;
         }
     }
 

@@ -1,19 +1,95 @@
 @extends('pwa.layouts.app')
 
+@section('header')
+<style>
+    body { background-color: #f8f9fa; }
+    
+    .client-card {
+        transition: transform 0.1s, background-color 0.1s;
+        cursor: pointer;
+    }
+
+    .client-card:active {
+        background-color: #f0f7ff !important;
+        transform: scale(0.97);
+    }
+
+    .avatar-circle {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        color: white;
+    }
+
+    .bg-primary-soft {
+        background-color: #e7f0ff;
+    }
+
+    .border-4 { border-left-width: 4px !important; }
+
+    /* Style épuré sans bordure pour coller exactement à la capture d'écran */
+    .search-input-clean {
+        font-size: 1.15rem;
+        font-weight: 500;
+        color: #333;
+    }
+    .search-input-clean::placeholder {
+        color: #757575;
+        font-weight: 500;
+    }
+    
+    /* ANNULATION STRICTE DE LA BORDURE BLEUE AU FOCUS */
+    .search-input-clean:focus {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: transparent !important;
+        background-color: transparent !important;
+    }
+
+    .search-full-width {
+        width: 100%;
+    }
+</style>
+
+<div class="d-flex align-items-center w-100 position-relative">
+    
+    <div class="d-flex align-items-center w-100" id="header-normal-state">
+        <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
+            <i class="bi bi-list fs-3 me-3"></i>
+        </button>
+        <h5 class="fw-bold mb-0 text-primary flex-grow-1">
+            <i class="bi bi-people-fill me-2"></i>Mes Clients <span class="badge bg-light text-primary border" id="clientCount">0</span>
+        </h5> 
+        <button onclick="openSearch()" class="btn btn-link text-dark p-0 border-0" id="loupe-btn">
+            <i class="bi bi-search fs-4"></i>
+        </button>
+    </div>
+
+    <div class="d-flex align-items-center search-full-width" id="header-search-state" style="display: none !important;">
+        <button onclick="closeAndResetSearch()" class="btn btn-link text-dark p-0 me-3 border-0">
+            <i class="bi bi-arrow-left fs-3"></i>
+        </button>
+        
+        <div class="flex-grow-1">
+            <input type="text" id="searchInput" class="form-control border-0 bg-transparent p-0 search-input-clean" placeholder="Chercher par nom, téléphone ou carnet...">
+        </div>
+    </div>
+
+</div>
+@endsection
+
 @section('content')
-<div class="container py-3" style="padding-bottom: 80px;"> {{-- Marge pour la nav du bas --}}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold mb-0 text-primary"><i class="bi bi-people-fill me-2"></i>Mes Clients</h5>
-        <!-- <span class="badge bg-light text-primary border" id="clientCount">0 clients</span> -->
-    </div>
+<div class="container py-3" style="padding-bottom: 80px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        </div>
 
-    {{-- Barre de recherche stylisée --}}
-    <div class="input-group mb-4 shadow-sm rounded-4 overflow-hidden border-0 bg-white">
-        <span class="input-group-text bg-white border-0 ps-3"><i class="bi bi-search text-muted"></i></span>
-        <input type="text" id="searchInput" class="form-control border-0 py-3" placeholder="Nom, téléphone ou N° carnet...">
-    </div>
-
-    {{-- Zone des clients --}}
+    {{-- Zone des clients alimentée dynamiquement --}}
     <div id="clientsContainer" class="row g-2">
         <div class="text-center py-5">
             <div class="spinner-border text-primary spinner-border-sm"></div>
@@ -22,22 +98,19 @@
     </div>
 </div>
 
-
-
 <script type="module">
     import { db, getAgentDB } from '/js/db-manager.js'; 
-    window.db = db; // Pour debug global
+    window.db = db;
+
     /**
-     * 1. Initialisation et vérification de la base
+     * 1. Initialisation et vérification de la base IndexedDB
      */
     async function init() {
         try {
             const database = getAgentDB();
-
             if (!database.isOpen()) {
                 await database.open();
             }
-            // Lancement du premier affichage
             await displayClients();
         } catch (err) {
             console.error("Impossible d'ouvrir la base de données:", err);
@@ -45,31 +118,28 @@
     }
 
     /**
-     * 2. Fonction de rendu des clients
+     * 2. Rendu applicatif et filtrage des bénéficiaires
      */
     async function displayClients(filter = "") {
         const container = document.getElementById('clientsContainer');
+        const countBadge = document.getElementById('clientCount');
         if (!container) return;
 
         try {
-            // Récupération des données en parallèle pour la performance
             const [clients, allCarnets, cycles] = await Promise.all([
                 db.clients.orderBy('nom').toArray(),
                 db.carnets.toArray(),
                 db.cycles.where('statut').equals('en_cours').toArray()
             ]);
 
-            // Map des cycles actifs pour un accès O(1)
             const activeCycles = {};
             cycles.forEach(c => activeCycles[c.carnet_id] = c);
 
-            // Comptage des carnets par client
             const carnetCounts = {};
             allCarnets.forEach(car => {
                 carnetCounts[car.client_id] = (carnetCounts[car.client_id] || 0) + 1;
             });
 
-            // Filtrage intelligent
             let filteredClients = clients;
             if (filter) {
                 const lowFilter = filter.toLowerCase();
@@ -80,7 +150,6 @@
                     const prenomNom = `${c.prenom} ${c.nom}`.toLowerCase();
                     const tel = (c.telephone || "").replace(/\s/g, "");
 
-                    // Match si TOUS les termes de recherche sont trouvés dans le nom ou tel
                     return terms.every(term => 
                         nomComplet.includes(term) || 
                         prenomNom.includes(term) || 
@@ -89,7 +158,10 @@
                 });
             }
 
-            // Rendu HTML
+            if (countBadge) {
+                countBadge.textContent = `${filteredClients.length}`;
+            }
+
             if (filteredClients.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-5 text-muted">
@@ -100,10 +172,8 @@
             }
 
             container.innerHTML = filteredClients.map(client => {
-                // Un client est considéré "En cours" s'il a au moins un carnet avec un cycle actif
                 const clientHasActive = allCarnets.some(car => car.client_id === client.id && activeCycles[car.id]); 
                 const nbCarnets = carnetCounts[client.id] || 0;
-                
                 const initiales = `${(client.nom || "?").charAt(0)}${(client.prenom || "?").charAt(0)}`.toUpperCase();
 
                 return `
@@ -143,16 +213,13 @@
         }
     }
 
-    /**
-     * 3. Bridge global et Événements
-     */
     window.openCarnet = function(clientId) {
         window.location.href = `/pwa/carnet?client_id=${clientId}`;
     }
 
+    // Gestion de l'écouteur unique de l'input
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        // On utilise un petit délai (debounce) pour ne pas rafraîchir à chaque micro-frappe
         let timeout;
         searchInput.addEventListener('input', (e) => {
             clearTimeout(timeout);
@@ -160,40 +227,33 @@
         });
     }
 
-    // Lancement
+    /**
+     * 3. Contrôle des transitions d'états du header
+     */
+    window.openSearch = function() {
+        document.getElementById('header-normal-state').classList.remove('d-flex');
+        document.getElementById('header-normal-state').style.setProperty('display', 'none', 'important');
+        
+        const searchState = document.getElementById('header-search-state');
+        searchState.style.setProperty('display', 'flex', 'important');
+        
+        setTimeout(() => {
+            document.getElementById('searchInput').focus();
+        }, 50);
+    }
+
+    window.closeAndResetSearch = function() {
+        const searchInput = document.getElementById('searchInput');
+        
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        
+        document.getElementById('header-search-state').classList.remove('d-flex');
+        document.getElementById('header-search-state').style.setProperty('display', 'none', 'important');
+        
+        document.getElementById('header-normal-state').style.setProperty('display', 'flex', 'important');
+    }
+
     init();
 </script>
-
-<style>
-    body { background-color: #f8f9fa; }
-    
-    .client-card {
-        transition: transform 0.1s, background-color 0.1s;
-        cursor: pointer;
-    }
-
-    .client-card:active {
-        background-color: #f0f7ff !important;
-        transform: scale(0.97);
-    }
-
-    .avatar-circle {
-        width: 48px;
-        height: 48px;
-        min-width: 48px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 1.2rem;
-        color: white;
-    }
-
-    .bg-primary-soft {
-        background-color: #e7f0ff;
-    }
-
-    .border-4 { border-left-width: 4px !important; }
-</style>
 @endsection

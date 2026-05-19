@@ -86,10 +86,17 @@
                                     <a href="{{ route('admin.clients.edit', $client->id) }}" class="btn btn-sm btn-outline-warning">Modifier</a>
                                     @endcan
                                     @can('GÃ©rer Clients')
-                                    <form method="POST" action="{{ route('admin.clients.destroy', $client->id) }}" onsubmit="return confirm('Supprimer ce client ?');">
+                                    <form id="form-delete-client-{{ $client->id }}" 
+                                        method="POST" 
+                                        action="{{ route('admin.clients.destroy', $client->id) }}" 
+                                        style="display: inline;">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmerSuppressionClient({{ $client->id }})">
+                                            Supprimer
+                                        </button>
                                     </form>
                                     @endcan
                                 </div>
@@ -109,4 +116,22 @@
         {{ $clients->links('pagination::bootstrap-5') }}
     </div>
 </div>
+<script>
+    function confirmerSuppressionClient(clientId) {
+        Swal.fire({
+            title: 'Confirmer la suppression',
+            text: "Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById(`form-delete-client-${clientId}`).submit();
+            }
+        });
+    }
+</script>
 @endsection
