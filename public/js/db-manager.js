@@ -35,7 +35,8 @@ export function getAgentDB() {
         cycles: '++id, &cycle_uid, carnet_id, statut, synced',
         collectes: '++id, &collecte_uid, cycle_uid, cycle_id, synced',
         bonus_en_attente: 'id, agent_id, type, statut, date_attribution',
-        paiements_valides: 'id, reference, montant_total, type, created_at'
+        paiements_valides: 'id, reference, montant_total, type, created_at',
+        agent_stats: 'id'
     });
     
     dbInstance = db;
@@ -51,6 +52,7 @@ export const db = {
     get carnets() { return getAgentDB()?.carnets; },
     get cycles() { return getAgentDB()?.cycles; },
     get collectes() { return getAgentDB()?.collectes; },
+    get agent_stats() { return getAgentDB()?.agent_stats; },
     open: () => getAgentDB()?.open(),
     isOpen: () => getAgentDB()?.isOpen() ?? false,
     table: (name) => getAgentDB()?.table(name)
@@ -75,7 +77,8 @@ export async function populateDatabase(data, options = {}) {
             database.collectes,
             database.agents,
             database.bonus_en_attente, 
-            database.paiements_valides  
+            database.paiements_valides,
+            database.agent_stats
         ], async () => {
             
             if (replaceAll) {
@@ -85,6 +88,7 @@ export async function populateDatabase(data, options = {}) {
                 await database.clients.clear();
                 await database.bonus_en_attente.clear(); 
                 await database.paiements_valides.clear();
+                await database.agent_stats.clear();
             }
 
             // 1. Mise à jour de l'agent (pour le pin_hash notamment)
@@ -157,6 +161,20 @@ export async function populateDatabase(data, options = {}) {
                     }
                 } catch (error) {
                     console.error("❌ Erreur Dexie sur historique_paiements :", error);
+                }
+            }
+
+            if (data.stats_performance && data.agent) {
+                try {
+                    await database.agent_stats.put({
+                        id: Number(data.agent.id), // Utilise l'ID de l'agent comme clé unique
+                        volume_historique_global: Number(data.stats_performance.volume_historique_global || 0),
+                        total_historique_cycles_termines: Number(data.stats_performance.total_historique_cycles_termines || 0),
+                        historique_courbe: data.stats_performance.historique_courbe || [] // Le tableau complet pour le graphique
+                    });
+                    console.log("✅ Statistiques de performance de l'agent mises à jour.");
+                } catch (error) {
+                    console.error("❌ Erreur Dexie sur agent_stats :", error);
                 }
             }
         });

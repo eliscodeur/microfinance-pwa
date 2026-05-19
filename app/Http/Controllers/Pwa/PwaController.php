@@ -121,6 +121,38 @@ class PwaController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->limit(10)
                 ->get();
+
+            // 📊 Calcul des statistiques historiques pour la courbe
+            $historiqueVolumeMensuel = \DB::table('collectes')
+                ->join('cycles', 'collectes.cycle_id', '=', 'cycles.id')
+                ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
+                ->join('clients', 'carnets.client_id', '=', 'clients.id')
+                ->where('clients.agent_id', $agent->id)
+                ->where('collectes.created_at', '>=', now()->subMonths(6)->startOfMonth())
+                ->select(
+                    \DB::raw("DATE_FORMAT(collectes.created_at, '%Y-%m') as mois"),
+                    \DB::raw("SUM(collectes.montant) as total_volume")
+                )
+                ->groupBy('mois')
+                ->orderBy('mois', 'asc')
+                ->get();
+
+            // Volume total brassé par l'agent depuis ses débuts
+            $volumeHistoriqueGlobal = \DB::table('collectes')
+                ->join('cycles', 'collectes.cycle_id', '=', 'cycles.id')
+                ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
+                ->join('clients', 'carnets.client_id', '=', 'clients.id')
+                ->where('clients.agent_id', $agent->id)
+                ->sum('collectes.montant');
+
+            // Compteur cumulé des cycles clôturés à 100% dans sa carrière
+            $totalHistoriqueCyclesTermines = \DB::table('cycles')
+                ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
+                ->join('clients', 'carnets.client_id', '=', 'clients.id')
+                ->where('clients.agent_id', $agent->id)
+                ->where('cycles.statut', 'termine')
+                ->count();
+
             // 6. Historique de synchro
             $existingSync = SyncHistory::where('agent_id', $agent->id)
                 ->where('sync_uuid', 'like', 'initial-sync-' . $agent->id . '-%')
@@ -157,6 +189,14 @@ class PwaController extends Controller
                 'retraits' => $retraits, 
                 'bonus_en_attente' => $bonusEnAttente->toArray(),
                 'historique_paiements' => $historiquePaiements->toArray(),
+                
+                // 📊 AJOUTÉ : Transmission du bloc de données statistiques au JSON !
+                'stats_performance' => [
+                    'historique_courbe'                => $historiqueVolumeMensuel,
+                    'volume_historique_global'         => (float) ($volumeHistoriqueGlobal ?? 0),
+                    'total_historique_cycles_termines' => (int) $totalHistoriqueCyclesTermines
+                ],
+                
                 'server_date' => now()->format('Y-m-d'),
             ]);
 

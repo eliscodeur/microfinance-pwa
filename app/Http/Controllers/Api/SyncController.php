@@ -219,6 +219,80 @@ class SyncController extends Controller
     /**
      * Construit le payload complet pour l'agent (initial data + après approbation).
      */
+    // private function buildSyncPayload(Agent $agent): array
+    // {
+    //     $clients = Client::where('agent_id', $agent->id)
+    //         ->whereHas('carnets', fn($q) => $q->where('statut', 'actif')->where('type', 'tontine'))
+    //         ->get();
+
+    //     $clientIds = $clients->pluck('id');
+
+    //     $carnets = Carnet::whereIn('client_id', $clientIds)
+    //         ->where('statut', 'actif')
+    //         ->where('type', 'tontine')
+    //         ->withCount(['cycles as total_cycles_termines' => fn($q) => $q->where('statut', 'termine')])
+    //         ->get();
+
+    //     $cycles = Cycle::whereIn('carnet_id', $carnets->pluck('id'))
+    //         ->where(fn($q) => $q
+    //             ->where('statut', 'en_cours')
+    //             ->orWhere(fn($q2) => $q2->where('statut', 'termine')->whereNull('retire_at'))
+    //         )
+    //         ->with(['collectes', 'retraits'])
+    //         ->get()
+    //         ->map(function ($cycle) {
+    //             $totalCollectes   = (float) $cycle->collectes->sum('montant');
+    //             $totalDejaRetire  = (float) $cycle->retraits->sum('montant_net');
+    //             $commission       = (float) ($cycle->montant_journalier ?? 0);
+
+    //             $cycle->solde_restant_net = max(0, $totalCollectes - $commission - $totalDejaRetire);
+
+    //             // Injecte cycle_uid dans chaque retrait pour faciliter le filtrage Dexie
+    //             $cycle->retraits->each(function ($retrait) use ($cycle) {
+    //                 $retrait->cycle_uid = $cycle->cycle_uid;
+    //                 $retrait->synced    = 1;
+    //             });
+
+    //             return $cycle;
+    //         });
+
+    //     // ✅ filter() protège contre les relations null
+    //     $collectes = $cycles->pluck('collectes')->filter()->flatten()->map(function ($col) {
+    //         $col->synced = 1;
+    //         return $col;
+    //     });
+
+    //     $retraits = $cycles->pluck('retraits')->filter()->flatten();
+
+    //     $bonusEnAttente = Bonus::where('agent_id', $agent->id)
+    //         ->where('statut', 'en_attente')
+    //         ->orderBy('date_attribution', 'desc')
+    //         ->get();
+
+    //     $historiquePaiements = Paiement::where('agent_id', $agent->id)
+    //         ->with(['bonuses'])
+    //         ->orderBy('created_at', 'desc')
+    //         ->limit(10)
+    //         ->get();
+
+    //     return [
+    //         'success' => true,
+    //         'agent'   => [
+    //             'id'       => $agent->id,
+    //             'nom'      => $agent->nom,
+    //             'pin_hash' => $agent->pin_hash,
+    //         ],
+    //         'clients'               => $clients,
+    //         'carnets'               => $carnets,
+    //         'cycles'                => $cycles->makeHidden(['collectes', 'retraits']),
+    //         'collectes'             => $collectes,
+    //         'retraits'              => $retraits,
+    //         'bonus_en_attente'      => $bonusEnAttente,
+    //         'historique_paiements'  => $historiquePaiements,
+    //         'server_date'           => now()->toDateString(),
+    //     ];
+    // }
+
     private function buildSyncPayload(Agent $agent): array
     {
         $clients = Client::where('agent_id', $agent->id)
@@ -247,7 +321,6 @@ class SyncController extends Controller
 
                 $cycle->solde_restant_net = max(0, $totalCollectes - $commission - $totalDejaRetire);
 
-                // Injecte cycle_uid dans chaque retrait pour faciliter le filtrage Dexie
                 $cycle->retraits->each(function ($retrait) use ($cycle) {
                     $retrait->cycle_uid = $cycle->cycle_uid;
                     $retrait->synced    = 1;
@@ -256,7 +329,6 @@ class SyncController extends Controller
                 return $cycle;
             });
 
-        // ✅ filter() protège contre les relations null
         $collectes = $cycles->pluck('collectes')->filter()->flatten()->map(function ($col) {
             $col->synced = 1;
             return $col;
@@ -275,6 +347,41 @@ class SyncController extends Controller
             ->limit(10)
             ->get();
 
+        // ======================================================================
+        // 📊 DONNÉES DE PERFORMANCE & EVOLUTION (SANS OBJECTIFS)
+        // ======================================================================
+        
+        // 1. Historique du volume collecté par mois sur les 6 derniers mois (Pour alimenter la courbe)
+        $historiqueVolumeMensuel = \DB::table('collectes')
+            ->join('cycles', 'collectes.cycle_id', '=', 'cycles.id')
+            ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
+            ->join('clients', 'carnets.client_id', '=', 'clients.id')
+            ->where('clients.agent_id', $agent->id)
+            ->where('collectes.created_at', '>=', now()->subMonths(6)->startOfMonth())
+            ->select(
+                \DB::raw("DATE_FORMAT(collectes.created_at, '%Y-%m') as mois"),
+                \DB::raw("SUM(collectes.montant) as total_volume")
+            )
+            ->groupBy('mois')
+            ->orderBy('mois', 'asc')
+            ->get();
+
+        // 2. Volume total historique amassé par cet agent depuis son inscription (Toutes collectes confondues)
+        $volumeHistoriqueGlobal = \DB::table('collectes')
+            ->join('cycles', 'collectes.cycle_id', '=', 'cycles.id')
+            ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
+            ->join('clients', 'carnets.client_id', '=', 'clients.id')
+            ->where('clients.agent_id', $agent->id)
+            ->sum('collectes.montant');
+
+        // 3. Compteur global des cycles menés à terme (historique complet de sa carrière)
+        $totalHistoriqueCyclesTermines = \DB::table('cycles')
+            ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
+            ->join('clients', 'carnets.client_id', '=', 'clients.id')
+            ->where('clients.agent_id', $agent->id)
+            ->where('cycles.statut', 'termine')
+            ->count();
+
         return [
             'success' => true,
             'agent'   => [
@@ -289,6 +396,14 @@ class SyncController extends Controller
             'retraits'              => $retraits,
             'bonus_en_attente'      => $bonusEnAttente,
             'historique_paiements'  => $historiquePaiements,
+            
+            // Bloc statistique épuré
+            'stats_performance'     => [
+                'historique_courbe'                => $historiqueVolumeMensuel,
+                'volume_historique_global'         => (float) $volumeHistoriqueGlobal,
+                'total_historique_cycles_termines' => $totalHistoriqueCyclesTermines
+            ],
+            
             'server_date'           => now()->toDateString(),
         ];
     }

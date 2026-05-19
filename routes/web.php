@@ -117,6 +117,9 @@ Route::middleware(['auth', 'role:Agent'])->prefix('pwa')->name('pwa.')->group(fu
     Route::get('/gains', function () {
         return view('pwa/gains');
     })->name('gains');
+    Route::get('/stats', function () {
+        return view('pwa/stats');
+    })->name('stats');
     Route::get('/nouveau-carnet/{client_id}', [CarnetController::class, 'agentCreate'])->name('carnets.create');
     Route::post('/store-carnet', [CarnetController::class, 'store'])->name('carnets.store');
     Route::get('/security-pin', [PwaController::class, 'showSecurityPin'])->name('pin');

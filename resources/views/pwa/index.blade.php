@@ -2,44 +2,41 @@
 @section('header')
 <div class="d-flex justify-content-between align-items-center w-100">
     <div class="d-flex align-items-center">
-        <!-- @if(View::hasSection('header_left'))
-            <div class="me-2">@yield('header_left')</div>
-        @endif -->
         <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
             <i class="bi bi-list fs-3 me-3"></i>
         </button>
-        <!-- <div class="me-2"><i class="bi bi-list fs-3 me-3"></i></div> -->
         <div class="logo-container">
             <img src="{{ asset('icons/icon-192x192.png') }}" class="logo-img" alt="Logo">
         </div>
         <span class="brand-text">Nana<span class="brand-subtext">Eco</span></span>
     </div>
 
-    <div class="d-flex align-items-center">
+    <!-- <div class="d-flex align-items-center">
         <div id="status-icons" class="me-3">
             <i id="online-icon" class="bi bi-wifi" style="color: var(--nana-green); font-size: 1.4rem;"></i>
             <i id="offline-icon" class="bi bi-wifi-off animate-pulse" style="color: #dc3545; font-size: 1.4rem; display: none;"></i>
         </div>
-    </div>
+    </div> -->
 </div>
 @endsection
 @section('content')
 
 <div class="container mt-n3">
     <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 cursor-pointer" style="cursor: pointer;">
-        <div class="row text-center">
-            <div class="col-6 border-end" onclick="goToCollecte()">
-                <small class="text-muted d-block">Collectes Jour</small>
-                <span class="fw-bold fs-5 text-primary" id="total-montant">0 FCFA</span>
+        <div class="row text-center align-items-center">
+            <div class="col-4 border-end" onclick="goToCollecte()">
+                <small class="text-muted d-block mb-1" style="font-size: 0.70rem; white-space: nowrap;">Collectes Jour</small>
+                <span class="fw-bold text-primary" id="total-montant" style="font-size: 0.85rem; white-space: nowrap;">0 F</span>
             </div>
-            <div class="col-6">
-                <small class="text-muted d-block">Clients vus</small>
-                <span class="fw-bold fs-5 text-dark" id="total-clients-vus">0</span>
+            <div class="col-4 border-end">
+                <small class="text-muted d-block mb-1" style="font-size: 0.70rem; white-space: nowrap;">Clients vus</small>
+                <span class="fw-bold text-dark" id="total-clients-vus" style="font-size: 1.1rem;">0</span>
+            </div>
+            <div class="col-4">
+                <small class="text-muted d-block mb-1" style="font-size: 0.70rem; white-space: nowrap;">Clients actifs</small>
+                <span class="fw-bold text-success" id="total-clients-actifs" style="font-size: 1.1rem;">0</span>
             </div>
         </div>
-        <!-- <div class="text-center mt-2">
-            <small class="text-muted"><i class="bi bi-pencil me-1"></i> Cliquez pour éditer</small>
-        </div> -->
     </div>
 </div>
 
@@ -119,22 +116,28 @@
             const total = duJour.reduce((acc, curr) => acc + (parseInt(curr.montant) || 0), 0);
             
             // 6. Calculer les clients uniques (un client = une fois même avec plusieurs collectes/carnets)
-            // Utilise Set pour éliminer les doublons : si un client a 2 collectes sur 2 carnets différents, il compte pour 1
             const idsUniques = new Set(duJour.map(c => Number(c.client_id)));
             const clientsVus = idsUniques.size;
             
-            // Debug: Afficher la répartition par client
-            // console.log(`[DEBUG] Clients uniques: ${clientsVus} | IDs: [${Array.from(idsUniques).join(', ')}]`);
+            // 6b. Calculer le nombre de clients actifs distincts (qui ont au moins un cycle en_cours)
+            const tousCyclesEnCours = await db.cycles.where('statut').equals('en_cours').toArray();
+            const carnetIdsEnCours = tousCyclesEnCours.map(cy => cy.carnet_id);
+            
+            const carnetsEnCours = await db.carnets.where('id').anyOf(carnetIdsEnCours).toArray();
+            const clientIdsActifsUniques = new Set(carnetsEnCours.map(car => Number(car.client_id)));
+            const totalClientsActifs = clientIdsActifsUniques.size;
 
             // 7. Mise à jour du DOM
             const elMontant = document.getElementById('total-montant');
-            const elClients = document.getElementById('total-clients-vus');
+            const elClientsVus = document.getElementById('total-clients-vus');
+            const elClientsActifs = document.getElementById('total-clients-actifs');
 
-            if (elMontant) elMontant.innerText = total.toLocaleString('fr-FR') + " FCFA";
-            if (elClients) elClients.innerText = clientsVus;
+            if (elMontant) elMontant.innerText = total.toLocaleString('fr-FR') + " F";
+            if (elClientsVus) elClientsVus.innerText = clientsVus;
+            if (elClientsActifs) elClientsActifs.innerText = totalClientsActifs;
 
             // Petit log pour débugger dans ta console (F12)
-            // console.log(`[Stats] Date: ${aujourdhui} | Collectes du jour non sync: ${duJour.length} | Clients: ${clientsVus} | Total: ${total} FCFA`);
+            // console.log(`[Stats] Date: ${aujourdhui} | Collectes du jour non sync: ${duJour.length} | Clients Vus: ${clientsVus} | Clients Actifs: ${totalClientsActifs} | Total: ${total} FCFA`);
 
         } catch (e) { 
             console.error("Erreur rafraîchissement stats:", e); 
@@ -266,11 +269,11 @@
         // Redirige vers la page d'édition de la collecte
         window.location.href = `/pwa/collectes-liste`;
     };
-     window.updateOnlineStatus = function(){
-        const isOnline = navigator.onLine;
-        document.getElementById('online-icon').style.display = isOnline ? 'block' : 'none';
-        document.getElementById('offline-icon').style.display = isOnline ? 'none' : 'block';
-    }
+    //  window.updateOnlineStatus = function(){
+    //     const isOnline = navigator.onLine;
+    //     document.getElementById('online-icon').style.display = isOnline ? 'block' : 'none';
+    //     document.getElementById('offline-icon').style.display = isOnline ? 'none' : 'block';
+    // }
 
 </script>
 

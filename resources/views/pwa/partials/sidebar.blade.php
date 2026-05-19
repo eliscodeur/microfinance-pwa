@@ -27,8 +27,8 @@
         <a href="/pwa/collectes-liste" class="list-group-item list-group-item-action border-0 py-3 px-4">
             <i class="bi bi-cash-stack me-3 fs-5"></i> Liste des Collectes
         </a>
-        <a href="/pwa/gains" class="list-group-item list-group-item-action border-0 py-3 px-4">
-            <i class="bi bi-graph-up-arrow me-3 fs-5"></i> Bonus & Commissions
+        <a href="/pwa/stats" class="list-group-item list-group-item-action border-0 py-3 px-4">
+            <i class="bi bi-graph-up-arrow me-3 fs-5"></i> Permormances & stats
         </a>
 
         <hr class="mx-3 my-2">
