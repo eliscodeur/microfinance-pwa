@@ -1,6 +1,7 @@
 import { Inertia } from '@inertiajs/inertia';
 import { Link, usePage } from '@inertiajs/inertia-react';
 import { useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
 import AdminLayout from '../../Layouts/AdminLayout.jsx';
 import BootstrapModal from '../../Components/BootstrapModal.jsx';
 import { formatDateToFR } from '../../Utils/creditHelpers';
@@ -71,6 +72,9 @@ export default function Show({ credit }) {
                 return 'En attente';
             case 'in_arrears':
                 return 'En retard';
+            case 'solder':
+            case 'solde':
+                return 'Soldé';
             case 'closed':
                 return 'Clôturé';
             case 'rejected':
@@ -95,7 +99,26 @@ export default function Show({ credit }) {
         }
     };
 
+    const allPaymentsPaid = payments.length > 0 && payments.every(payment => payment.status === 'paid');
+    const displayedCreditStatus = allPaymentsPaid ? 'solder' : credit.statut;
+
+    const lastPaymentDate = payments.reduce((latest, payment) => {
+        if (!payment.date_paye) {
+            return latest;
+        }
+
+        const paymentDate = new Date(payment.date_paye);
+        if (Number.isNaN(paymentDate.getTime())) {
+            return latest;
+        }
+
+        return latest === null || paymentDate > latest ? paymentDate : latest;
+    }, null);
+
     const canPayInstallment = payment => {
+        if (!['active', 'in_arrears'].includes(displayedCreditStatus)) {
+            return false;
+        }
         if (payment.status === 'paid') {
             return false;
         }
@@ -139,21 +162,52 @@ export default function Show({ credit }) {
 
     const savePayment = (payment) => {
         const amount = Number(paymentAmounts[payment.id]);
+        const penalty = Number(penalties[payment.id] ?? payment.computed_penalty ?? 0);
+        const totalDue = Number(payment.montant_total) + penalty;
+        const paidAmount = Number(payment.montant_paye ?? 0);
+        const remaining = Math.max(0, totalDue - paidAmount);
 
         if (Number.isNaN(amount) || amount <= 0) {
+            Swal.fire({
+                title: 'Montant invalide',
+                text: 'Le montant doit être supérieur à zéro.',
+                icon: 'error',
+            });
             return;
         }
 
-        Inertia.patch(`/admin/credits/${credit.id}/payments/${payment.id}`, {
-            montant_paye: amount,
-        }, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setPaymentAmounts(prev => ({
-                    ...prev,
-                    [payment.id]: '',
-                }));
-            },
+        if (amount > remaining) {
+            Swal.fire({
+                title: 'Paiement trop élevé',
+                text: `Le montant dépasse le solde restant de ${formatCurrency(remaining)} pour cette échéance.`,
+                icon: 'error',
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Confirmer le paiement ?',
+            text: `Vous allez enregistrer un paiement de ${formatCurrency(amount)} pour l'échéance #${payment.echeance}.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, valider',
+            cancelButtonText: 'Annuler',
+        }).then(result => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            Inertia.patch(`/admin/credits/${credit.id}/payments/${payment.id}`, {
+                montant_paye: amount,
+            }, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setPaymentAmounts(prev => ({
+                        ...prev,
+                        [payment.id]: '',
+                    }));
+                },
+            });
         });
     };
 
@@ -185,11 +239,11 @@ export default function Show({ credit }) {
                         <Link href="/admin/credits" className="btn btn-outline-secondary me-2">
                             Retour
                         </Link>
-                        {credit.statut !== 'approved' && credit.statut !== 'active' && credit.statut !== 'rejected' && credit.statut !== 'closed' && credit.statut === 'pending' && (
+                        {/* {credit.statut !== 'approved' && credit.statut !== 'active' && credit.statut !== 'rejected' && credit.statut !== 'closed' && credit.statut === 'pending' && (
                             <button className="btn btn-success" onClick={approve}>
                                 Approuver
                             </button>
-                        )}
+                        )} */}
                     </div>
                 </div>
 
@@ -212,7 +266,16 @@ export default function Show({ credit }) {
                                 <strong>Client :</strong> {credit.client.nom} {credit.client.prenom}
                             </p>
                             <p>
-                                <strong>Statut :</strong> {creditStatusLabel(credit.statut)}
+                                <strong>Statut :</strong> {creditStatusLabel(displayedCreditStatus)}
+                            </p>
+                            {allPaymentsPaid && credit.statut !== 'solder' && (
+                                <p className="text-muted small mb-2">
+                                    Statut harmonisé sur Soldé car toutes les échéances sont réglées.
+                                </p>
+                            )}
+                            <p>
+                                <strong>Dernier paiement :</strong>{' '}
+                                {lastPaymentDate ? formatDateToFR(lastPaymentDate.toISOString()) : '—'}
                             </p>
                             <p>
                                 <strong>Montant demandé :</strong> {formatCurrency(credit.montant_demande)}
@@ -319,7 +382,7 @@ export default function Show({ credit }) {
                                             <td>{formatCurrency(payment.montant_interets)}</td>
                                             <td>{formatCurrency(payment.montant_total)}</td>
                                             <td>
-                                                {payment.status !== 'paid' ? (
+                                                {payment.status !== 'paid' && ['active', 'in_arrears'].includes(credit.statut) ? (
                                                     <div className="input-group">
                                                         <input
                                                             type="number"
@@ -349,7 +412,7 @@ export default function Show({ credit }) {
                                             <td>{formatCurrency(paidAmount)}</td>
                                             <td>{formatCurrency(remaining)}</td>
                                             <td>
-                                                {payment.status !== 'paid' ? (
+                                                {payment.status !== 'paid' && ['active', 'in_arrears'].includes(credit.statut) ? (
                                                     <div className="d-flex gap-2 align-items-center">
                                                         <div className="input-group">
                                                             <input
@@ -365,7 +428,6 @@ export default function Show({ credit }) {
                                                                         [payment.id]: e.target.value,
                                                                     }))
                                                                 }
-                                                                disabled={!canPayInstallment(payment)}
                                                             />
                                                             <button
                                                                 type="button"
@@ -381,11 +443,18 @@ export default function Show({ credit }) {
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    <span className={paymentClass(payment.display_status ?? payment.status)}>
-                                                        {paymentStatusLabel(payment.display_status ?? payment.status)}
-                                                    </span>
+                                                    <div>
+                                                        <span className={paymentClass(payment.display_status ?? payment.status)}>
+                                                            {paymentStatusLabel(payment.display_status ?? payment.status)}
+                                                        </span>
+                                                        {payment.status !== 'paid' && !['active', 'in_arrears'].includes(credit.statut) && (
+                                                            <div className="small text-muted mt-1">
+                                                                Paiement disponible après approbation et décaissement.
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )}
-                                                {!canPayInstallment(payment) && payment.status !== 'paid' && (
+                                                {!canPayInstallment(payment) && payment.status !== 'paid' && ['active', 'in_arrears'].includes(credit.statut) && (
                                                     <div className="small text-muted mt-1">
                                                         Paiement bloqué tant que l’échéance précédente n’est pas réglée.
                                                     </div>

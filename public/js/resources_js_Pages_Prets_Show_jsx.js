@@ -1,4 +1,4 @@
-(self["webpackChunk"] = self["webpackChunk"] || []).push([["resources_js_Pages_Credits_Create_jsx"],{
+(self["webpackChunk"] = self["webpackChunk"] || []).push([["resources_js_Pages_Prets_Show_jsx"],{
 
 /***/ "./resources/js/Layouts/AdminLayout.jsx":
 /*!**********************************************!*\
@@ -83,606 +83,587 @@ function AdminLayout(_ref) {
 
 /***/ }),
 
-/***/ "./resources/js/Pages/Credits/Create.jsx":
-/*!***********************************************!*\
-  !*** ./resources/js/Pages/Credits/Create.jsx ***!
-  \***********************************************/
+/***/ "./resources/js/Pages/Prets/Show.jsx":
+/*!*******************************************!*\
+  !*** ./resources/js/Pages/Prets/Show.jsx ***!
+  \*******************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ Create)
+/* harmony export */   "default": () => (/* binding */ Show)
 /* harmony export */ });
-/* harmony import */ var _inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @inertiajs/inertia-react */ "./node_modules/@inertiajs/inertia-react/dist/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
-/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../Layouts/AdminLayout.jsx */ "./resources/js/Layouts/AdminLayout.jsx");
-/* harmony import */ var _Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../Utils/creditHelpers */ "./resources/js/Utils/creditHelpers.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
-function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
-function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
-function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @inertiajs/inertia-react */ "./node_modules/@inertiajs/inertia-react/dist/index.js");
+/* harmony import */ var _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @inertiajs/inertia */ "./node_modules/@inertiajs/inertia/dist/index.js");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../Layouts/AdminLayout.jsx */ "./resources/js/Layouts/AdminLayout.jsx");
+/* harmony import */ var _Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../Utils/creditHelpers */ "./resources/js/Utils/creditHelpers.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 
 
 
 
 
 
-function Create(_ref) {
-  var _selectedCarnet$total, _selectedCarnet$requi, _selectedCarnet$avail, _selectedCarnet$guara;
-  var clients = _ref.clients;
-  var form = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.useForm)({
-    client_id: '',
-    carnet_id: '',
-    montant_demande: 0,
-    type: 'compte',
-    mode: 'degressif',
-    periodicite: 'mensuelle',
-    nombre_echeances: 3,
-    taux: 1.5,
-    taux_manuelle: '',
-    date_debut: new Date().toISOString().slice(0, 10)
+
+function Show() {
+  var _ref, _ref2, _credit$montant_accor, _ref3, _credit$montant_deman, _ref4, _credit$taux_propose, _diagnostic$nombreCar, _diagnostic$totalEpar, _diagnostic$cyclesCom, _diagnostic$regularit, _credit$periodicite3, _credit$nombre_echean3, _credit$duree, _credit$metadata, _credit$metadata2;
+  var _usePage = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.usePage)(),
+    props = _usePage.props;
+  var credit = props.credit,
+    client = props.client,
+    diagnostic = props.diagnostic;
+  var statusLabel = function statusLabel(statut) {
+    switch (statut) {
+      case 'pending':
+      case 'soumis':
+      case 'en_etude':
+        return 'En étude';
+      case 'approved':
+      case 'approuve':
+        return 'Approuvé';
+      case 'active':
+        return 'Décaissement effectué';
+      case 'in_arrears':
+        return 'En retard';
+      case 'solder':
+      case 'solde':
+        return 'Soldé';
+      case 'rejected':
+      case 'rejete':
+        return 'Rejeté';
+      default:
+        return statut !== null && statut !== void 0 ? statut : 'Inconnu';
+    }
+  };
+  var approvedAmount = (_ref = (_ref2 = (_credit$montant_accor = credit === null || credit === void 0 ? void 0 : credit.montant_accorde) !== null && _credit$montant_accor !== void 0 ? _credit$montant_accor : credit === null || credit === void 0 ? void 0 : credit.montant_demande) !== null && _ref2 !== void 0 ? _ref2 : credit === null || credit === void 0 ? void 0 : credit.montant) !== null && _ref !== void 0 ? _ref : 0;
+  var requestedAmount = (_ref3 = (_credit$montant_deman = credit === null || credit === void 0 ? void 0 : credit.montant_demande) !== null && _credit$montant_deman !== void 0 ? _credit$montant_deman : credit === null || credit === void 0 ? void 0 : credit.montant) !== null && _ref3 !== void 0 ? _ref3 : 0;
+  var proposedRate = (_ref4 = (_credit$taux_propose = credit === null || credit === void 0 ? void 0 : credit.taux_propose) !== null && _credit$taux_propose !== void 0 ? _credit$taux_propose : credit === null || credit === void 0 ? void 0 : credit.taux) !== null && _ref4 !== void 0 ? _ref4 : 0;
+  var approveForm = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.useForm)({
+    action: 'approuve',
+    montant_accorde: approvedAmount,
+    taux: proposedRate,
+    date_debut: credit !== null && credit !== void 0 && credit.date_debut ? credit.date_debut.split('T')[0] : new Date().toISOString().slice(0, 10)
   });
-  var _useState = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]),
-    _useState2 = _slicedToArray(_useState, 2),
-    carnets = _useState2[0],
-    setCarnets = _useState2[1];
-  var today = new Date().toISOString().slice(0, 10);
-  var isCompteCredit = form.data.type === 'compte';
-  var selectedCarnet = carnets.find(function (carnet) {
-    return String(carnet.id) === String(form.data.carnet_id);
-  });
-  var isCompteCarnetSelected = (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'compte';
-  var isTontineCarnetSelected = (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'tontine';
-  var isTypeFixedByCarnet = !!selectedCarnet;
-  var pointageWarning = isTontineCarnetSelected && (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.total_pointages) < (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.required_pointages);
-  (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
-    if (isCompteCarnetSelected && form.data.type !== 'compte') {
-      form.setData('type', 'compte');
-    }
-    if (isTontineCarnetSelected && form.data.type !== 'quinzaine') {
-      form.setData('type', 'quinzaine');
-    }
-  }, [isCompteCarnetSelected, isTontineCarnetSelected, form.data.type]);
-  (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
-    if (!form.data.client_id) {
-      setCarnets([]);
-      form.setData('carnet_id', '');
-      return;
-    }
-    var controller = new AbortController();
-    var url = "/admin/carnets/get-by-client/".concat(form.data.client_id, "?t=").concat(Date.now());
-    fetch(url, {
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Accept': 'application/json'
-      },
-      signal: controller.signal
-    }).then(function (response) {
-      if (!response.ok) {
-        throw new Error("HTTP error! status: ".concat(response.status));
-      }
-      return response.json();
-    }).then(function (data) {
-      console.log('Carnets fetched:', data);
-      if (Array.isArray(data)) {
-        setCarnets(data);
-        if (!data.some(function (item) {
-          return String(item.id) === String(form.data.carnet_id);
-        })) {
-          form.setData('carnet_id', '');
-        }
-      } else {
-        console.error('Expected array, got:', data);
-        setCarnets([]);
-      }
-    })["catch"](function (err) {
-      console.error('Error fetching carnets:', err);
-      setCarnets([]);
+  var requestSchedule = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
+    var _credit$taux_manuelle, _credit$nombre_echean, _credit$mode, _credit$periodicite, _credit$date_debut;
+    return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.buildScheduleFromForm)({
+      montant_demande: requestedAmount,
+      taux: proposedRate,
+      taux_manuelle: (_credit$taux_manuelle = credit === null || credit === void 0 ? void 0 : credit.taux_manuelle) !== null && _credit$taux_manuelle !== void 0 ? _credit$taux_manuelle : '',
+      nombre_echeances: (_credit$nombre_echean = credit === null || credit === void 0 ? void 0 : credit.nombre_echeances) !== null && _credit$nombre_echean !== void 0 ? _credit$nombre_echean : 1,
+      mode: (_credit$mode = credit === null || credit === void 0 ? void 0 : credit.mode) !== null && _credit$mode !== void 0 ? _credit$mode : 'degressif',
+      periodicite: (_credit$periodicite = credit === null || credit === void 0 ? void 0 : credit.periodicite) !== null && _credit$periodicite !== void 0 ? _credit$periodicite : 'mensuelle',
+      date_debut: (_credit$date_debut = credit === null || credit === void 0 ? void 0 : credit.date_debut) !== null && _credit$date_debut !== void 0 ? _credit$date_debut : new Date().toISOString().slice(0, 10)
     });
-    return function () {
-      return controller.abort();
+  }, [requestedAmount, proposedRate, credit]);
+  var approvedSchedule = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
+    var _credit$taux_manuelle2, _credit$nombre_echean2, _credit$mode2, _credit$periodicite2, _ref5;
+    return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.buildScheduleFromForm)({
+      montant_demande: approveForm.montant_accorde,
+      taux: approveForm.taux,
+      taux_manuelle: (_credit$taux_manuelle2 = credit === null || credit === void 0 ? void 0 : credit.taux_manuelle) !== null && _credit$taux_manuelle2 !== void 0 ? _credit$taux_manuelle2 : '',
+      nombre_echeances: (_credit$nombre_echean2 = credit === null || credit === void 0 ? void 0 : credit.nombre_echeances) !== null && _credit$nombre_echean2 !== void 0 ? _credit$nombre_echean2 : 1,
+      mode: (_credit$mode2 = credit === null || credit === void 0 ? void 0 : credit.mode) !== null && _credit$mode2 !== void 0 ? _credit$mode2 : 'degressif',
+      periodicite: (_credit$periodicite2 = credit === null || credit === void 0 ? void 0 : credit.periodicite) !== null && _credit$periodicite2 !== void 0 ? _credit$periodicite2 : 'mensuelle',
+      date_debut: (_ref5 = approveForm.date_debut || (credit === null || credit === void 0 ? void 0 : credit.date_debut)) !== null && _ref5 !== void 0 ? _ref5 : new Date().toISOString().slice(0, 10)
+    });
+  }, [approveForm, credit]);
+  var requestScheduleSummary = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
+    return {
+      totalInterest: requestSchedule.reduce(function (sum, row) {
+        return sum + row.interest;
+      }, 0),
+      totalDue: requestSchedule.reduce(function (sum, row) {
+        return sum + row.total;
+      }, 0)
     };
-  }, [form.data.client_id]);
-  var schedule = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
-    return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.buildScheduleFromForm)(form.data);
-  }, [form.data]);
-  var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(1),
-    _useState4 = _slicedToArray(_useState3, 2),
-    currentPage = _useState4[0],
-    setCurrentPage = _useState4[1];
-  var pageSize = 6;
-  var pageCount = Math.max(1, Math.ceil(schedule.length / pageSize));
-  (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
-    setCurrentPage(1);
-  }, [schedule.length]);
-  var paginatedSchedule = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
-    var start = (currentPage - 1) * pageSize;
-    return schedule.slice(start, start + pageSize);
-  }, [schedule, currentPage]);
-  var totalInterest = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
-    return schedule.reduce(function (sum, row) {
-      return sum + row.interest;
-    }, 0);
-  }, [schedule]);
-  var totalDue = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
-    return schedule.reduce(function (sum, row) {
-      return sum + row.total;
-    }, 0);
-  }, [schedule]);
-  var meanInstallment = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
-    return schedule.length ? totalDue / schedule.length : 0;
-  }, [schedule, totalDue]);
-  var hasErrors = Object.keys(form.errors).length > 0;
-  var submit = function submit(e) {
-    e.preventDefault();
-    sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
-      title: 'Confirmer la demande ?',
-      text: 'Voulez-vous envoyer cette demande de crédit au back-office ?',
+  }, [requestSchedule]);
+  var approvedScheduleSummary = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
+    return {
+      totalInterest: approvedSchedule.reduce(function (sum, row) {
+        return sum + row.interest;
+      }, 0),
+      totalDue: approvedSchedule.reduce(function (sum, row) {
+        return sum + row.total;
+      }, 0)
+    };
+  }, [approvedSchedule]);
+  var rejectForm = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.useForm)({
+    action: 'rejete',
+    motif: ''
+  });
+  function confirmAction(title, text, callback) {
+    sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
+      title: title,
+      text: text,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Oui, envoyer',
+      confirmButtonText: 'Oui, continuer',
       cancelButtonText: 'Annuler'
     }).then(function (result) {
-      if (!result.isConfirmed) {
-        return;
+      if (result.isConfirmed) {
+        callback();
       }
-      form.post('/admin/credits', {
-        onSuccess: function onSuccess() {
-          sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
-            title: 'Demande envoyée',
-            text: 'La demande de crédit a bien été enregistrée.',
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false
-          });
-          form.reset('montant_demande', 'type', 'mode', 'periodicite', 'nombre_echeances', 'taux', 'taux_manuelle', 'date_debut');
-        },
-        onError: function onError(errors) {
-          if (Object.keys(errors).length) {
-            sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
-              title: 'Erreur',
-              text: 'Veuillez corriger les champs en surbrillance.',
-              icon: 'error'
-            });
-          }
-        }
+    });
+  }
+  function submitApprove(e) {
+    e.preventDefault();
+    confirmAction('Approuver le dossier ?', 'Le dossier sera approuvé et le statut sera mis à jour.', function () {
+      approveForm.post("/admin/prets/".concat(credit.id, "/valider"));
+    });
+  }
+  function submitReject(e) {
+    e.preventDefault();
+    confirmAction('Refuser le dossier ?', 'Le dossier sera refusé et le motif de refus enregistré.', function () {
+      rejectForm.post("/admin/prets/".concat(credit.id, "/valider"));
+    });
+  }
+  function markEnEtude() {
+    confirmAction('Mettre en étude ?', 'Le dossier restera en attente d’analyse interne.', function () {
+      _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_2__.Inertia.post("/admin/prets/".concat(credit.id, "/valider"), {
+        action: 'en_etude'
       });
     });
-  };
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_3__["default"], {
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+  }
+  var isPending = ['pending', 'soumis', 'en_etude'].includes(credit === null || credit === void 0 ? void 0 : credit.statut);
+  var isApproved = (credit === null || credit === void 0 ? void 0 : credit.statut) === 'approved';
+  function doDecaissement() {
+    confirmAction('Confirmer le décaissement ?', 'Confirmer le décaissement et génération de l’échéancier.', function () {
+      _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_2__.Inertia.post("/admin/prets/".concat(credit.id, "/decaisser"));
+    });
+  }
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_4__["default"], {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
         className: "d-flex justify-content-between align-items-center mb-4",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h1", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("h1", {
             className: "h3",
-            children: "Nouvelle demande de cr\xE9dit"
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
+            children: ["Fiche d'instruction \u2014 Dossier #", credit.id]
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
             className: "text-muted mb-0",
-            children: "Saisie interactive et pr\xE9visualisation des \xE9ch\xE9ances."
+            children: "Analyse 360\xB0 du profil client et workflow comit\xE9 de cr\xE9dit."
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-          href: "/admin/credits",
-          className: "btn btn-outline-secondary",
-          children: "Retour"
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
+            href: "/admin/prets",
+            className: "btn btn-outline-secondary me-2",
+            children: "Retour"
+          })
         })]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("form", {
-        onSubmit: submit,
-        className: "card shadow-sm p-4",
-        children: [hasErrors && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-          className: "alert alert-danger",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("strong", {
-            children: "Merci de corriger les erreurs suivantes :"
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("ul", {
-            className: "mb-0 mt-2",
-            children: Object.entries(form.errors).map(function (_ref2) {
-              var _ref3 = _slicedToArray(_ref2, 2),
-                field = _ref3[0],
-                message = _ref3[1];
-              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("li", {
-                children: Array.isArray(message) ? message.join(', ') : message
-              }, field);
-            })
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        className: "row mt-4",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          className: "col-md-4",
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            className: "card mb-3",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              className: "card-header",
+              children: "Diagnostic Client"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              className: "card-body",
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Nom :"
+                }), " ", client ? "".concat(client.nom, " ").concat(client.prenom) : '—']
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Nombre de carnets :"
+                }), " ", (_diagnostic$nombreCar = diagnostic === null || diagnostic === void 0 ? void 0 : diagnostic.nombreCarnets) !== null && _diagnostic$nombreCar !== void 0 ? _diagnostic$nombreCar : 0]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Total \xE9pargn\xE9 :"
+                }), " ", (_diagnostic$totalEpar = diagnostic === null || diagnostic === void 0 ? void 0 : diagnostic.totalEpargne) !== null && _diagnostic$totalEpar !== void 0 ? _diagnostic$totalEpar : 0]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Cycles compl\xE9t\xE9s :"
+                }), " ", (_diagnostic$cyclesCom = diagnostic === null || diagnostic === void 0 ? void 0 : diagnostic.cyclesCompletes) !== null && _diagnostic$cyclesCom !== void 0 ? _diagnostic$cyclesCom : 0]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "R\xE9gularit\xE9 :"
+                }), " ", (_diagnostic$regularit = diagnostic === null || diagnostic === void 0 ? void 0 : diagnostic.regularitePourcent) !== null && _diagnostic$regularit !== void 0 ? _diagnostic$regularit : 'N/A', "%"]
+              })]
+            })]
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            className: "card",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              className: "card-header",
+              children: "Demande initiale"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              className: "card-body",
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Montant demand\xE9 :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(requestedAmount)]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Taux nominal annuel propos\xE9 :"
+                }), " ", proposedRate, "%"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "P\xE9riodicit\xE9 :"
+                }), " ", (_credit$periodicite3 = credit === null || credit === void 0 ? void 0 : credit.periodicite) !== null && _credit$periodicite3 !== void 0 ? _credit$periodicite3 : '—']
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Nombre d\u2019\xE9ch\xE9ances :"
+                }), " ", (_credit$nombre_echean3 = credit === null || credit === void 0 ? void 0 : credit.nombre_echeances) !== null && _credit$nombre_echean3 !== void 0 ? _credit$nombre_echean3 : '—']
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Date de d\xE9but demand\xE9e :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(credit === null || credit === void 0 ? void 0 : credit.date_debut)]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Dur\xE9e :"
+                }), " ", (_credit$duree = credit === null || credit === void 0 ? void 0 : credit.duree) !== null && _credit$duree !== void 0 ? _credit$duree : '—']
+              })]
+            })]
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-          className: "row gy-3",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-            className: "col-md-6",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-              className: "form-label",
-              children: "Client"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
-              className: "form-select",
-              value: form.data.client_id,
-              onChange: function onChange(e) {
-                return form.setData('client_id', e.target.value);
-              },
-              required: true,
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                value: "",
-                children: "S\xE9lectionner un client"
-              }), clients.map(function (client) {
-                return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("option", {
-                  value: client.id,
-                  children: [client.nom, " ", client.prenom]
-                }, client.id);
-              })]
-            })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-            className: "col-md-6",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
-              className: "form-label",
-              children: ["Carnet", isCompteCredit && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
-                className: "text-danger ms-2",
-                children: "*"
-              })]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
-              className: "form-select ".concat(form.errors.carnet_id ? 'is-invalid' : ''),
-              value: form.data.carnet_id,
-              onChange: function onChange(e) {
-                return form.setData('carnet_id', e.target.value);
-              },
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                value: "",
-                children: isCompteCredit ? 'Sélectionner un carnet obligatoire' : 'Sélectionner un carnet (optionnel)'
-              }), carnets.length === 0 && form.data.client_id && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                value: "",
-                children: "Aucun carnet actif trouv\xE9"
-              }), carnets.map(function (carnet) {
-                return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("option", {
-                  value: carnet.id,
-                  children: [carnet.type === 'tontine' ? 'Tontine' : 'Compte', " ", carnet.numero]
-                }, carnet.id);
-              })]
-            }), form.errors.carnet_id && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-              className: "invalid-feedback",
-              children: form.errors.carnet_id
-            }), !form.errors.carnet_id && isCompteCredit && carnets.length === 0 && form.data.client_id && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-              className: "form-text text-warning",
-              children: "Le client ne poss\xE8de pas de carnet de compte actif. Veuillez d'abord cr\xE9er un carnet."
-            }), selectedCarnet && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-              className: "form-text text-muted mt-2",
-              children: selectedCarnet.type === 'tontine' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-                children: ["Cat\xE9gorie : ", selectedCarnet.category || 'N/A', " \u2022 Cycles : ", selectedCarnet.nombre_cycles || 'N/A', " \u2022 Pointages : ", (_selectedCarnet$total = selectedCarnet.total_pointages) !== null && _selectedCarnet$total !== void 0 ? _selectedCarnet$total : 0, "/", (_selectedCarnet$requi = selectedCarnet.required_pointages) !== null && _selectedCarnet$requi !== void 0 ? _selectedCarnet$requi : '?']
-              }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-                children: ["Compte li\xE9 : ", selectedCarnet.linked_tontine ? selectedCarnet.linked_tontine.numero : 'Aucun']
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          className: "col-md-8",
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            className: "card mb-3",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              className: "card-header",
+              children: "Actions du comit\xE9"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              className: "card-body",
+              children: isPending ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.Fragment, {
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  className: "mb-3",
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                    className: "btn btn-secondary me-2",
+                    onClick: markEnEtude,
+                    children: "Mettre en \xE9tude"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("form", {
+                    onSubmit: submitApprove,
+                    className: "d-inline",
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                      className: "mb-2",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                        className: "form-label",
+                        children: "Montant accord\xE9"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                        className: "form-control",
+                        type: "number",
+                        value: approveForm.montant_accorde,
+                        onChange: function onChange(e) {
+                          return approveForm.setData('montant_accorde', e.target.value);
+                        }
+                      })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                      className: "mb-2",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                        className: "form-label",
+                        children: "Taux final (%)"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                        className: "form-control",
+                        type: "number",
+                        value: approveForm.taux,
+                        onChange: function onChange(e) {
+                          return approveForm.setData('taux', e.target.value);
+                        }
+                      })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                      className: "mb-2",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                        className: "form-label",
+                        children: "Date de d\xE9but de l'\xE9ch\xE9ancier"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                        className: "form-control",
+                        type: "date",
+                        value: approveForm.date_debut,
+                        onChange: function onChange(e) {
+                          return approveForm.setData('date_debut', e.target.value);
+                        }
+                      })]
+                    }), Number(approveForm.montant_accorde) !== Number(requestedAmount) || Number(approveForm.taux) !== Number(proposedRate) ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                      className: "alert alert-warning mt-3",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                        children: "Attention :"
+                      }), " les conditions d\u2019approbation diff\xE8rent de la demande initiale.", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("ul", {
+                        className: "mb-0",
+                        children: [Number(approveForm.montant_accorde) !== Number(requestedAmount) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("li", {
+                          children: ["Montant demand\xE9 : ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(requestedAmount), " \u2014 Montant d\xE9cisionnel : ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(approveForm.montant_accorde)]
+                        }), Number(approveForm.taux) !== Number(proposedRate) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("li", {
+                          children: ["Taux propos\xE9 : ", proposedRate, "% \u2014 Taux d\xE9cisionnel : ", approveForm.taux, "%"]
+                        })]
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                        children: "Le plan de remboursement sera bas\xE9 sur les conditions valid\xE9es par le comit\xE9."
+                      })]
+                    }) : null, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                      className: "btn btn-success me-2",
+                      type: "submit",
+                      children: "Approuver"
+                    })]
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                    className: "mt-3",
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("form", {
+                      onSubmit: submitReject,
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                        className: "mb-2",
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                          className: "form-label",
+                          children: "Motif de refus"
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                          className: "form-control",
+                          type: "text",
+                          value: rejectForm.motif,
+                          onChange: function onChange(e) {
+                            return rejectForm.setData('motif', e.target.value);
+                          }
+                        })]
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                        className: "btn btn-danger",
+                        type: "submit",
+                        children: "Refuser"
+                      })]
+                    })
+                  })]
+                })
+              }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "alert alert-secondary",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Dossier trait\xE9 :"
+                }), " ", statusLabel(credit === null || credit === void 0 ? void 0 : credit.statut)]
               })
-            }), selectedCarnet && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-              className: "form-text text-muted mt-1",
-              children: ["Assiette de l'\xE9pargne : ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)((_selectedCarnet$avail = selectedCarnet.available_savings) !== null && _selectedCarnet$avail !== void 0 ? _selectedCarnet$avail : 0), " \u2022 Garantie maximale possible : ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)((_selectedCarnet$guara = selectedCarnet.guarantee_base) !== null && _selectedCarnet$guara !== void 0 ? _selectedCarnet$guara : 0)]
-            }), pointageWarning && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-              className: "form-text text-warning",
-              children: "Seuil recommand\xE9 non atteint, mais l\u2019admin peut enregistrer le cr\xE9dit malgr\xE9 tout."
             })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-            className: "col-md-6",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-              className: "form-label",
-              children: "Montant demand\xE9"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
-              type: "number",
-              className: "form-control ".concat(form.errors.montant_demande ? 'is-invalid' : ''),
-              value: form.data.montant_demande,
-              onChange: function onChange(e) {
-                return form.setData('montant_demande', e.target.value);
-              },
-              min: "1000",
-              required: true
-            }), form.errors.montant_demande && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-              className: "invalid-feedback",
-              children: form.errors.montant_demande
+          }), isApproved && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            className: "card mb-3",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              className: "card-header",
+              children: "D\xE9caissement"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              className: "card-body",
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                className: "btn btn-primary",
+                onClick: doDecaissement,
+                children: "Confirmer le d\xE9caissement (Mise en place)"
+              })
             })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-            className: "col-md-4",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-              className: "form-label",
-              children: "Type de cr\xE9dit"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("select", {
-              className: "form-select",
-              value: form.data.type,
-              onChange: function onChange(e) {
-                return form.setData('type', e.target.value);
-              },
-              required: true,
-              disabled: isTypeFixedByCarnet,
-              children: (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'compte' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                  value: "compte",
-                  children: "Cr\xE9dit sur compte"
-                })
-              }) : (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'tontine' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                  value: "quinzaine",
-                  children: "Cr\xE9dit quinzaine"
-                })
-              }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                  value: "",
-                  children: "Choisir"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                  value: "compte",
-                  children: "Cr\xE9dit sur compte"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                  value: "quinzaine",
-                  children: "Cr\xE9dit quinzaine"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                  value: "mensuel",
-                  children: "Cr\xE9dit mensuel"
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            className: "card mb-3",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              className: "card-header",
+              children: "\xC9ch\xE9ancier de la demande initiale"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              className: "card-body",
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                className: "mb-2",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Montant demand\xE9 :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(requestedAmount), " \u2022 ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Taux :"
+                }), " ", proposedRate, "%"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                className: "mb-2",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Date de d\xE9but :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(credit === null || credit === void 0 ? void 0 : credit.date_debut)]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "row gy-2 mb-3",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                  className: "col-md-6",
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    className: "border rounded-3 p-3 bg-light",
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                      className: "text-muted",
+                      children: "Int\xE9r\xEAt total"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                      className: "fs-5 fw-bold",
+                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(requestScheduleSummary.totalInterest)
+                    })]
+                  })
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                  className: "col-md-6",
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    className: "border rounded-3 p-3 bg-light",
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                      className: "text-muted",
+                      children: "Total \xE0 rembourser"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                      className: "fs-5 fw-bold",
+                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(requestScheduleSummary.totalDue)
+                    })]
+                  })
                 })]
-              })
-            }), (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'compte' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-              className: "form-text text-muted",
-              children: "Le type est fix\xE9 \xE0 Cr\xE9dit sur compte pour ce carnet."
-            }), (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'tontine' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-              className: "form-text text-muted",
-              children: "Le type est fix\xE9 \xE0 Cr\xE9dit quinzaine pour ce carnet de tontine."
-            })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-            className: "col-md-4",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-              className: "form-label",
-              children: "Mode de calcul"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
-              className: "form-select",
-              value: form.data.mode,
-              onChange: function onChange(e) {
-                return form.setData('mode', e.target.value);
-              },
-              required: true,
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                value: "",
-                children: "Choisir"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                value: "fixe",
-                children: "Fixe"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                value: "degressif",
-                children: "D\xE9gressif"
-              })]
-            })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-            className: "col-md-4",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-              className: "form-label",
-              children: "P\xE9riodicit\xE9"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
-              className: "form-select",
-              value: form.data.periodicite,
-              onChange: function onChange(e) {
-                return form.setData('periodicite', e.target.value);
-              },
-              required: true,
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                value: "",
-                children: "Choisir"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                value: "quinzaine",
-                children: "Quinzaine"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                value: "mensuelle",
-                children: "Mensuelle"
-              })]
-            })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-            className: "col-md-4",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-              className: "form-label",
-              children: "Nombre d'\xE9ch\xE9ances"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
-              type: "number",
-              className: "form-control",
-              value: form.data.nombre_echeances,
-              onChange: function onChange(e) {
-                return form.setData('nombre_echeances', e.target.value);
-              },
-              min: "1",
-              required: true
-            })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-            className: "col-md-4",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-              className: "form-label",
-              children: "Taux standard (%)"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
-              type: "number",
-              step: "0.01",
-              min: "0",
-              className: "form-control",
-              value: form.data.taux,
-              onChange: function onChange(e) {
-                return form.setData('taux', e.target.value);
-              },
-              required: true
-            })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-            className: "col-md-4",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-              className: "form-label",
-              children: "Taux manuel (%)"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
-              type: "number",
-              step: "0.01",
-              min: "0",
-              className: "form-control",
-              value: form.data.taux_manuelle,
-              onChange: function onChange(e) {
-                return form.setData('taux_manuelle', e.target.value);
-              },
-              placeholder: "Optionnel"
-            })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-            className: "col-md-12",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-              className: "form-label",
-              children: "Date de d\xE9but"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
-              type: "date",
-              className: "form-control ".concat(form.errors.date_debut ? 'is-invalid' : ''),
-              value: form.data.date_debut,
-              onChange: function onChange(e) {
-                return form.setData('date_debut', e.target.value);
-              },
-              min: today,
-              required: true
-            }), form.errors.date_debut && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-              className: "invalid-feedback",
-              children: form.errors.date_debut
-            })]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-            className: "col-12",
-            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-              className: "row gy-3",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                className: "col-md-4",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                  className: "border rounded-3 p-3 bg-light",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "text-muted",
-                    children: "Montant total"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "fs-4 fw-bold",
-                    children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(totalDue)
-                  })]
-                })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                className: "col-md-4",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                  className: "border rounded-3 p-3 bg-light",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "text-muted",
-                    children: "Int\xE9r\xEAt total"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "fs-4 fw-bold",
-                    children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(totalInterest)
-                  })]
-                })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                className: "col-md-4",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                  className: "border rounded-3 p-3 bg-light",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "text-muted",
-                    children: "\xC9ch\xE9ance moyenne"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "fs-4 fw-bold",
-                    children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(meanInstallment)
-                  })]
-                })
-              })]
-            })
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-            className: "col-12",
-            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-              className: "card border-secondary",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                className: "card-header bg-white",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("strong", {
-                  children: "Aper\xE7u des \xE9ch\xE9ances"
-                })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                className: "card-body p-0",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("table", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                className: "table-responsive",
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("table", {
                   className: "table table-sm mb-0",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("thead", {
-                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("tr", {
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("thead", {
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
                         children: "#"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
                         children: "Date"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
                         children: "Principal"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
                         children: "Int\xE9r\xEAts"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
                         children: "Total"
                       })]
                     })
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("tbody", {
-                    children: [paginatedSchedule.map(function (item) {
-                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("tr", {
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("tbody", {
+                    children: requestSchedule.map(function (item) {
+                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
                           children: item.numero
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
-                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatDateToFR)(item.date)
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
-                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(item.principal)
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
-                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(item.interest)
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
-                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(item.total)
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(item.date)
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(item.principal)
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(item.interest)
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(item.total)
                         })]
                       }, item.numero);
-                    }), schedule.length === 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("tr", {
-                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
-                        colSpan: "5",
-                        className: "text-center py-4",
-                        children: "Remplissez le formulaire pour afficher le plan."
-                      })
-                    })]
+                    })
                   })]
                 })
-              }), schedule.length > pageSize && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                className: "card-footer bg-white border-top",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("nav", {
-                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("ul", {
-                    className: "pagination justify-content-center mb-0",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("li", {
-                      className: "page-item ".concat(currentPage === 1 ? 'disabled' : ''),
-                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
-                        type: "button",
-                        className: "page-link",
-                        onClick: function onClick() {
-                          return setCurrentPage(function (prev) {
-                            return Math.max(prev - 1, 1);
-                          });
-                        },
-                        children: "Pr\xE9c\xE9dent"
-                      })
-                    }), Array.from({
-                      length: pageCount
-                    }, function (_, index) {
-                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("li", {
-                        className: "page-item ".concat(currentPage === index + 1 ? 'active' : ''),
-                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
-                          type: "button",
-                          className: "page-link",
-                          onClick: function onClick() {
-                            return setCurrentPage(index + 1);
-                          },
-                          children: index + 1
-                        })
-                      }, index);
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("li", {
-                      className: "page-item ".concat(currentPage === pageCount ? 'disabled' : ''),
-                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
-                        type: "button",
-                        className: "page-link",
-                        onClick: function onClick() {
-                          return setCurrentPage(function (prev) {
-                            return Math.min(prev + 1, pageCount);
-                          });
-                        },
-                        children: "Suivant"
-                      })
+              })]
+            })]
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            className: "card mb-3",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              className: "card-header",
+              children: "\xC9ch\xE9ancier valid\xE9 par le comit\xE9"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              className: "card-body",
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                className: "mb-2",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Montant valid\xE9 :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(approveForm.montant_accorde), " \u2022 ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Taux :"
+                }), " ", approveForm.taux, "%"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                className: "mb-2",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Date de d\xE9but valid\xE9e :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(approveForm.date_debut)]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "row gy-2 mb-3",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                  className: "col-md-6",
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    className: "border rounded-3 p-3 bg-light",
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                      className: "text-muted",
+                      children: "Int\xE9r\xEAt total"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                      className: "fs-5 fw-bold",
+                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(approvedScheduleSummary.totalInterest)
                     })]
                   })
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                  className: "col-md-6",
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    className: "border rounded-3 p-3 bg-light",
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                      className: "text-muted",
+                      children: "Total \xE0 rembourser"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                      className: "fs-5 fw-bold",
+                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(approvedScheduleSummary.totalDue)
+                    })]
+                  })
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                className: "table-responsive",
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("table", {
+                  className: "table table-sm mb-0",
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("thead", {
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                        children: "#"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                        children: "Date"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                        children: "Principal"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                        children: "Int\xE9r\xEAts"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                        children: "Total"
+                      })]
+                    })
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("tbody", {
+                    children: approvedSchedule.map(function (item) {
+                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          children: item.numero
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(item.date)
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(item.principal)
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(item.interest)
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(item.total)
+                        })]
+                      }, item.numero);
+                    })
+                  })]
                 })
               })]
-            })
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-            className: "col-12 text-end",
-            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
-              type: "submit",
-              className: "btn btn-primary",
-              children: "Enregistrer la demande"
-            })
+            })]
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            className: "card",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              className: "card-header",
+              children: "Historique et notes"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              className: "card-body",
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Statut actuel :"
+                }), " ", statusLabel(credit === null || credit === void 0 ? void 0 : credit.statut)]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Montant demand\xE9 :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(requestedAmount)]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Montant valid\xE9 :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(approvedAmount)]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Taux appliqu\xE9 :"
+                }), " ", Number(approveForm.taux) ? approveForm.taux : proposedRate, "%"]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Date de d\xE9but valid\xE9e :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(approveForm.date_debut)]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Date de demande :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(credit === null || credit === void 0 ? void 0 : credit.date_demande)]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Date d'approbation :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(credit === null || credit === void 0 ? void 0 : credit.approved_at)]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("p", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Date de dernier changement :"
+                }), " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(credit === null || credit === void 0 ? void 0 : credit.updated_at)]
+              }), (credit === null || credit === void 0 || (_credit$metadata = credit.metadata) === null || _credit$metadata === void 0 ? void 0 : _credit$metadata.rejection_reason) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                className: "alert alert-warning mt-3",
+                role: "alert",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                  children: "Motif de refus :"
+                }), " ", credit.metadata.rejection_reason]
+              }), (credit === null || credit === void 0 || (_credit$metadata2 = credit.metadata) === null || _credit$metadata2 === void 0 ? void 0 : _credit$metadata2.preview) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                className: "alert alert-info mt-3",
+                role: "alert",
+                children: "Ce dossier a \xE9t\xE9 saisi en mode pr\xE9visualisation."
+              })]
+            })]
           })]
         })]
       })]

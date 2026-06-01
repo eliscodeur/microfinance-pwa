@@ -158,6 +158,7 @@ class CreditController extends Controller
                 'credit_uid' => Str::uuid(),
                 'client_id' => $data['client_id'],
                 'carnet_id' => $data['carnet_id'] ?? null,
+                'admin_id' => auth()->id() ?? null,
                 'montant_demande' => $data['montant_demande'],
                 'montant_accorde' => $montantAccorde,
                 'taux' => CreditCalculator::calculateRate($data['taux'], $data['taux_manuelle']),
@@ -189,6 +190,7 @@ class CreditController extends Controller
                     'montant_interets' => $item['interest'],
                     'montant_total' => $item['total'],
                     'status' => 'pending',
+                    'admin_id' => auth()->id(),
                 ]);
             }
 
@@ -345,6 +347,7 @@ class CreditController extends Controller
             'montant_paye' => round($newPaid, 2),
             'status' => $newPaid >= (float) $payment->montant_total + (float) $payment->penalite ? 'paid' : 'partiel',
             'date_paye' => $newPaid >= (float) $payment->montant_total + (float) $payment->penalite ? now() : null,
+            'admin_id' => auth()->id(),
         ]);
 
         if ($paidDiff > 0) {
@@ -391,7 +394,7 @@ class CreditController extends Controller
             $currentPaid = (float) $payment->montant_paye;
             $penalite = $updates['penalite'] ?? (float) $payment->penalite;
             $totalDue = (float) $payment->montant_total + $penalite;
-            $newPaid = round($currentPaid + $amountPaye, 2);
+            $remainingDue = round($totalDue - $currentPaid, 2);
 
             $previousUnpaidExists = $credit->payments()
                 ->where('echeance', '<', $payment->echeance)
@@ -406,47 +409,11 @@ class CreditController extends Controller
                 return back()->with('error', 'Le montant payé doit être supérieur à zéro.');
             }
 
-            $remainingDue = $totalDue - $currentPaid;
-            $surplus = 0.0;
-            $amountToApply = $amountPaye;
-            $surplusNote = null;
-
             if ($amountPaye > $remainingDue) {
-                $surplus = round($amountPaye - $remainingDue, 2);
-                $amountToApply = $remainingDue;
-
-                $client = $credit->client ?: $credit->load('client')->client;
-                $compteCarnet = $client->carnets()
-                    ->where('type', 'compte')
-                    ->where('statut', 'actif')
-                    ->first();
-
-                if ($compteCarnet) {
-                    $surplusNote = 'Le surplus de ' . number_format($surplus, 2, ',', ' ') . ' FCFA a été versé sur le compte épargne du client (' . $compteCarnet->numero . ').';
-                    $metadata = $credit->metadata ?? [];
-                    $metadata['surplus_deposits'] = array_merge($metadata['surplus_deposits'] ?? [], [[
-                        'payment_id' => $payment->id,
-                        'amount' => $surplus,
-                        'carnet_id' => $compteCarnet->id,
-                        'carnet_numero' => $compteCarnet->numero,
-                        'type' => 'savings_deposit',
-                        'created_at' => now()->toDateTimeString(),
-                    ]]);
-                    $credit->update(['metadata' => $metadata]);
-                } else {
-                    $surplusNote = 'Le montant exact de l\'échéance a été enregistré. Le reliquat de ' . number_format($surplus, 2, ',', ' ') . ' FCFA doit être remis au client.';
-                    $metadata = $credit->metadata ?? [];
-                    $metadata['surplus_returns'] = array_merge($metadata['surplus_returns'] ?? [], [[
-                        'payment_id' => $payment->id,
-                        'amount' => $surplus,
-                        'note' => 'Reliquat remis au client',
-                        'created_at' => now()->toDateTimeString(),
-                    ]]);
-                    $credit->update(['metadata' => $metadata]);
-                }
+                return back()->with('error', 'Le montant payé dépasse le montant restant de l\'échéance.');
             }
 
-            $newPaid = round($currentPaid + $amountToApply, 2);
+            $newPaid = round($currentPaid + $amountPaye, 2);
             $updates['montant_paye'] = $newPaid;
 
             if ($newPaid >= $totalDue) {
@@ -459,20 +426,13 @@ class CreditController extends Controller
                 $remaining = number_format($totalDue - $newPaid, 2, ',', ' ');
                 $successMessage = "Paiement partiel enregistré. Solde restant : {$remaining} FCFA.";
             }
-
-            if ($surplusNote) {
-                $successMessage .= ' ' . $surplusNote;
-            }
         }
 
-        if (empty($updates)) {
-            return back()->with('error', 'Aucune modification à enregistrer.');
-        }
-
+        $updates['admin_id'] = auth()->id();
         $payment->update($updates);
 
-        if (!empty($amountToApply) && $amountToApply > 0) {
-            $credit->increment('montant_rembourse', round($amountToApply, 2));
+        if (!empty($updates['montant_paye']) && $updates['montant_paye'] > 0) {
+            $credit->increment('montant_rembourse', round($updates['montant_paye'] - $currentPaid, 2));
         }
 
         // Check if all payments are paid and mark credit as settled

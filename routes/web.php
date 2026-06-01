@@ -15,6 +15,7 @@ use App\Http\Controllers\Pwa\PwaController;
 use App\Http\Controllers\Admin\CarnetController;
 use App\Http\Controllers\Admin\CreditController;
 use App\Http\Controllers\Api\SyncController;
+use App\Http\Controllers\PretInstructionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -96,6 +97,12 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     // Dans routes/web.php
     Route::resource('categories', CategoryTontineController::class)->middleware('can:Gérer Carnets');
     Route::post('agents/{agent}/reset-pin', [AgentController::class, 'resetPin'])->name('agents.reset-pin');
+    
+    // Routes pour gestion / instruction des prêts (validation, décaissement)
+    Route::get('prets', [PretInstructionController::class, 'index'])->name('prets.index')->middleware('can:Gérer Crédits');
+    Route::get('prets/{id}', [PretInstructionController::class, 'show'])->name('prets.show')->middleware('can:Gérer Crédits');
+    Route::post('prets/{id}/valider', [PretInstructionController::class, 'valider'])->name('prets.valider')->middleware('can:Gérer Crédits');
+    Route::post('prets/{id}/decaisser', [PretInstructionController::class, 'decaisser'])->name('prets.decaisser')->middleware('can:Gérer Crédits');
 });
 
 

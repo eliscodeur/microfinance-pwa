@@ -1,5 +1,6 @@
 import { Link, useForm } from '@inertiajs/inertia-react';
 import { useEffect, useMemo, useState } from 'react';
+import Swal from 'sweetalert2';
 import AdminLayout from '../../Layouts/AdminLayout.jsx';
 import { buildScheduleFromForm, formatCurrency, formatDateToFR } from '../../Utils/creditHelpers';
 
@@ -108,21 +109,53 @@ export default function Create({ clients }) {
         [schedule, totalDue],
     );
 
+    const hasErrors = Object.keys(form.errors).length > 0;
+
     const submit = e => {
         e.preventDefault();
-        form.post('/admin/credits', {
-            onSuccess: () => {
-                form.reset(
-                    'montant_demande',
-                    'type',
-                    'mode',
-                    'periodicite',
-                    'nombre_echeances',
-                    'taux',
-                    'taux_manuelle',
-                    'date_debut',
-                );
-            },
+
+        Swal.fire({
+            title: 'Confirmer la demande ?',
+            text: 'Voulez-vous envoyer cette demande de crédit au back-office ?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, envoyer',
+            cancelButtonText: 'Annuler',
+        }).then(result => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            form.post('/admin/credits', {
+                onSuccess: () => {
+                    Swal.fire({
+                        title: 'Demande envoyée',
+                        text: 'La demande de crédit a bien été enregistrée.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
+                    form.reset(
+                        'montant_demande',
+                        'type',
+                        'mode',
+                        'periodicite',
+                        'nombre_echeances',
+                        'taux',
+                        'taux_manuelle',
+                        'date_debut',
+                    );
+                },
+                onError: errors => {
+                    if (Object.keys(errors).length) {
+                        Swal.fire({
+                            title: 'Erreur',
+                            text: 'Veuillez corriger les champs en surbrillance.',
+                            icon: 'error',
+                        });
+                    }
+                },
+            });
         });
     };
 
@@ -142,6 +175,16 @@ export default function Create({ clients }) {
                 </div>
 
                 <form onSubmit={submit} className="card shadow-sm p-4">
+                    {hasErrors && (
+                        <div className="alert alert-danger">
+                            <strong>Merci de corriger les erreurs suivantes :</strong>
+                            <ul className="mb-0 mt-2">
+                                {Object.entries(form.errors).map(([field, message]) => (
+                                    <li key={field}>{Array.isArray(message) ? message.join(', ') : message}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                     <div className="row gy-3">
                         <div className="col-md-6">
                             {/* <span>Nombre de carnets : {carnets.length}</span> */}

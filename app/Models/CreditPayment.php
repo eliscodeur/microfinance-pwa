@@ -20,6 +20,7 @@ class CreditPayment extends Model
         'status',
         'date_paye',
         'penalite',
+        'admin_id',
     ];
 
     protected $casts = [
@@ -35,5 +36,10 @@ class CreditPayment extends Model
     public function credit()
     {
         return $this->belongsTo(Credit::class);
+    }
+
+    public function admin()
+    {
+        return $this->belongsTo(User::class, 'admin_id');
     }
 }

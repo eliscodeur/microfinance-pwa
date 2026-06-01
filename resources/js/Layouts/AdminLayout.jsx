@@ -36,6 +36,11 @@ export default function AdminLayout({ children }) {
                                     Crédits
                                 </Link>
                             </li>
+                            <li className="nav-item">
+                                <Link href="/admin/prets" className="nav-link">
+                                    Instruction Crédit
+                                </Link>
+                            </li>
                         </ul>
                     </div>
                 </div>

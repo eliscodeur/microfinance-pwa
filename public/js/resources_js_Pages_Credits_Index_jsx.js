@@ -63,6 +63,13 @@ function AdminLayout(_ref) {
                 className: "nav-link",
                 children: "Cr\xE9dits"
               })
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
+              className: "nav-item",
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
+                href: "/admin/prets",
+                className: "nav-link",
+                children: "Instruction Cr\xE9dit"
+              })
             })]
           })
         })]
@@ -117,6 +124,8 @@ function Index(_ref) {
         return 'badge bg-secondary';
       case 'rejected':
         return 'badge bg-dark';
+      case 'solder':
+        return 'badge bg-success';
       default:
         return 'badge bg-info';
     }
@@ -135,6 +144,8 @@ function Index(_ref) {
         return 'Clôturé';
       case 'rejected':
         return 'Rejeté';
+      case 'solder':
+        return 'Soldé';
       default:
         return 'Inconnu';
     }

@@ -7,7 +7,7 @@
     $agentsMenuOpen = request()->routeIs('admin.agents.*');
     
     $clientsMenuOpen = request()->routeIs('admin.clients.*');
-    $creditsMenuOpen = request()->routeIs('admin.credits.*');
+    $creditsMenuOpen = request()->routeIs('admin.credits.*') || request()->routeIs('admin.prets.*');
     $carnetsMenuOpen = request()->routeIs('admin.carnets.*') || request()->routeIs('admin.categories.*');
     $collecteMenuOpen = request()->routeIs('admin.sync-batches.*') || request()->routeIs('admin.cycles.*');
 @endphp
@@ -127,6 +127,7 @@
         </a>
         <div class="collapse {{ $creditsMenuOpen ? 'show' : '' }} submenu" id="creditsSub" data-bs-parent="#sidebarNav">
             <a href="{{ route('admin.credits.index') }}" class="{{ request()->routeIs('admin.credits.index') ? 'active' : '' }}">Suivi Crédits</a>
+            <a href="{{ route('admin.prets.index') }}" class="{{ request()->routeIs('admin.prets.*') ? 'active' : '' }}">Instruction Crédit</a>
             <a href="{{ route('admin.credits.create') }}" class="{{ request()->routeIs('admin.credits.create') ? 'active' : '' }}">Nouvelle Demande</a>
         </div>
         @endcan

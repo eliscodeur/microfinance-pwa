@@ -24,6 +24,8 @@ export default function Index({ credits }) {
                 return 'badge bg-secondary';
             case 'rejected':
                 return 'badge bg-dark';
+            case 'solder':
+                return 'badge bg-success';
             default:
                 return 'badge bg-info';
         }
@@ -43,6 +45,8 @@ export default function Index({ credits }) {
                 return 'Clôturé';
             case 'rejected':
                 return 'Rejeté';
+            case 'solder':
+                return 'Soldé';
             default:
                 return 'Inconnu';
         }
