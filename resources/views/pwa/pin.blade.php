@@ -7,7 +7,7 @@
         </button>
     
     <div class="d-flex align-items-center justify-content-between flex-grow-1">
-        <span class="fw-bold text-dark fs-5">Sécurité</span>
+        <span class="fw-bold text-primary fs-5">Sécurité</span>
         
     </div>
 
@@ -15,40 +15,40 @@
 @endsection
 @section('content')
 <div class="container py-3">
-    <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px; background: linear-gradient(135deg, #6c757d, #343a40); color: white;">
+    <!-- <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px; background: linear-gradient(135deg, #134E5E, #2d7a8c); color: white;">
         <div class="card-body p-4 text-center">
             <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
-                <i class="bi bi-shield-lock fs-3"></i>
+                <i class="bi bi-shield-lock fs-3 text-white"></i>
             </div>
             <h4 class="fw-bold mb-1">Sécurité</h4>
             <p class="mb-0 opacity-75 small">Modifier mon code PIN agent</p>
         </div>
-    </div>
+    </div> -->
 
     <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
         <div class="mb-3">
             <label class="small fw-bold text-muted mb-2">ANCIEN CODE PIN</label>
             <input type="password" id="old-pin" class="form-control form-control-lg text-center" 
-                    inputmode="numeric" maxlength="4" 
+                   inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code"
                    style="letter-spacing: 0.5rem; border-radius: 15px; background: #f8f9fa;">
         </div>
 
         <div class="mb-3">
             <label class="small fw-bold text-muted mb-2">NOUVEAU CODE PIN</label>
             <input type="password" id="new-pin" class="form-control form-control-lg text-center border-primary" 
-                   inputmode="numeric" maxlength="4" 
+                   inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password"
                    style="letter-spacing: 0.5rem; border-radius: 15px;">
         </div>
 
         <div class="mb-4">
             <label class="small fw-bold text-muted mb-2">CONFIRMER LE NOUVEAU PIN</label>
             <input type="password" id="confirm-pin" class="form-control form-control-lg text-center border-primary" 
-                  inputmode="numeric" maxlength="4" 
+                   inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password"
                    style="letter-spacing: 0.5rem; border-radius: 15px;">
         </div>
 
         <button onclick="validerChangementPIN()" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" 
-                style="border-radius: 15px; height: 60px;">
+                style="border-radius: 15px; height: 60px; background-color: #134E5E; border-color: #134E5E;">
             METTRE À JOUR LE PIN
         </button>
         
@@ -109,7 +109,7 @@
             if (!authObj) {
                 Swal.close(); 
                 setTimeout(() => {
-                    notifierErreur("Session introuvable. Reconnectez-vous.");
+                    return notifierErreur("Session introuvable. Reconnectez-vous.");
                 }, 100);
             }
             
@@ -119,7 +119,7 @@
             if (authObj.pin_hash !== oldHashSaisi) {
                 Swal.close(); 
                 setTimeout(() => {
-                    notifierErreur("L'ancien code PIN est incorrect.");
+                    return notifierErreur("L'ancien code PIN est incorrect.");
                 }, 100);
             }
 
@@ -156,8 +156,7 @@
             document.getElementById('confirm-pin').value = "";
 
         } catch (error) {
-            console.error("Erreur technique:", error);
-            notifierErreur("Erreur lors de la sauvegarde locale.");
+            return notifierErreur("Erreur lors de la sauvegarde locale.");
         }
     };
 </script>

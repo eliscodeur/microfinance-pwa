@@ -23,18 +23,26 @@
 
 <div class="container mt-n3">
     <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 cursor-pointer" style="cursor: pointer;">
-        <div class="row text-center align-items-center">
-            <div class="col-4 border-end" onclick="goToCollecte()">
-                <small class="text-muted d-block mb-1" style="font-size: 0.70rem; white-space: nowrap;">Collectes Jour</small>
-                <span class="fw-bold text-primary" id="total-montant" style="font-size: 0.85rem; white-space: nowrap;">0 F</span>
+        <div class="row text-center align-items-center g-0">
+            <div class="col-4 border-end" onclick="goToCollecte()" style="cursor: pointer;">
+                <small class="text-muted d-block mb-1" style="font-size: 0.70rem; white-space: nowrap;">
+                    <i class="bi bi-cash-coin text-success me-1"></i>Collectes Jour
+                </small>
+                <span class="fw-bold text-success" id="total-montant" style="font-size: 0.85rem; white-space: nowrap;">0 F</span>
             </div>
-            <div class="col-4 border-end">
-                <small class="text-muted d-block mb-1" style="font-size: 0.70rem; white-space: nowrap;">Clients vus</small>
+
+            <div class="col-4 border-end" style="padding: 0 2px;">
+                <small class="text-muted d-block mb-1" style="font-size: 0.62rem; line-height: 1.1; font-weight: 500;">
+                    <i class="bi bi-check2-circle text-primary me-1"></i>Clients Encaissés
+                </small>
                 <span class="fw-bold text-dark" id="total-clients-vus" style="font-size: 1.1rem;">0</span>
             </div>
+
             <div class="col-4">
-                <small class="text-muted d-block mb-1" style="font-size: 0.70rem; white-space: nowrap;">Clients actifs</small>
-                <span class="fw-bold text-success" id="total-clients-actifs" style="font-size: 1.1rem;">0</span>
+                <small class="text-muted d-block mb-1" style="font-size: 0.70rem; white-space: nowrap;">
+                    <i class="bi bi-people text-secondary me-1"></i>Clients actifs
+                </small>
+                <span class="fw-bold text-primary" id="total-clients-actifs" style="font-size: 1.1rem;">0</span>
             </div>
         </div>
     </div>

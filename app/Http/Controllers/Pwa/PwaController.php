@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Pwa;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; 
+use App\Models\User;               
 use App\Models\Client;               
 use App\Models\Carnet;               
 use App\Models\Agent;               
@@ -216,7 +217,7 @@ class PwaController extends Controller
         ]);
 
         // On cherche l'utilisateur via son matricule (champ username)
-        $user = \App\Models\User::where('username', $request->matricule)->first();
+        $user = User::where('username', $request->matricule)->first();
 
         if ($user && $user->agent) {
             $user->agent->update([

@@ -8,7 +8,10 @@
         </button>
     
     <div class="d-flex align-items-center flex-grow-1">
-        <h5 class="fw-bold mb-0 text-primary"><i class="bi bi-wallet2 me-2"></i>Mes Gains</h5>
+        <h5 class="fw-bold mb-0 text-primary">
+            <!-- <i class="bi bi-wallet2 me-2"></i> -->
+            Mes Gains
+        </h5>
     </div>
 
 </div>

@@ -1,8 +1,8 @@
 {
     "name": "Nana Eco Consulting",
-    "short_name": "Tontine",
-    "id": "/agent/login",
-    "start_url": "/agent/login",
+    "short_name": "Nana Eco",
+    "id": "/pwa/dashboard",
+    "start_url": "/pwa/dashboard",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#1a56a6",

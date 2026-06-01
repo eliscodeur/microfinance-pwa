@@ -8,7 +8,7 @@
             <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
                 <i class="bi bi-list fs-3 me-3"></i>
             </button>
-            <span class="fw-bold text-dark fs-5 text-primary">Listes des cycles</span>
+            <span class="fw-bold fs-5 text-primary">Listes des cycles</span>
         </div>
         
         <button onclick="activerModeRecherche()" class="btn btn-link text-dark p-0 border-0">
@@ -129,7 +129,16 @@
         const val = input ? input.value.trim() : '';
         
         if (!container) return;
-
+        container.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary spinner-border-sm mb-2" role="status" style="width: 1.5rem; height: 1.5rem; border-width: 0.15em;">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <div class="text-muted small" style="font-size: 0.75rem; font-weight: 500; letter-spacing: 0.5px;">
+                        Chargement des livrets...
+                    </div>
+                </div>
+            `;
         try {
             const [clients, carnets, cycles, collectes] = await Promise.all([
                 activeDB.clients.toArray(),
@@ -258,9 +267,18 @@
 
             if (!auMoinsUnMatch) {
                 container.innerHTML = html + `
-                    <div class="text-center py-5 text-muted">
-                        <i class="bi bi-search display-1 opacity-25 d-block mb-3"></i>
-                        <div class="small">Aucun cycle trouvé.</div>
+                    <div class="text-center py-5 px-3">
+                        <!-- Illustration SVG minimaliste d'un dossier vide -->
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="120" height="120" class="mb-4 opacity-75">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" fill="#f1f2f6"/>
+                            <circle cx="12" cy="13" r="3" fill="#dfe4ea"/>
+                            <path d="M12 12v2M12 15h.01" stroke="#a4b0be" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        
+                        <h5 class="fw-bold text-secondary mb-1">Livret totalement vide</h5>
+                        <p class="text-muted small mx-auto mb-0" style="max-width: 260px;">
+                            Aucun mouvement ni cycle de pointage n'a été détecté localement.
+                        </p>
                     </div>`;
                 return;
             }

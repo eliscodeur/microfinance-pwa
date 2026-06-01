@@ -55,6 +55,57 @@
     .search-full-width {
         width: 100%;
     }
+    /* --- STYLE DE L'ÉTAT VIDE (EMPTY STATE) MOBILE --- */
+    .pwa-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        animation: fadeInEmpty 0.3s ease-out;
+    }
+
+    /* Bulle texturée soft pour l'icône */
+    .empty-state-icon-box {
+        width: 64px;
+        height: 64px;
+        background-color: #f8f9fa; /* Fond gris ultra doux, neutre pour la recherche */
+        color: #a0aec0; /* Couleur d'icône discrète */
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px dashed #e2e8f0; /* Effet de contour technique/épuré */
+    }
+
+    /* Alignement parfait du glyphe Bootstrap */
+    .empty-state-icon-box i {
+        font-size: 1.8rem;
+        line-height: 1 !important;
+        display: inline-block !important;
+    }
+
+    .empty-state-icon-box i::before {
+        display: inline-block !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Style élégant pour le filtre tapé par l'agent */
+    .badge-filter {
+        background-color: rgba(19, 78, 94, 0.08); /* Rappel subtil du bleu Nana */
+        color: var(--nana-blue, #134E5E);
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-style: normal;
+    }
+
+    /* Micro-apparition fluide pour le confort visuel */
+    @keyframes fadeInEmpty {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>
 
 <div class="d-flex align-items-center w-100 position-relative">
@@ -64,7 +115,9 @@
             <i class="bi bi-list fs-3 me-3"></i>
         </button>
         <h5 class="fw-bold mb-0 text-primary flex-grow-1">
-            <i class="bi bi-people-fill me-2"></i>Mes Clients <span class="badge bg-light text-primary border" id="clientCount">0</span>
+            <!-- <i class="bi bi-people-fill me-2"></i> -->
+            Mes Clients 
+            <span class="badge bg-light text-primary border" id="clientCount">0</span>
         </h5> 
         <button onclick="openSearch()" class="btn btn-link text-dark p-0 border-0" id="loupe-btn">
             <i class="bi bi-search fs-4"></i>
@@ -164,10 +217,13 @@
 
             if (filteredClients.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-5 text-muted">
-                        <i class="bi bi-search mb-2" style="font-size: 2rem;"></i>
-                        <p class="small">Aucun client trouvé pour "${filter}"</p>
-                    </div>`;
+                                        <div class="pwa-empty-state text-center py-5 px-4">
+                                            <div class="empty-state-icon-box mb-3">
+                                                <i class="bi bi-person-x"></i>
+                                            </div>
+                                            <h6 class="fw-bold text-dark mb-1">Aucun résultat</h6>
+                                            <p class="text-muted small mb-0">Aucun client ne correspond à la recherche <span class="badge-filter">"${filter}"</span></p>
+                                        </div>`;
                 return;
             }
 

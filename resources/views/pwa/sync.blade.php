@@ -8,7 +8,7 @@
         </button>
     
     <div class="d-flex align-items-center justify-content-between flex-grow-1">
-        <span class="fw-bold text-dark fs-5">Synchronisation</span>
+        <span class="fw-bold text-dark fs-5 text-primary">Synchronisation</span>
         
         <span id="network-status-badge" class="badge rounded-pill px-3 py-2 shadow-sm border small transition-status animate-fade">
             <i class="bi bi-circle-fill me-1 small"></i> <span id="network-status-text">Vérification...</span>

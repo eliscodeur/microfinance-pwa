@@ -5,10 +5,10 @@
     
     <div id="header-default-mode" class="d-flex align-items-center justify-content-between w-100 px-2">
         <div class="d-flex align-items-center">
-        <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
-            <i class="bi bi-list fs-3 me-3"></i>
-        </button>
-            <span class="fw-bold text-dark fs-5 text-primary">Liste des collectes</span>
+            <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
+                <i class="bi bi-list fs-3 me-3"></i>
+            </button>
+            <span class="fw-bold fs-5 text-primary">Liste des collectes</span>
         </div>
         
         <button onclick="activerModeRecherche()" class="btn btn-link text-dark p-0 border-0">
@@ -166,7 +166,16 @@
         const input = document.getElementById('inputSearchClient');
         const container = document.getElementById('collectes-master-container');
         const val = input?.value.trim();
-
+        container.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary spinner-border-sm mb-2" role="status" style="width: 1.5rem; height: 1.5rem; border-width: 0.15em;">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <div class="text-muted small" style="font-size: 0.75rem; font-weight: 500; letter-spacing: 0.5px;">
+                        Chargement des livrets...
+                    </div>
+                </div>
+            `;
         try {
             const toutesLesCols = await activeDB.collectes.toArray();
             const allClients = await activeDB.clients.toArray();
@@ -186,7 +195,16 @@
             let html = `<div class="px-2 mb-2 text-muted small fw-bold text-uppercase" style="font-size:0.6rem;">${val ? val : 'VUE GLOBALE'}</div>`;
 
             if (collectesAffichees.length === 0) {
-                container.innerHTML = html + `<div class="text-center py-5 text-muted small">Aucune collecte trouvée.</div>`;
+                container.innerHTML = html + `
+                    <div class="text-center py-5 px-3">
+                        <div class="position-relative d-inline-block mb-3">
+                            <i class="bi bi-folder-x text-secondary opacity-25" style="font-size: 4.5rem;"></i>
+                        </div>
+                        <h6 class="fw-bold text-secondary mb-1" style="font-size: 0.95rem;">Aucun pointage trouvé</h6>
+                        <p class="text-muted small mx-auto mb-0" style="max-width: 250px; font-size: 0.8rem;">
+                            Aucune mise ou collecte n'a encore été enregistrée sur ce cycle.
+                        </p>
+                    </div>`;
                 return;
             }
 

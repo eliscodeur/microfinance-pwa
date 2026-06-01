@@ -14,9 +14,9 @@
 
 <div class="d-flex align-items-center w-100 bg-white py-1">
     
-    <button onclick="goBackToCollecte()" class="btn btn-link text-dark p-0 me-3 border-0">
+    <!-- <button onclick="goBackToCollecte()" class="btn btn-link text-dark p-0 me-3 border-0">
         <i class="bi bi-arrow-left fs-3"></i>
-    </button>
+    </button> -->
     
     <div class="d-flex align-items-center justify-content-between flex-grow-1">
         <span id="client-nom" class="header-pointage-title text-truncate me-2">Chargement...</span>
@@ -136,44 +136,67 @@
         const fini = stats.fait >= 31;
 
         document.getElementById('zone-action').innerHTML = `
-            <div class="card shadow-sm border-0 mb-4" style="border-radius:20px;">
+            <div class="card shadow-sm border-0 mb-4 animate__animated animate__fadeIn" style="border-radius:24px;">
                 <div class="card-body text-center p-4">
-                    <h6 class="text-muted fw-bold mb-3">PROGRESSION DU CYCLE</h6>
+                    
+                    <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+                        <small class="text-muted fw-bold text-uppercase">Progression du cycle</small>
+                        <span class="badge bg-light text-dark border fw-bold" style="border-radius: 8px;">Mise : ${cycle.montant_journalier} F</span>
+                    </div>
+                    
                     <input type="hidden" id="prix-unit" value="${cycle.montant_journalier}">
                     
-                    <div class="progress mb-3" style="height: 25px; border-radius: 20px; background: #eee;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: ${stats.pct}%">
+                    <div class="progress mb-3" style="height: 22px; border-radius: 12px; background: #f1f3f5; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                            style="width: ${stats.pct}%; border-radius: 12px; font-weight: bold; font-size: 0.85rem;">
                             ${Math.round(stats.pct)}%
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between small fw-bold mb-4">
-                        <span>PAYÉ : ${stats.fait} j</span>
-                        <span class="text-primary">RESTE : ${stats.restant} j</span>
+                    <div class="d-flex justify-content-between small fw-bold mb-4 px-1">
+                        <span class="text-success"><i class="bi bi-calendar-check me-1"></i>PAYÉ : ${stats.fait} j</span>
+                        <span class="text-primary"><i class="bi bi-calendar-minus me-1"></i>RESTE : ${stats.restant} j</span>
                     </div>
 
                     ${fini ? `
-                        <div class="alert alert-success py-3 rounded-4">
-                            <b>CYCLE COMPLET !</b><br><small>Vous pouvez clôturer ce cycle.</small>
+                        <div class="alert alert-success py-3 rounded-4 border-0 shadow-sm animate__animated animate__heartBeat">
+                            <i class="bi bi-trophy-fill fs-3 d-block mb-1 text-success"></i>
+                            <b class="fs-5">CYCLE COMPLET !</b><br>
+                            <small class="text-muted">Toutes les 31 collectes ont été effectuées.</small>
                         </div>
                     ` : `
-                        <div class="bg-light rounded-4 p-4 mb-4 border">
-                            <small class="text-muted fw-bold">NOMBRE DE JOURS À POINTER</small>
-                            <div class="d-flex justify-content-center align-items-center my-3">
-                                <button class="btn btn-white shadow-sm border-0" onclick="window.changePointage(-1)" style="width:55px; height:55px; border-radius:15px; font-size:1.5rem;">-</button>
-                                <h1 class="mx-4 mb-0 fw-black" id="nb-val">1</h1>
-                                <button class="btn btn-white shadow-sm border-0" onclick="window.changePointage(1, ${stats.restant})" style="width:55px; height:55px; border-radius:15px; font-size:1.5rem;">+</button>
+                        <div class="bg-light rounded-4 p-3 mb-4 border-0" style="background-color: #f8f9fa !important;">
+                            <small class="text-secondary fw-bold tracking-wide" style="font-size: 0.75rem;">NOMBRE DE JOURS À POINTER</small>
+                            
+                            <div class="d-flex justify-content-center align-items-center my-2">
+                                <button class="btn btn-white shadow-sm border" onclick="window.changePointage(-1)" 
+                                        style="width:50px; height:50px; border-radius:14px; font-size:1.5rem; font-weight: bold; background: #fff;">-</button>
+                                
+                                <h1 class="mx-4 mb-0 fw-bold display-6 text-dark" id="nb-val" style="min-width: 40px;">1</h1>
+                                
+                                <button class="btn btn-white shadow-sm border" onclick="window.changePointage(1, ${stats.restant})" 
+                                        style="width:50px; height:50px; border-radius:14px; font-size:1.5rem; font-weight: bold; background: #fff;">+</button>
                             </div>
-                            <h3 class="text-primary fw-bold mb-0"><span id="total-txt">${cycle.montant_journalier}</span> FCFA</h3>
+                            
+                            <h3 class="fw-bold text-primary mb-0 mt-2" style="font-size: 1.6rem;">
+                                <span id="total-txt">${cycle.montant_journalier}</span> <span style="font-size: 1.1rem;">FCFA</span>
+                            </h3>
                         </div>
-                        <button class="btn btn-primary btn-lg w-100 btn-mobile shadow" onclick="window.ouvrirConfirm(${cycle.id}, ${cycle.montant_journalier})">
-                            VALIDER LE POINTAGE
+                        
+                        <button class="btn btn-primary btn-lg w-100 shadow border-0 fw-bold d-flex align-items-center justify-content-center gap-2" 
+                                onclick="window.ouvrirConfirm(${cycle.id}, ${cycle.montant_journalier})"
+                                style="border-radius: 16px; height: 60px; background: linear-gradient(135deg, #0d6efd, #0a58ca);">
+                            <i class="bi bi-check-circle-fill fs-5"></i> VALIDER LE POINTAGE
                         </button>
                     `}
                     
-                    <button class="btn btn-link text-danger text-decoration-none mt-4 fw-bold" onclick="window.ouvrirCloture(${cycle.id})">
-                        <i class="bi bi-x-circle me-1"></i> CLÔTURER LE CYCLE MAINTENANT
-                    </button>
+                    <div class="mt-4 pt-3 border-top">
+                        <button class="btn btn-link text-muted text-decoration-none small fw-medium py-1" 
+                                onclick="window.ouvrirCloture(${cycle.id})" style="font-size: 0.85rem;">
+                            <i class="bi bi-excretion me-1 text-danger"></i> Clôturer le cycle de force
+                        </button>
+                    </div>
+
                 </div>
             </div>
         `;
@@ -181,25 +204,126 @@
 
     function afficherActionCreation(carnetId, solde, displaySolde) {
         document.getElementById('zone-action').innerHTML = `
-            <div class="card border-0 shadow-sm p-4 text-center" style="border-radius: 20px;">
-                <h5 class="fw-bold mb-3">Nouveau Cycle</h5>
-                <label class="small text-muted mb-1">Mise journalière (FCFA)</label>
-                <input type="number" 
-                    id="input_mise" 
-                    class="form-control mb-3 text-center fs-4 fw-bold" 
-                    value="300" 
-                    min="100" 
-                    inputmode="numeric"
-                    onchange="if(this.value < 100) this.value = 100;"
-                    style="border-radius: 15px; height: 60px;">
-               
-                <button onclick="window.creerCycle(${carnetId})" class="btn btn-warning btn-lg w-100 fw-bold text-white shadow" style="border-radius: 15px; height: 60px;">
-                    OUVRIR LE CYCLE
+            <div class="card border-0 shadow-sm p-4 text-center animate__animated animate__fadeInUp" style="border-radius: 24px;">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle" style="width: 60px; height: 60px;">
+                    <i class="bi bi-folder-plus fs-2"></i>
+                </div>
+
+                <h5 class="fw-bold mb-1">Nouveau Cycle</h5>
+                <p class="small text-muted mb-4">Initialisation d'une nouvelle tontine</p>
+                
+                <div class="form-group mb-4">
+                    <label class="small fw-bold text-secondary d-block mb-2 text-start px-2">
+                        <i class="bi bi-cash me-1"></i> Mise journalière (FCFA)
+                    </label>
+                    
+                    <input type="number" 
+                        id="input_mise" 
+                        class="form-control text-center fw-bold text-dark border-2" 
+                        value="300" 
+                        min="100" 
+                        step="100"
+                        inputmode="numeric"
+                        style="border-radius: 16px; height: 65px; font-size: 1.5rem; background-color: #f8f9fa;">
+                    
+                    <div class="d-flex justify-content-between gap-2 mt-2 px-1">
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-2 flex-grow-1" style="border-radius: 10px;" onclick="document.getElementById('input_mise').value = 300">300 F</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-2 flex-grow-1" style="border-radius: 10px;" onclick="document.getElementById('input_mise').value = 500">500 F</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-2 flex-grow-1" style="border-radius: 10px;" onclick="document.getElementById('input_mise').value = 1000">1000 F</button>
+                    </div>
+                </div>
+            
+                <button onclick="confirmerOuvertureCycle(${carnetId})" class="btn btn-success btn-lg w-100 fw-bold text-white shadow-sm border-0 d-flex align-items-center justify-content-center gap-2" style="border-radius: 16px; height: 60px; background: linear-gradient(135deg, #198754, #157347);">
+                    <i class="bi bi-play-circle-fill fs-5"></i> OUVRIR LE CYCLE
                 </button>
             </div>
         `;
     }
-    
+
+    window.confirmerOuvertureCycle = function(carnetId) {
+        const miseInput = document.getElementById('input_mise');
+        const miseValeur = parseInt(miseInput.value, 10);
+
+        // Vérification de sécurité de base
+        if (isNaN(miseValeur) || miseValeur < 100) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Mise invalide',
+                text: 'La mise minimale journalière doit être de 100 FCFA.',
+                confirmButtonColor: '#ff9800'
+            });
+            miseInput.value = 100;
+            return;
+        }
+
+        // Fenêtre de confirmation stricte
+        Swal.fire({
+            title: 'Confirmer la mise ?',
+            text: `Vous allez ouvrir un cycle avec une mise journalière de ${miseValeur} FCFA pour ce livret.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745', // Vert pour valider
+            cancelButtonColor: '#dc3545',  // Rouge pour annuler
+            confirmButtonText: 'Oui, ouvrir',
+            cancelButtonText: 'Annuler',
+            reverseButtons: true // Met le bouton "Valider" à droite, plus naturel sur mobile
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Si l'agent clique sur "Oui, ouvrir", on lance la fonction Dexie
+                window.creerCycle(carnetId, miseValeur);
+            }
+        });
+    };
+
+    window.creerCycle = async (cid, miseValidee) => {
+        try {
+            const activeDB = getAgentDB();
+            
+            const existant = await activeDB.cycles
+                .where('carnet_id').equals(Number(cid))
+                .and(c => c.statut === 'en_cours')
+                .first();
+                
+            if (existant) {
+                Swal.fire('Erreur', 'Un cycle est déjà actif sur ce livret.', 'error');
+                return;
+            }
+
+            const carnet = await activeDB.carnets.get(Number(cid));
+            
+            let dateDebut = new Date();
+            let dateFin = new Date(dateDebut);
+            let joursAjoutes = 0;
+            while (joursAjoutes < 31) {
+                dateFin.setDate(dateFin.getDate() + 1);
+                if (dateFin.getDay() !== 0) joursAjoutes++; // Hors dimanche
+            }
+        
+            await activeDB.cycles.add({
+                cycle_uid: generateUUID(),
+                carnet_id: carnet.id,
+                client_id: carnet.client_id,
+                agent_id: Number(agentId),
+                montant_journalier: miseValidee, // Utilisation directe de la valeur confirmée
+                statut: 'en_cours',
+                date_debut: dateDebut.toISOString(),
+                date_fin_prevue: dateFin.toISOString(), 
+                synced: 0
+            });
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Cycle ouvert !',
+                text: `Mise fixée à ${miseValidee} FCFA.`,
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => initPage());
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Erreur', 'Impossible de sauvegarder le cycle localement.', 'error');
+        }
+    };
     // --- 3. LOGIQUE & COMMANDES ---
     window.changePointage = (v, max) => {
         const el = document.getElementById('nb-val');
@@ -326,49 +450,6 @@
         }).then(() => {
             initPage();
         });
-    };
-
-    window.creerCycle = async (cid) => {
-        const activeDB = getAgentDB();
-        const existant = await activeDB.cycles
-            .where('carnet_id').equals(Number(cid))
-            .and(c => c.statut === 'en_cours')
-            .first();
-            
-        if (existant) {
-            Swal.fire('Erreur', 'Un cycle est déjà actif sur ce livret.', 'error');
-            return;
-        }
-
-        const mise = parseInt(document.getElementById('input_mise').value) || 300;
-        const carnet = await activeDB.carnets.get(Number(cid));
-        
-        let dateDebut = new Date();
-        let dateFin = new Date(dateDebut);
-        let joursAjoutes = 0;
-        while (joursAjoutes < 31) {
-            dateFin.setDate(dateFin.getDate() + 1);
-            if (dateFin.getDay() !== 0) joursAjoutes++; // Hors dimanche
-        }
-       
-        await activeDB.cycles.add({
-            cycle_uid: generateUUID(),
-            carnet_id: carnet.id,
-            client_id: carnet.client_id,
-            agent_id: Number(agentId),
-            montant_journalier: mise,
-            statut: 'en_cours',
-            date_debut: dateDebut.toISOString(),
-            date_fin_prevue: dateFin.toISOString(), 
-            synced: 0
-        });
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Cycle ouvert !',
-            timer: 1500,
-            showConfirmButton: false
-        }).then(() => initPage());
     };
 
     async function getStats(uid) {

@@ -144,7 +144,7 @@ export default function Create({ clients }) {
                 <form onSubmit={submit} className="card shadow-sm p-4">
                     <div className="row gy-3">
                         <div className="col-md-6">
-                            <span>Nombre de carnets : {carnets.length}</span>
+                            {/* <span>Nombre de carnets : {carnets.length}</span> */}
                             <label className="form-label">Client</label>
                             <select
                                 className="form-select"

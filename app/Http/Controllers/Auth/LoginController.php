@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Agent;
 
 class LoginController extends Controller
 {
@@ -52,7 +53,7 @@ class LoginController extends Controller
 
                 if ($request->expectsJson()) {
                     // 1. Récupérer l'agent
-                    $agent = \App\Models\Agent::where('user_id', $user->id)->first();
+                    $agent = Agent::where('user_id', $user->id)->first();
                     
                     return response()->json([
                         'agent' => [

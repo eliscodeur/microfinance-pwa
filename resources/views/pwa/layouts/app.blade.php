@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bootstrap-icons.css') }}">
     <link rel="stylesheet" href="{{ asset('css/animate.min.css') }}">
-
+    <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/crypto-js.min.js') }}"></script>
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/dexie.js') }}"></script>
@@ -128,43 +128,49 @@
     // --- GESTION DE LA SESSION ET PHOTOS ---
     (function() {
         const sessionActive = localStorage.getItem('session_active');
-       
+        const styleBlock = document.createElement('style');
+        styleBlock.innerHTML = 'html { display: none !important; }';
+        document.head.appendChild(styleBlock);
         if (sessionActive !== 'true') {
+            document.documentElement.style.display = 'none'; // Cache instantanément toute la page
             window.location.replace("/agent/login");
             return;
         }
-
-        const matricule = localStorage.getItem('current_agent_matricule'); // Contient l'URL entière ou le chemin
+        styleBlock.remove();
+        const matricule = localStorage.getItem('current_agent_matricule'); 
         const auth = "auth_v1_" + matricule;
         const authAgent = JSON.parse(localStorage.getItem(auth));
+        
+      
+
         const nom = (authAgent.nom || '').toUpperCase();
         const nameEl = document.getElementById('agent');
         if (nameEl) {  
             nameEl.innerText = `${nom}`.trim();
         }
         const elPhoto = document.getElementById('agent-photo');
-       
+        
         // 1. On prépare les chemins
         const baseUrl = window.location.origin;
         const defaultAvatar = baseUrl + '/images/default-avatar.png';
 
         // 2. On vérifie si authAgent.photo existe et n'est pas vide/undefined
-        if (authAgent && authAgent.photo && authAgent.photo.trim() !== "") {
-            
-            // On s'assure qu'il y a un slash entre le dossier et le nom du fichier
-            const photoPath = authAgent.photo.startsWith('/') ? authAgent.photo : '/' + authAgent.photo;
-            elPhoto.src = baseUrl + '/storage/' + photoPath;
+        if (elPhoto) {
+            if (authAgent.photo && authAgent.photo.trim() !== "") {
+                // On s'assure qu'il y a un slash entre le dossier et le nom du fichier
+                const photoPath = authAgent.photo.startsWith('/') ? authAgent.photo : '/' + authAgent.photo;
+                elPhoto.src = baseUrl + '/storage/' + photoPath;
 
-            // Sécurité au cas où le fichier n'existe plus sur le serveur
-            elPhoto.onerror = function() {
-                if (this.src !== defaultAvatar) {
-                    this.src = defaultAvatar;
-                }
-                this.onerror = null; 
-            };
-
-        } else {
-            elPhoto.src = defaultAvatar;
+                // Sécurité au cas où le fichier n'existe plus sur le serveur
+                elPhoto.onerror = function() {
+                    if (this.src !== defaultAvatar) {
+                        this.src = defaultAvatar;
+                    }
+                    this.onerror = null; 
+                };
+            } else {
+                elPhoto.src = defaultAvatar;
+            }
         }
 
         // Redirection si synchro interrompue
@@ -178,11 +184,34 @@
         await verifierStatutAgentForce();
     });
 
+
     function deconnexion() {
-        localStorage.setItem('session_active', 'false');
-        localStorage.removeItem('current_agent_matricule');
-        sessionStorage.clear();
-        window.location.replace("/agent/login");
+        // Fermeture automatique du menu latéral avant d'afficher l'alerte
+        if (typeof toggleSidebar === 'function') {
+            toggleSidebar();
+        }
+
+        Swal.fire({
+            title: 'Déconnexion',
+            text: 'Voulez-vous vraiment vous déconnecter de votre espace terrain ?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545', 
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Oui, me déconnecter',
+            cancelButtonText: 'Annuler',
+            reverseButtons: true 
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Nettoyage de la session locale
+                localStorage.setItem('session_active', 'false');
+                localStorage.removeItem('current_agent_matricule');
+                sessionStorage.clear();
+                
+                // Redirection immédiate
+                window.location.replace("/agent/login");
+            }
+        });
     }
 
     // --- GESTION DU STATUT ON/OFFLINE ---
@@ -279,9 +308,23 @@
 
 <script>
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-        // .then(() => console.log("Service Worker enregistré !"))
-        // .catch(err => console.log("Erreur SW :", err));
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').then(reg => {
+                // Si le service worker est déjà actif, on envoie le signal directement
+                if (reg.active) {
+                    reg.active.postMessage({ action: 'cachePrivatePages' });
+                }
+                // Si c'est la première installation, on attend qu'il devienne actif
+                reg.onupdatefound = () => {
+                    const installingWorker = reg.installing;
+                    installingWorker.onstatechange = () => {
+                        if (installingWorker.state === 'activated') {
+                            navigator.serviceWorker.controller.postMessage({ action: 'cachePrivatePages' });
+                        }
+                    };
+                };
+            });
+        });
     }
 </script>
 <script>

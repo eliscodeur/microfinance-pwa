@@ -2,12 +2,15 @@
 @section('header')
 <div class="d-flex align-items-center w-100 bg-white py-1">
     
-        <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
-            <i class="bi bi-list fs-3 me-3"></i>
-        </button>
+    <button onclick="toggleSidebar()" class="btn btn-link text-dark p-0 me-3 border-0">
+        <i class="bi bi-list fs-3 me-3"></i>
+    </button>
     
     <div class="d-flex align-items-center flex-grow-1">
-        <h5 class="fw-bold mb-0 text-primary"><i class="bi bi-graph-up-arrow me-3 fs-5"></i>Performances & stats</h5>
+        <h5 class="fw-bold mb-0 text-primary">
+            <!-- <i class="bi bi-graph-up-arrow me-3 fs-5"></i> -->
+            Performances & stats
+        </h5>
     </div>
 
 </div>
