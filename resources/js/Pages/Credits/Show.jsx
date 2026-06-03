@@ -1,44 +1,62 @@
 import { Inertia } from '@inertiajs/inertia';
 import { Link, usePage } from '@inertiajs/inertia-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import AdminLayout from '../../Layouts/AdminLayout.jsx';
-import BootstrapModal from '../../Components/BootstrapModal.jsx';
 import { formatDateToFR } from '../../Utils/creditHelpers';
+
+const MySwal = withReactContent(Swal);
+
+// Nomenclature institutionnelle — Tons neutres et professionnels
+const CREDIT_STATUS_CONFIG = {
+    pending: { label: 'En attente d\'instruction', class: 'badge bg-light text-secondary border border-secondary-subtle' },
+    approved: { label: 'Approuvé (Non décaissé)', class: 'badge bg-light text-info border border-info-subtle' },
+    active: { label: 'Sain / En cours', class: 'badge bg-light text-success border border-success-subtle' },
+    in_arrears: { label: 'En Souffrance / Impayé', class: 'badge bg-light text-danger border border-danger-subtle' },
+    solder: { label: 'Soldé', class: 'badge bg-light text-dark border' },
+    solde: { label: 'Soldé', class: 'badge bg-light text-dark border' },
+    closed: { label: 'Clôturé', class: 'badge bg-light text-muted border' },
+    rejected: { label: 'Rejeté', class: 'badge bg-light text-danger border border-danger-subtle' },
+};
+
+const PAYMENT_STATUS_CONFIG = {
+    pending: { label: 'À échoir', class: 'badge bg-light text-muted border border-secondary-subtle' },
+    partiel: { label: 'Impayé Partiel', class: 'badge bg-light text-info border border-info-subtle' },
+    late: { label: 'En Souffrance', class: 'badge bg-light text-danger border border-danger-subtle' },
+    paid: { label: 'Réglé', class: 'badge bg-light text-success border border-success-subtle' },
+};
+
+const LABELS_MAPPING = {
+    compte: 'Prélèvement sur compte Épargne',
+    cash: 'Versement Espèces (Caisse)',
+    digital: 'Collecte Mobile Money / Numérique',
+    quinzaine: 'Quinzomadaire',
+    mensuel: 'Mensuelle',
+    mensuelle: 'Mensuelle',
+};
 
 export default function Show({ credit }) {
     const { flash } = usePage().props;
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const payments = Array.isArray(credit.payments) ? credit.payments : credit.payments?.data ?? [];
+
+    // État local pour bloquer les boutons pendant les requêtes (Anti-double click)
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    const payments = useMemo(() => {
+        return Array.isArray(credit.payments) ? credit.payments : credit.payments?.data ?? [];
+    }, [credit.payments]);
+
     const pagination = Array.isArray(credit.payments) ? null : credit.payments ?? null;
 
-    const [penalties, setPenalties] = useState(() =>
-        payments.reduce((acc, payment) => ({
-            ...acc,
-            [payment.id]: payment.computed_penalty ?? payment.penalite ?? 0,
-        }), {}),
-    );
-    const [paymentAmounts, setPaymentAmounts] = useState(() =>
-        payments.reduce((acc, payment) => ({
-            ...acc,
-            [payment.id]: '',
-        }), {}),
-    );
+    const [penalties, setPenalties] = useState({});
 
     useEffect(() => {
-        setPenalties(
-            payments.reduce((acc, payment) => ({
-                ...acc,
-                [payment.id]: payment.computed_penalty ?? payment.penalite ?? 0,
-            }), {}),
-        );
-        setPaymentAmounts(
-            payments.reduce((acc, payment) => ({
-                ...acc,
-                [payment.id]: '',
-            }), {}),
-        );
-    }, [credit.payments]);
+        const initialPenalties = {};
+        payments.forEach(payment => {
+            initialPenalties[payment.id] = payment.computed_penalty ?? payment.penalite ?? 0;
+        });
+        setPenalties(initialPenalties);
+    }, [payments]);
 
     const formatCurrency = value =>
         new Intl.NumberFormat('fr-FR', {
@@ -47,449 +65,391 @@ export default function Show({ credit }) {
             maximumFractionDigits: 0,
         }).format(value);
 
-    const paymentClass = status => {
-        switch (status) {
-            case 'paid':
-                return 'badge bg-success';
-            case 'late':
-                return 'badge bg-danger';
-            case 'pending':
-                return 'badge bg-warning text-dark';
-            case 'partiel':
-                return 'badge bg-info text-dark';
-            default:
-                return 'badge bg-secondary';
-        }
-    };
+    const financialSummary = useMemo(() => {
+        const principalAccorde = Number(credit.montant_accorde ?? credit.montant_demande ?? 0);
+        const interetTotal = Number(credit.interet_total ?? 0);
+        const penalitesCumulees = Number(credit.penalty_amount ?? 0);
+        
+        const totalAttenduGlobal = principalAccorde + interetTotal + penalitesCumulees;
+        const totalRembourse = Number(credit.montant_rembourse ?? 0);
+        const resteARecouvrer = Math.max(0, totalAttenduGlobal - totalRembourse);
 
-    const creditStatusLabel = status => {
-        switch (status) {
-            case 'approved':
-                return 'Approuvé';
-            case 'active':
-                return 'Actif';
-            case 'pending':
-                return 'En attente';
-            case 'in_arrears':
-                return 'En retard';
-            case 'solder':
-            case 'solde':
-                return 'Soldé';
-            case 'closed':
-                return 'Clôturé';
-            case 'rejected':
-                return 'Rejeté';
-            default:
-                return 'Inconnu';
-        }
-    };
+        const encoursEnRetard = payments
+            .filter(p => p.status !== 'paid' && new Date(p.due_date) < new Date())
+            .reduce((sum, p) => sum + (Number(p.montant_total) + Number(p.penalite ?? 0) - Number(p.montant_paye ?? 0)), 0);
 
-    const paymentStatusLabel = status => {
-        switch (status) {
-            case 'paid':
-                return 'Payé';
-            case 'late':
-                return 'En retard';
-            case 'pending':
-                return 'En attente';
-            case 'partiel':
-                return 'Partiel';
-            default:
-                return 'Inconnu';
-        }
-    };
+        return {
+            principalAccorde,
+            interetTotal,
+            penalitesCumulees,
+            totalAttenduGlobal,
+            totalRembourse,
+            resteARecouvrer,
+            encoursEnRetard
+        };
+    }, [credit, payments]);
 
-    const allPaymentsPaid = payments.length > 0 && payments.every(payment => payment.status === 'paid');
+    const allPaymentsPaid = payments.length > 0 && payments.every(p => p.status === 'paid');
     const displayedCreditStatus = allPaymentsPaid ? 'solder' : credit.statut;
 
-    const lastPaymentDate = payments.reduce((latest, payment) => {
-        if (!payment.date_paye) {
-            return latest;
-        }
-
-        const paymentDate = new Date(payment.date_paye);
-        if (Number.isNaN(paymentDate.getTime())) {
-            return latest;
-        }
-
-        return latest === null || paymentDate > latest ? paymentDate : latest;
-    }, null);
-
     const canPayInstallment = payment => {
-        if (!['active', 'in_arrears'].includes(displayedCreditStatus)) {
-            return false;
-        }
-        if (payment.status === 'paid') {
-            return false;
-        }
-        if (payment.can_pay !== undefined) {
-            return payment.can_pay;
-        }
+        if (isProcessing) return false;
+        if (!['active', 'in_arrears'].includes(displayedCreditStatus)) return false;
+        if (payment.status === 'paid') return false;
+        if (payment.can_pay !== undefined) return payment.can_pay;
 
         return payments
             .filter(p => p.echeance < payment.echeance)
             .every(p => p.status === 'paid');
     };
 
-    const approve = () => {
-        setConfirmOpen(true);
-    };
-
-    const confirmApprove = () => {
-        setConfirmOpen(false);
-        Inertia.post(`/admin/credits/${credit.id}/approve`);
-    };
-
     const savePenalty = (payment) => {
-        const amount = Number(penalties[payment.id] ?? payment.computed_penalty ?? 0);
-
+        const amount = Math.round(Number(penalties[payment.id] ?? 0));
         if (Number.isNaN(amount) || amount < 0) {
+            Swal.fire({ title: 'Erreur', text: 'Montant de pénalité invalide.', icon: 'error' });
             return;
         }
 
-        Inertia.patch(`/admin/credits/${credit.id}/payments/${payment.id}`, {
-            penalite: amount,
-        }, {
+        setIsProcessing(true);
+        Inertia.patch(`/admin/credits/${credit.id}/payments/${payment.id}`, { penalite: amount }, {
             preserveScroll: true,
+            onStart: () => setIsProcessing(true),
+            onFinish: () => setIsProcessing(false),
             onSuccess: () => {
-                setPenalties(prev => ({
-                    ...prev,
-                    [payment.id]: amount,
-                }));
+                Swal.fire({ title: 'Mis à jour', text: 'Pénalité enregistrée.', icon: 'success', timer: 1300, showConfirmButton: false });
             },
         });
     };
 
-    const savePayment = (payment) => {
-        const amount = Number(paymentAmounts[payment.id]);
-        const penalty = Number(penalties[payment.id] ?? payment.computed_penalty ?? 0);
-        const totalDue = Number(payment.montant_total) + penalty;
-        const paidAmount = Number(payment.montant_paye ?? 0);
-        const remaining = Math.max(0, totalDue - paidAmount);
+    const triggerPaymentModal = (payment, remaining) => {
+        const cleanRemaining = Math.max(0, Math.round(remaining));
 
-        if (Number.isNaN(amount) || amount <= 0) {
-            Swal.fire({
-                title: 'Montant invalide',
-                text: 'Le montant doit être supérieur à zéro.',
-                icon: 'error',
-            });
-            return;
-        }
-
-        if (amount > remaining) {
-            Swal.fire({
-                title: 'Paiement trop élevé',
-                text: `Le montant dépasse le solde restant de ${formatCurrency(remaining)} pour cette échéance.`,
-                icon: 'error',
-            });
-            return;
-        }
-
-        Swal.fire({
-            title: 'Confirmer le paiement ?',
-            text: `Vous allez enregistrer un paiement de ${formatCurrency(amount)} pour l'échéance #${payment.echeance}.`,
-            icon: 'warning',
+        MySwal.fire({
+            title: `Guichet d'Encaissement — Échéance #${payment.echeance}`,
+            html: `
+                <div style="text-align: left; font-size: 0.85rem; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.25rem; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Échéance Nue :</span> <strong>${formatCurrency(payment.montant_total)}</strong></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Pénalités appliquées :</span> <strong>${formatCurrency(penalties[payment.id] ?? 0)}</strong></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #6c757d;"><span>Déjà perçu :</span> <strong>${formatCurrency(payment.montant_paye ?? 0)}</strong></div>
+                    <hr style="margin: 8px 0; border: 0; border-top: 1px solid #dee2e6;"/>
+                    <div style="display: flex; justify-content: space-between; color: #212529; font-weight: bold;"><span>Reste Exigible :</span> <span>${formatCurrency(cleanRemaining)}</span></div>
+                </div>
+                <div style="text-align: left;">
+                    <label for="swal-input-amount" style="font-weight: bold; font-size: 0.85rem; display: block; margin-bottom: 5px;">Montant à encaisser (FCFA) :</label>
+                    <input 
+                        id="swal-input-amount" 
+                        type="number" 
+                        class="form-control" 
+                        style="text-align: right; font-weight: bold;"
+                        value="${cleanRemaining}"
+                        min="1" 
+                        max="${cleanRemaining}"
+                        step="1"
+                    />
+                </div>
+            `,
             showCancelButton: true,
-            confirmButtonText: 'Oui, valider',
+            confirmButtonText: 'Valider',
             cancelButtonText: 'Annuler',
-        }).then(result => {
-            if (!result.isConfirmed) {
-                return;
+            confirmButtonColor: '#4f5d73',
+            cancelButtonColor: '#6c757d',
+            focusConfirm: true,
+            didOpen: () => {
+                // Focus automatique et sélection complète du montant pour saisie instantanée
+                const input = document.getElementById('swal-input-amount');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            },
+            preConfirm: () => {
+                const inputElement = document.getElementById('swal-input-amount');
+                const amount = Math.round(Number(inputElement.value));
+
+                if (!amount || Number.isNaN(amount) || amount <= 0) {
+                    Swal.showValidationMessage('Veuillez saisir un montant valide.');
+                    return false;
+                }
+                if (amount > cleanRemaining) {
+                    Swal.showValidationMessage(`Le montant saisi excède le reste dû.`);
+                    return false;
+                }
+                return amount;
             }
-
-            Inertia.patch(`/admin/credits/${credit.id}/payments/${payment.id}`, {
-                montant_paye: amount,
-            }, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setPaymentAmounts(prev => ({
-                        ...prev,
-                        [payment.id]: '',
-                    }));
-                },
-            });
+        }).then(result => {
+            if (result.isConfirmed && result.value) {
+                Inertia.patch(`/admin/credits/${credit.id}/payments/${payment.id}`, { 
+                    montant_paye: result.value 
+                }, {
+                    preserveScroll: true,
+                    onStart: () => setIsProcessing(true),
+                    onFinish: () => setIsProcessing(false),
+                    onSuccess: () => {
+                        Swal.fire({ title: 'Succès', text: 'Encaissement enregistré.', icon: 'success', timer: 1500, showConfirmButton: false });
+                    }
+                });
+            }
         });
-    };
-
-    const closeConfirm = () => {
-        setConfirmOpen(false);
     };
 
     return (
         <AdminLayout>
-            <div>
-                {flash.success && (
-                    <div className="alert alert-success" role="alert">
-                        {flash.success}
-                    </div>
-                )}
-                {flash.error && (
-                    <div className="alert alert-danger" role="alert">
-                        {flash.error}
-                    </div>
-                )}
-                <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="container-fluid px-0" style={{ color: '#2c3e50' }}>
+                
+                {/* Alertes système */}
+                {flash.success && <div className="alert alert-success d-flex align-items-center mb-3 small shadow-sm">{flash.success}</div>}
+                {flash.error && <div className="alert alert-danger d-flex align-items-center mb-3 small shadow-sm">{flash.error}</div>}
+
+                {/* EN-TÊTE SOBRE */}
+                <div className="d-flex justify-content-between align-items-center py-2 px-3 mb-3 bg-white border rounded shadow-sm">
                     <div>
-                        <h1 className="h3">Crédit #{credit.id}</h1>
-                        <p className="text-muted mb-0">
-                            Détail du dossier de crédit et échéancier.
-                        </p>
+                        <span className="text-uppercase text-muted fs-8 fw-semibold tracking-wider">SIG — Portefeuille Crédits</span>
+                        <h1 className="fs-5 text-dark fw-bold mb-0">Dossier de Prêt #CR-{credit.id}</h1>
                     </div>
                     <div>
-                        <Link href="/admin/credits" className="btn btn-outline-secondary me-2">
+                        <Link href="/admin/credits" className="btn btn-sm btn-outline-secondary px-3">
                             Retour
                         </Link>
-                        {/* {credit.statut !== 'approved' && credit.statut !== 'active' && credit.statut !== 'rejected' && credit.statut !== 'closed' && credit.statut === 'pending' && (
-                            <button className="btn btn-success" onClick={approve}>
-                                Approuver
-                            </button>
-                        )} */}
                     </div>
                 </div>
 
-                <BootstrapModal
-                    show={confirmOpen}
-                    title="Confirmation"
-                    body="Approuver ce crédit et activer l’échéancier ?"
-                    onConfirm={confirmApprove}
-                    onClose={closeConfirm}
-                    confirmText="Oui, approuver"
-                    cancelText="Annuler"
-                    confirmVariant="success"
-                />
+                {/* CARTES INDICATEURS STYLE INSTITUTIONNEL */}
+                <div className="row g-3 mb-4">
+                    <div className="col-md-3">
+                        <div className="card h-100 border bg-white shadow-sm p-3">
+                            <span className="text-uppercase text-muted fs-8 fw-bold">Encours Global</span>
+                            <h4 className="fw-bold text-dark my-1">{formatCurrency(financialSummary.totalAttenduGlobal)}</h4>
+                            <div className="fs-8 text-muted border-top pt-1 mt-1">Capital + Int. + Pén.</div>
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <div className="card h-100 border bg-white shadow-sm p-3">
+                            <span className="text-uppercase text-muted fs-8 fw-bold">Total Recouvré</span>
+                            <h4 className="fw-bold text-dark my-1">{formatCurrency(financialSummary.totalRembourse)}</h4>
+                            <div className="fs-8 text-muted border-top pt-1 mt-1">Amorti à : {financialSummary.totalAttenduGlobal > 0 ? Math.round((financialSummary.totalRembourse / financialSummary.totalAttenduGlobal) * 100) : 0}%</div>
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <div className="card h-100 border bg-white shadow-sm p-3 border-start border-warning border-3">
+                            <span className="text-uppercase text-muted fs-8 fw-bold">Reste à Recouvrer</span>
+                            <h4 className="fw-bold text-dark my-1">{formatCurrency(financialSummary.resteARecouvrer)}</h4>
+                            <div className="fs-8 text-secondary border-top pt-1 mt-1 fw-medium">Créance active</div>
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <div className={`card h-100 border bg-white shadow-sm p-3 ${financialSummary.encoursEnRetard > 0 ? 'border-start border-danger border-3' : ''}`}>
+                            <span className="text-uppercase text-muted fs-8 fw-bold">Portefeuille à Risque</span>
+                            <h4 className={`fw-bold my-1 ${financialSummary.encoursEnRetard > 0 ? 'text-danger' : 'text-dark'}`}>{formatCurrency(financialSummary.encoursEnRetard)}</h4>
+                            <div className="fs-8 text-muted border-top pt-1 mt-1">{financialSummary.encoursEnRetard > 0 ? '⚠️ Arriérés échus' : 'Aucun retard'}</div>
+                        </div>
+                    </div>
+                </div>
 
+                {/* INFORMATION BLOCS */}
                 <div className="row g-3 mb-4">
                     <div className="col-md-4">
-                        <div className="card shadow-sm p-3">
-                            <h5 className="mb-3">Informations</h5>
-                            <p>
-                                <strong>Client :</strong> {credit.client.nom} {credit.client.prenom}
-                            </p>
-                            <p>
-                                <strong>Statut :</strong> {creditStatusLabel(displayedCreditStatus)}
-                            </p>
-                            {allPaymentsPaid && credit.statut !== 'solder' && (
-                                <p className="text-muted small mb-2">
-                                    Statut harmonisé sur Soldé car toutes les échéances sont réglées.
-                                </p>
-                            )}
-                            <p>
-                                <strong>Dernier paiement :</strong>{' '}
-                                {lastPaymentDate ? formatDateToFR(lastPaymentDate.toISOString()) : '—'}
-                            </p>
-                            <p>
-                                <strong>Montant demandé :</strong> {formatCurrency(credit.montant_demande)}
-                            </p>
-                            <p>
-                                <strong>Taux appliqué :</strong> {credit.taux}%
-                            </p>
+                        <div className="card shadow-sm border h-100">
+                            <div className="card-header bg-light py-2 border-bottom">
+                                <h6 className="text-uppercase text-secondary fw-bold fs-8 mb-0">I. Bénéficiaire / Membre</h6>
+                            </div>
+                            <div className="card-body py-2">
+                                <table className="table table-sm table-borderless mb-0 fs-7">
+                                    <tbody>
+                                        <tr><td className="text-muted px-0">Nom & Prénom :</td><td className="fw-bold text-end">{credit.client?.nom} {credit.client?.prenom}</td></tr>
+                                        <tr><td className="text-muted px-0">Classe de Risque :</td><td className="text-end"><span className={(CREDIT_STATUS_CONFIG[displayedCreditStatus] || {}).class}>{(CREDIT_STATUS_CONFIG[displayedCreditStatus] || {}).label}</span></td></tr>
+                                        <tr><td className="text-muted px-0">Compte Épargne :</td><td className="text-end fw-semibold text-monospace">{credit.client?.code_compte ?? 'N/A'}</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
+                    
                     <div className="col-md-4">
-                        <div className="card shadow-sm p-3">
-                            <h5 className="mb-3">Conditions</h5>
-                            <p>
-                                <strong>Type :</strong> {credit.type}
-                            </p>
-                            <p>
-                                <strong>Mode :</strong> {credit.mode}
-                            </p>
-                            <p>
-                                <strong>Périodicité :</strong> {credit.periodicite}
-                            </p>
-                            <p>
-                                <strong>Échéances :</strong> {credit.nombre_echeances}
-                            </p>
+                        <div className="card shadow-sm border h-100">
+                            <div className="card-header bg-light py-2 border-bottom">
+                                <h6 className="text-uppercase text-secondary fw-bold fs-8 mb-0">II. Caractéristiques du Crédit</h6>
+                            </div>
+                            <div className="card-body py-2">
+                                <table className="table table-sm table-borderless mb-0 fs-7">
+                                    <tbody>
+                                        <tr><td className="text-muted px-0">Ligne de Produit :</td><td className="fw-semibold text-end">{LABELS_MAPPING[credit.type] || credit.type}</td></tr>
+                                        <tr><td className="text-muted px-0">Mode de Décaissement :</td><td className="text-end">{LABELS_MAPPING[credit.mode] || credit.mode}</td></tr>
+                                        <tr><td className="text-muted px-0">Échéancier :</td><td className="text-end">{credit.nombre_echeances} éch. ({LABELS_MAPPING[credit.periodicite] || credit.periodicite})</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
+
                     <div className="col-md-4">
-                        <div className="card shadow-sm p-3">
-                            <h5 className="mb-3">Chiffres clés</h5>
-                            <p>
-                                <strong>Intérêt total :</strong> {formatCurrency(credit.interet_total)}
-                            </p>
-                            <p>
-                                <strong>Pénalités totales :</strong> {formatCurrency(credit.penalty_amount ?? 0)}
-                            </p>
-                            <p>
-                                <strong>Montant total dû :</strong>{' '}
-                                {formatCurrency(
-                                    Number(credit.montant_accorde) + Number(credit.interet_total) + Number(credit.penalty_amount ?? 0),
-                                )}
-                            </p>
-                            <p>
-                                <strong>Montant remboursé :</strong> {formatCurrency(credit.montant_rembourse)}
-                            </p>
+                        <div className="card shadow-sm border h-100">
+                            <div className="card-header bg-light py-2 border-bottom">
+                                <h6 className="text-uppercase text-secondary fw-bold fs-8 mb-0">III. Structure Financière</h6>
+                            </div>
+                            <div className="card-body py-2">
+                                <table className="table table-sm table-borderless mb-0 fs-7">
+                                    <tbody>
+                                        <tr><td className="text-muted px-0">Capital Octroyé :</td><td className="fw-bold text-end text-dark">{formatCurrency(financialSummary.principalAccorde)}</td></tr>
+                                        <tr><td className="text-muted px-0">Taux Contractuel :</td><td className="text-end fw-semibold">{credit.taux}%</td></tr>
+                                        <tr><td className="text-muted px-0">Intérêts Dus :</td><td className="text-end text-dark fw-semibold">{formatCurrency(credit.interet_total ?? 0)}</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                {/* COMPENSATION COMPENSATOIRE */}
                 {credit.emergency_withdrawal_summary?.length > 0 && (
-                    <>
-                        <div className="alert alert-warning">
-                            <strong>Prélèvement automatique appliqué :</strong> des sommes ont été prélevées sur l'épargne disponible pour couvrir une ou plusieurs échéances en défaut.
+                    <div className="card shadow-sm mb-4 border border-secondary">
+                        <div className="card-header bg-light py-2 border-bottom">
+                            <h6 className="text-dark mb-0 fw-bold fs-8">⚠️ Recouvrement par Compensation (Épargne de Garantie)</h6>
                         </div>
-                        <div className="card shadow-sm mb-4 border-danger">
-                            <div className="card-header bg-white text-danger">
-                                <strong>Prélèvements de secours automatiques</strong>
-                            </div>
-                            <div className="card-body">
-                                <p className="mb-3 text-muted">
-                                    Les montants suivants ont été retirés automatiquement et affectés aux paiements en défaut.
-                                </p>
-                                <ul className="list-group list-group-flush">
-                                    {credit.emergency_withdrawal_summary.map((item, index) => (
-                                        <li key={index} className="list-group-item px-0">
-                                            <strong>Échéance #{item.echeance} :</strong> {formatCurrency(item.amount_withdrawn)} prélevés, dont {formatCurrency(item.amount_applied)} appliqués au paiement.
-                                        </li>
-                                    ))}
-                                </ul>
+                        <div className="card-body py-2">
+                            <div className="row g-2">
+                                {credit.emergency_withdrawal_summary.map((item, index) => (
+                                    <div key={index} className="col-md-4">
+                                        <div className="p-2 rounded bg-light border fs-8 text-dark">
+                                            <strong>Échéance #{item.echeance} :</strong> Retrait de <span className="fw-bold">{formatCurrency(item.amount_withdrawn)}</span>.
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    </>
+                    </div>
                 )}
 
-                <div className="card shadow-sm">
-                    <div className="card-header bg-white">
-                        <strong>Échéancier</strong>
+                {/* TABLEAU COMPACT ET NETTOYÉ */}
+                <div className="card shadow-sm border">
+                    <div className="card-header bg-light py-2 border-bottom">
+                        <h5 className="card-title mb-0 fs-7 fw-bold text-dark">IV. Registre Comptable des Échéances et Amortissements</h5>
                     </div>
                     <div className="card-body p-0">
-                        <table className="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Date</th>
-                                    <th>Principal</th>
-                                    <th>Intérêts</th>
-                                    <th>Total</th>
-                                    <th>Pénalité</th>
-                                    <th>Payé</th>
-                                    <th>Reste</th>
-                                    <th>Paiement</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {payments.map(payment => {
-                                    const totalDue = Number(payment.montant_total) + Number(payment.penalite ?? 0);
-                                    const paidAmount = Number(payment.montant_paye ?? 0);
-                                    const remaining = Math.max(0, totalDue - paidAmount);
+                        <div className="table-responsive">
+                            <table className="table table-sm table-bordered align-middle mb-0 text-nowrap border-light">
+                                <thead className="table-light text-uppercase fs-8 tracking-wider text-secondary border-bottom">
+                                    <tr>
+                                        <th className="text-center bg-white" style={{ width: '40px' }}>N°</th>
+                                        <th className="bg-white">Date Exigibilité</th>
+                                        <th className="text-end bg-white">Amort. Principal</th>
+                                        <th className="text-end bg-white">Intérêts Dus</th>
+                                        <th className="text-end bg-white">Échéance Nue</th>
+                                        <th className="text-center bg-white" style={{ width: '140px' }}>Pénalités (XAF)</th>
+                                        <th className="text-end bg-white">Montant Perçu</th>
+                                        <th className="text-end bg-white text-dark fw-bold" style={{ backgroundColor: '#fdfefe' }}>Reste À Payer (RAP)</th>
+                                        <th className="ps-3 bg-white" style={{ width: '200px' }}>Guichet / Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="fs-7">
+                                    {payments.map(payment => {
+                                        const totalDue = Number(payment.montant_total) + Number(payment.penalite ?? 0);
+                                        const paidAmount = Number(payment.montant_paye ?? 0);
+                                        const remaining = Math.max(0, totalDue - paidAmount);
+                                        const isOverdue = remaining > 0 && new Date(payment.due_date) < new Date();
+                                        
+                                        let dynamicStatus = 'pending';
+                                        if (remaining === 0) {
+                                            dynamicStatus = 'paid';
+                                        } else if (paidAmount > 0 && remaining > 0) {
+                                            dynamicStatus = 'partiel';
+                                        } else if (isOverdue) {
+                                            dynamicStatus = 'late';
+                                        }
+                                        
+                                        const statusConfig = PAYMENT_STATUS_CONFIG[dynamicStatus];
 
-                                    return (
-                                        <tr key={payment.id}>
-                                            <td>{payment.echeance}</td>
-                                            <td>{formatDateToFR(payment.due_date)}</td>
-                                            <td>{formatCurrency(payment.montant_principal)}</td>
-                                            <td>{formatCurrency(payment.montant_interets)}</td>
-                                            <td>{formatCurrency(payment.montant_total)}</td>
-                                            <td>
-                                                {payment.status !== 'paid' && ['active', 'in_arrears'].includes(credit.statut) ? (
-                                                    <div className="input-group">
-                                                        <input
-                                                            type="number"
-                                                            step="0.01"
-                                                            min="0"
-                                                            className="form-control"
-                                                            value={penalties[payment.id] ?? payment.computed_penalty ?? 0}
-                                                            onChange={e =>
-                                                                setPenalties(prev => ({
-                                                                    ...prev,
-                                                                    [payment.id]: e.target.value,
-                                                                }))
-                                                            }
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-secondary"
-                                                            onClick={() => savePenalty(payment)}
-                                                        >
-                                                            Enregistrer
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    formatCurrency(payment.computed_penalty ?? payment.penalite ?? 0)
-                                                )}
-                                            </td>
-                                            <td>{formatCurrency(paidAmount)}</td>
-                                            <td>{formatCurrency(remaining)}</td>
-                                            <td>
-                                                {payment.status !== 'paid' && ['active', 'in_arrears'].includes(credit.statut) ? (
-                                                    <div className="d-flex gap-2 align-items-center">
-                                                        <div className="input-group">
+                                        return (
+                                            <tr key={payment.id} style={isOverdue ? { backgroundColor: '#fffdfd' } : {}}>
+                                                <td className="text-center fw-bold text-muted">{payment.echeance}</td>
+                                                <td>{formatDateToFR(payment.due_date)}</td>
+                                                <td className="text-end text-monospace">{formatCurrency(payment.montant_principal)}</td>
+                                                <td className="text-end text-monospace">{formatCurrency(payment.montant_interets)}</td>
+                                                <td className="text-end text-monospace fw-semibold">{formatCurrency(payment.montant_total)}</td>
+                                                <td className="text-center">
+                                                    {remaining > 0 && ['active', 'in_arrears'].includes(credit.statut) ? (
+                                                        <div className="input-group input-group-sm mx-auto" style={{ maxWidth: '110px' }}>
                                                             <input
                                                                 type="number"
-                                                                step="0.01"
+                                                                step="1"
                                                                 min="0"
-                                                                className="form-control"
-                                                                placeholder="Montant"
-                                                                value={paymentAmounts[payment.id] ?? ''}
-                                                                onChange={e =>
-                                                                    setPaymentAmounts(prev => ({
-                                                                        ...prev,
-                                                                        [payment.id]: e.target.value,
-                                                                    }))
-                                                                }
+                                                                disabled={isProcessing}
+                                                                className="form-control text-end text-monospace fs-7 px-1 py-0"
+                                                                value={penalties[payment.id] ?? ''}
+                                                                onChange={e => setPenalties(prev => ({ ...prev, [payment.id]: e.target.value }))}
                                                             />
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-outline-secondary"
-                                                                onClick={() => savePayment(payment)}
-                                                                disabled={!canPayInstallment(payment)}
+                                                            <button 
+                                                                className="btn btn-outline-secondary px-2 py-0 border-start-0" 
+                                                                type="button" 
+                                                                onClick={() => savePenalty(payment)}
+                                                                disabled={isProcessing}
                                                             >
-                                                                Payer
+                                                                ✓
                                                             </button>
                                                         </div>
-                                                        <span className={paymentClass(payment.display_status ?? payment.status)}>
-                                                            {paymentStatusLabel(payment.display_status ?? payment.status)}
-                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted text-monospace fs-7">{formatCurrency(payment.computed_penalty ?? payment.penalite ?? 0)}</span>
+                                                    )}
+                                                </td>
+                                                <td className="text-end text-secondary text-monospace">{formatCurrency(paidAmount)}</td>
+                                                <td className={`text-end text-monospace fw-bold ${remaining > 0 ? 'text-dark' : 'text-success'}`} style={{ backgroundColor: '#fafbfc' }}>
+                                                    {formatCurrency(remaining)}
+                                                </td>
+                                                <td className="ps-3">
+                                                    <div className="d-flex align-items-center gap-2">
+                                                        {remaining > 0 && ['active', 'in_arrears'].includes(credit.statut) ? (
+                                                            <button 
+                                                                className="btn btn-xs btn-outline-dark px-2 py-0 fs-8 fw-semibold" 
+                                                                type="button" 
+                                                                onClick={() => triggerPaymentModal(payment, remaining)}
+                                                                disabled={!canPayInstallment(payment) || isProcessing}
+                                                                style={{ borderRadius: '3px' }}
+                                                            >
+                                                                Encaisser
+                                                            </button>
+                                                        ) : null}
+                                                        
+                                                        <span className={statusConfig.class} style={{ fontSize: '11px', padding: '3px 6px' }}>{statusConfig.label}</span>
                                                     </div>
-                                                ) : (
-                                                    <div>
-                                                        <span className={paymentClass(payment.display_status ?? payment.status)}>
-                                                            {paymentStatusLabel(payment.display_status ?? payment.status)}
-                                                        </span>
-                                                        {payment.status !== 'paid' && !['active', 'in_arrears'].includes(credit.statut) && (
-                                                            <div className="small text-muted mt-1">
-                                                                Paiement disponible après approbation et décaissement.
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                {!canPayInstallment(payment) && payment.status !== 'paid' && ['active', 'in_arrears'].includes(credit.statut) && (
-                                                    <div className="small text-muted mt-1">
-                                                        Paiement bloqué tant que l’échéance précédente n’est pas réglée.
-                                                    </div>
-                                                )}
+
+                                                    {!canPayInstallment(payment) && remaining > 0 && ['active', 'in_arrears'].includes(credit.statut) && (
+                                                        <div className="fs-9 text-muted mt-1">
+                                                            🔒 Attente échéance précédente
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+
+                                    {payments.length === 0 && (
+                                        <tr>
+                                            <td colSpan="9" className="text-center py-4 text-muted bg-white">
+                                                Aucune écriture disponible.
                                             </td>
                                         </tr>
-                                    );
-                                })}
-                                {payments.length === 0 && (
-                                    <tr>
-                                        <td colSpan="9" className="text-center py-4">
-                                            Aucun échéancier disponible.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
+                {/* Pagination */}
                 {pagination && (
-                    <div className="mt-3 d-flex justify-content-end gap-2">
+                    <div className="mt-2 d-flex justify-content-end gap-1 bg-white p-1 rounded border">
                         <button
-                            className="btn btn-outline-secondary"
+                            className="btn btn-xs btn-link text-secondary text-decoration-none fs-7 px-2 py-0"
                             onClick={() => Inertia.visit(pagination.prev_page_url)}
-                            disabled={!pagination.prev_page_url}
+                            disabled={!pagination.prev_page_url || isProcessing}
                         >
-                            Précédent
+                            « Précédent
                         </button>
                         <button
-                            className="btn btn-outline-secondary"
+                            className="btn btn-xs btn-link text-secondary text-decoration-none fs-7 px-2 py-0"
                             onClick={() => Inertia.visit(pagination.next_page_url)}
-                            disabled={!pagination.next_page_url}
+                            disabled={!pagination.next_page_url || isProcessing}
                         >
-                            Suivant
+                            Suivant »
                         </button>
                     </div>
                 )}

@@ -11,8 +11,8 @@
             @can('Gérer Clients')
             <a href="{{ route('admin.clients.create') }}" class="btn btn-primary">Ajouter client</a>
             @endcan
-            <a href="{{ route('admin.clients.export', 'csv') }}" class="btn btn-outline-secondary">Exporter CSV</a>
-            <a href="{{ route('admin.clients.export', 'excel') }}" class="btn btn-outline-success">Exporter Excel</a>
+            <a href="{{ route('admin.clients.export', ['format' => 'csv', 'search' => $search, 'agent_id' => $agentId]) }}" class="btn btn-outline-secondary">Exporter CSV</a>
+            <a href="{{ route('admin.clients.export', ['format' => 'excel', 'search' => $search, 'agent_id' => $agentId]) }}" class="btn btn-outline-success">Exporter Excel</a>
         </div>
     </div>
 
@@ -50,8 +50,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Client</th>
-                        <th>Contact</th>
+                        <th>Client</th> <th>Contact</th>
                         <th>Adresse</th>
                         <th>Agent</th>
                         <th>Carnets</th>
@@ -62,41 +61,35 @@
                     @forelse($clients as $client)
                         <tr>
                             <td>
-                                <strong>{{ $client->nom }} {{ $client->prenom }}</strong><br>
+                                <div class="fw-bold">{{ $client->nom }} {{ $client->prenom }}</div>
                                 <small class="text-muted">#{{ $client->id }}</small>
                             </td>
                             <td>{{ $client->telephone ?: '---' }}</td>
                             <td>{{ $client->adresse ?: '---' }}</td>
-                            <td>{{ $client->agent->nom ?? 'Non affecte' }}</td>
+                            <td>
+                                <span class="badge {{ $client->agent ? 'bg-info text-dark' : 'bg-secondary' }}">
+                                    {{ $client->agent->nom ?? 'Non affecté' }}
+                                </span>
+                            </td>
                             <td>
                                 <span class="badge bg-light text-dark border">{{ $client->carnets_count }}</span>
                                 @if($client->carnets_count > 0)
                                     <div class="small text-muted mt-1">
                                         {{ $client->carnets->take(2)->pluck('numero')->implode(', ') }}
-                                        @if($client->carnets_count > 2)
-                                            ...
-                                        @endif
+                                        @if($client->carnets_count > 2)...@endif
                                     </div>
                                 @endif
                             </td>
                             <td class="text-end">
                                 <div class="d-inline-flex gap-2">
-                                    <a href="{{ route('admin.clients.show', $client->id) }}" class="btn btn-sm btn-outline-info">Details</a>
-                                    @can('Modifier donnÃ©es')
+                                    <a href="{{ route('admin.clients.show', $client->id) }}" class="btn btn-sm btn-outline-info">Détails</a>
+                                    @can('Modifier données')
                                     <a href="{{ route('admin.clients.edit', $client->id) }}" class="btn btn-sm btn-outline-warning">Modifier</a>
                                     @endcan
-                                    @can('GÃ©rer Clients')
-                                    <form id="form-delete-client-{{ $client->id }}" 
-                                        method="POST" 
-                                        action="{{ route('admin.clients.destroy', $client->id) }}" 
-                                        style="display: inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button" 
-                                                class="btn btn-sm btn-outline-danger" 
-                                                onclick="confirmerSuppressionClient({{ $client->id }})">
-                                            Supprimer
-                                        </button>
+                                    @can('Gérer Clients')
+                                    <form id="form-delete-client-{{ $client->id }}" method="POST" action="{{ route('admin.clients.destroy', $client->id) }}" style="display: inline;">
+                                        @csrf @method('DELETE')
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmerSuppressionClient({{ $client->id }})">Supprimer</button>
                                     </form>
                                     @endcan
                                 </div>
@@ -104,7 +97,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">Aucun client enregistre.</td>
+                            <td colspan="6" class="text-center py-5 text-muted">Aucun client trouvé.</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -11,73 +11,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ AdminLayout)
 /* harmony export */ });
-/* harmony import */ var _inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @inertiajs/inertia-react */ "./node_modules/@inertiajs/inertia-react/dist/index.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
-
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 
 function AdminLayout(_ref) {
   var children = _ref.children;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("nav", {
-      className: "navbar navbar-expand-lg navbar-dark bg-dark",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
-        className: "container-fluid px-4",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-          href: "/admin/dashboard",
-          className: "navbar-brand",
-          children: "NANA ECO CONSULTING"
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("button", {
-          className: "navbar-toggler",
-          type: "button",
-          "data-bs-toggle": "collapse",
-          "data-bs-target": "#navbarNav",
-          "aria-controls": "navbarNav",
-          "aria-expanded": "false",
-          "aria-label": "Toggle navigation",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("span", {
-            className: "navbar-toggler-icon"
-          })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("div", {
-          className: "collapse navbar-collapse",
-          id: "navbarNav",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("ul", {
-            className: "navbar-nav ms-auto",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/clients",
-                className: "nav-link",
-                children: "Clients"
-              })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/carnets",
-                className: "nav-link",
-                children: "Carnets"
-              })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/credits",
-                className: "nav-link",
-                children: "Cr\xE9dits"
-              })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/prets",
-                className: "nav-link",
-                children: "Instruction Cr\xE9dit"
-              })
-            })]
-          })
-        })]
-      })
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("main", {
-      className: "container mt-4",
-      children: children
-    })]
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, {
+    children: children
   });
 }
 
@@ -142,6 +81,8 @@ function Create(_ref) {
   var isTontineCarnetSelected = (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'tontine';
   var isTypeFixedByCarnet = !!selectedCarnet;
   var pointageWarning = isTontineCarnetSelected && (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.total_pointages) < (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.required_pointages);
+
+  // Gestion stricte du type de crédit selon le carnet sélectionné
   (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
     if (isCompteCarnetSelected && form.data.type !== 'compte') {
       form.setData('type', 'compte');
@@ -150,6 +91,8 @@ function Create(_ref) {
       form.setData('type', 'quinzaine');
     }
   }, [isCompteCarnetSelected, isTontineCarnetSelected, form.data.type]);
+
+  // Récupération asynchrone sécurisée des carnets du client
   (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
     if (!form.data.client_id) {
       setCarnets([]);
@@ -183,13 +126,17 @@ function Create(_ref) {
         setCarnets([]);
       }
     })["catch"](function (err) {
-      console.error('Error fetching carnets:', err);
-      setCarnets([]);
+      if (err.name !== 'AbortError') {
+        console.error('Error fetching carnets:', err);
+        setCarnets([]);
+      }
     });
     return function () {
       return controller.abort();
     };
   }, [form.data.client_id]);
+
+  // Génération interactive de l'échéancier
   var schedule = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
     return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.buildScheduleFromForm)(form.data);
   }, [form.data]);
@@ -206,6 +153,8 @@ function Create(_ref) {
     var start = (currentPage - 1) * pageSize;
     return schedule.slice(start, start + pageSize);
   }, [schedule, currentPage]);
+
+  // Calculs financiers globaux
   var totalInterest = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
     return schedule.reduce(function (sum, row) {
       return sum + row.interest;
@@ -228,7 +177,9 @@ function Create(_ref) {
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Oui, envoyer',
-      cancelButtonText: 'Annuler'
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33'
     }).then(function (result) {
       if (!result.isConfirmed) {
         return;
@@ -242,13 +193,14 @@ function Create(_ref) {
             timer: 2000,
             showConfirmButton: false
           });
-          form.reset('montant_demande', 'type', 'mode', 'periodicite', 'nombre_echeances', 'taux', 'taux_manuelle', 'date_debut');
+          // Correction Inertia : passage par un tableau pour réinitialiser les champs ciblés
+          form.reset(['montant_demande', 'type', 'mode', 'periodicite', 'nombre_echeances', 'taux', 'taux_manuelle', 'date_debut']);
         },
         onError: function onError(errors) {
           if (Object.keys(errors).length) {
             sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
               title: 'Erreur',
-              text: 'Veuillez corriger les champs en surbrillance.',
+              text: 'Voulez-vous corriger les champs en surbrillance ?',
               icon: 'error'
             });
           }
@@ -369,9 +321,9 @@ function Create(_ref) {
             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
               type: "number",
               className: "form-control ".concat(form.errors.montant_demande ? 'is-invalid' : ''),
-              value: form.data.montant_demande,
+              value: form.data.montant_demande || '',
               onChange: function onChange(e) {
-                return form.setData('montant_demande', e.target.value);
+                return form.setData('montant_demande', parseFloat(e.target.value) || 0);
               },
               min: "1000",
               required: true
@@ -392,16 +344,12 @@ function Create(_ref) {
               },
               required: true,
               disabled: isTypeFixedByCarnet,
-              children: (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'compte' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                  value: "compte",
-                  children: "Cr\xE9dit sur compte"
-                })
-              }) : (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'tontine' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                  value: "quinzaine",
-                  children: "Cr\xE9dit quinzaine"
-                })
+              children: (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'compte' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                value: "compte",
+                children: "Cr\xE9dit sur compte"
+              }) : (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'tontine' ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                value: "quinzaine",
+                children: "Cr\xE9dit quinzaine"
               }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
                 children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                   value: "",
@@ -478,9 +426,9 @@ function Create(_ref) {
             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
               type: "number",
               className: "form-control",
-              value: form.data.nombre_echeances,
+              value: form.data.nombre_echeances || '',
               onChange: function onChange(e) {
-                return form.setData('nombre_echeances', e.target.value);
+                return form.setData('nombre_echeances', parseInt(e.target.value, 10) || 0);
               },
               min: "1",
               required: true
@@ -495,9 +443,9 @@ function Create(_ref) {
               step: "0.01",
               min: "0",
               className: "form-control",
-              value: form.data.taux,
+              value: form.data.taux || '',
               onChange: function onChange(e) {
-                return form.setData('taux', e.target.value);
+                return form.setData('taux', parseFloat(e.target.value) || 0);
               },
               required: true
             })]
@@ -510,12 +458,15 @@ function Create(_ref) {
               type: "number",
               step: "0.01",
               min: "0",
-              className: "form-control",
+              className: "form-control ".concat(form.data.taux_manuelle !== '' ? 'border-warning bg-light-warning' : ''),
               value: form.data.taux_manuelle,
               onChange: function onChange(e) {
-                return form.setData('taux_manuelle', e.target.value);
+                return form.setData('taux_manuelle', e.target.value !== '' ? parseFloat(e.target.value) : '');
               },
               placeholder: "Optionnel"
+            }), form.data.taux_manuelle !== '' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+              className: "form-text text-warning fw-medium",
+              children: "Un taux d\xE9rogatoire manuel sera appliqu\xE9."
             })]
           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
             className: "col-md-12",
@@ -547,7 +498,7 @@ function Create(_ref) {
                     className: "text-muted",
                     children: "Montant total"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "fs-4 fw-bold",
+                    className: "fs-4 fw-bold text-dark",
                     children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(totalDue)
                   })]
                 })
@@ -559,7 +510,7 @@ function Create(_ref) {
                     className: "text-muted",
                     children: "Int\xE9r\xEAt total"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "fs-4 fw-bold",
+                    className: "fs-4 fw-bold text-dark",
                     children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(totalInterest)
                   })]
                 })
@@ -571,7 +522,7 @@ function Create(_ref) {
                     className: "text-muted",
                     children: "\xC9ch\xE9ance moyenne"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "fs-4 fw-bold",
+                    className: "fs-4 fw-bold text-dark",
                     children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(meanInstallment)
                   })]
                 })
@@ -589,7 +540,7 @@ function Create(_ref) {
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                 className: "card-body p-0",
                 children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("table", {
-                  className: "table table-sm mb-0",
+                  className: "table table-sm table-hover mb-0",
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("thead", {
                     children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("tr", {
                       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
@@ -622,7 +573,7 @@ function Create(_ref) {
                     }), schedule.length === 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("tr", {
                       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
                         colSpan: "5",
-                        className: "text-center py-4",
+                        className: "text-center py-4 text-muted",
                         children: "Remplissez le formulaire pour afficher le plan."
                       })
                     })]
@@ -677,10 +628,10 @@ function Create(_ref) {
               })]
             })
           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-            className: "col-12 text-end",
+            className: "col-12 text-end text-right",
             children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
               type: "submit",
-              className: "btn btn-primary",
+              className: "btn btn-primary px-4",
               children: "Enregistrer la demande"
             })
           })]
@@ -757,18 +708,36 @@ function buildScheduleFromForm(form) {
   var taux = calculateRate(form.taux, form.taux_manuelle) / 100;
   var nombre = Math.max(1, Number(form.nombre_echeances || 1));
   var mode = form.mode || 'fixe';
-  var periodDaysCount = periodDays(form.periodicite || 'mensuelle');
+  var periodicite = form.periodicite || 'mensuelle';
   var start = form.date_debut || new Date().toISOString().slice(0, 10);
-  var startDate = parseDateString(start);
+
+  // Utilise votre fonction de parsing ou crée une date locale sécurisée
+  var startDate = typeof parseDateString === 'function' ? parseDateString(start) : new Date(start + 'T00:00:00'); // Évite les décalages de fuseau horaire au parsing
+
   var principalBase = Math.round(montant / nombre * 100) / 100;
   var remaining = montant;
   var schedule = [];
   for (var i = 1; i <= nombre; i += 1) {
+    // 1. Calcul des intérêts (Fixe ou Dégressif)
     var interest = mode === 'degressif' ? Math.round(remaining * taux * 100) / 100 : Math.round(montant * taux * 100) / 100;
+
+    // 2. Ajustement de la dernière échéance pour vider le capital restant dû
     var principal = i === nombre ? Math.round(remaining * 100) / 100 : principalBase;
     var total = Math.round((principal + interest) * 100) / 100;
+
+    // 3. Gestion dynamique et précise de la date d'échéance
     var dueDate = new Date(startDate);
-    dueDate.setDate(dueDate.getDate() + (i - 1) * periodDaysCount);
+    if (periodicite === 'mensuelle') {
+      // Ajoute exactement (i - 1) mois (Ex: 1er Janvier -> 1er Février -> 1er Mars)
+      dueDate.setMonth(dueDate.getMonth() + (i - 1));
+    } else if (periodicite === 'quinzaine') {
+      // Ajoute 14 jours par échéance
+      dueDate.setDate(dueDate.getDate() + (i - 1) * 14);
+    } else {
+      // Fallback si vous utilisez periodDays pour d'autres cas spécifiques
+      var periodDaysCount = typeof periodDays === 'function' ? periodDays(periodicite) : 30;
+      dueDate.setDate(dueDate.getDate() + (i - 1) * periodDaysCount);
+    }
     schedule.push({
       numero: i,
       date: dueDate.toISOString().slice(0, 10),
@@ -776,6 +745,8 @@ function buildScheduleFromForm(form) {
       interest: interest,
       total: total
     });
+
+    // 4. Mise à jour du capital restant pour le prochain tour
     remaining = Math.round((remaining - principal) * 100) / 100;
   }
   return schedule;

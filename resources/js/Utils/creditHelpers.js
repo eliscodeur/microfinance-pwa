@@ -55,23 +55,41 @@ export function buildScheduleFromForm(form) {
   const taux = calculateRate(form.taux, form.taux_manuelle) / 100;
   const nombre = Math.max(1, Number(form.nombre_echeances || 1));
   const mode = form.mode || 'fixe';
-  const periodDaysCount = periodDays(form.periodicite || 'mensuelle');
+  const periodicite = form.periodicite || 'mensuelle';
   const start = form.date_debut || new Date().toISOString().slice(0, 10);
-  const startDate = parseDateString(start);
+  
+  // Utilise votre fonction de parsing ou crée une date locale sécurisée
+  const startDate = typeof parseDateString === 'function' 
+    ? parseDateString(start) 
+    : new Date(start + 'T00:00:00'); // Évite les décalages de fuseau horaire au parsing
 
   const principalBase = Math.round((montant / nombre) * 100) / 100;
   let remaining = montant;
   const schedule = [];
 
   for (let i = 1; i <= nombre; i += 1) {
+    // 1. Calcul des intérêts (Fixe ou Dégressif)
     const interest = mode === 'degressif'
       ? Math.round((remaining * taux) * 100) / 100
       : Math.round((montant * taux) * 100) / 100;
 
+    // 2. Ajustement de la dernière échéance pour vider le capital restant dû
     const principal = i === nombre ? Math.round(remaining * 100) / 100 : principalBase;
     const total = Math.round((principal + interest) * 100) / 100;
+    
+    // 3. Gestion dynamique et précise de la date d'échéance
     const dueDate = new Date(startDate);
-    dueDate.setDate(dueDate.getDate() + (i - 1) * periodDaysCount);
+    if (periodicite === 'mensuelle') {
+      // Ajoute exactement (i - 1) mois (Ex: 1er Janvier -> 1er Février -> 1er Mars)
+      dueDate.setMonth(dueDate.getMonth() + (i - 1));
+    } else if (periodicite === 'quinzaine') {
+      // Ajoute 14 jours par échéance
+      dueDate.setDate(dueDate.getDate() + (i - 1) * 14);
+    } else {
+      // Fallback si vous utilisez periodDays pour d'autres cas spécifiques
+      const periodDaysCount = typeof periodDays === 'function' ? periodDays(periodicite) : 30;
+      dueDate.setDate(dueDate.getDate() + (i - 1) * periodDaysCount);
+    }
 
     schedule.push({
       numero: i,
@@ -81,6 +99,7 @@ export function buildScheduleFromForm(form) {
       total,
     });
 
+    // 4. Mise à jour du capital restant pour le prochain tour
     remaining = Math.round((remaining - principal) * 100) / 100;
   }
 

@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#134E5E">
     
-    <title>{{ config('app.name', 'Nana Eco Consulting') }}</title>
+    <title>Nana Eco Consulting</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <link rel="manifest" href="{{ asset('manifest.json') }}">

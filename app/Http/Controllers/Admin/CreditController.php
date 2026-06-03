@@ -71,6 +71,8 @@ class CreditController extends Controller
             'nombre_echeances.max' => 'Le nombre d’échéances ne peut pas dépasser 60.',
         ]);
 
+        $guaranteeBase = 0;
+
         if ($request->filled('carnet_id')) {
             $carnet = Carnet::with('categoryTontine')
                 ->where('id', $request->carnet_id)
@@ -81,7 +83,7 @@ class CreditController extends Controller
             if (!$carnet) {
                 return back()->withInput()->with('error', 'Le carnet sélectionné est invalide ou n’appartient pas au client.');
             }
-            // Vérifier que le carnet n'a pas déjà un crédit en cours
+
             $carnetHasActiveCredit = Credit::where('carnet_id', $request->carnet_id)
                 ->whereIn('statut', ['pending', 'approved', 'active', 'in_arrears'])
                 ->exists();
@@ -89,6 +91,7 @@ class CreditController extends Controller
             if ($carnetHasActiveCredit) {
                 return back()->withInput()->with('error', 'Ce carnet a déjà un crédit en cours. Veuillez sélectionner un autre carnet.');
             }
+
             if ($request->type === 'compte' && $carnet->type !== 'compte') {
                 return back()->withInput()->with('error', 'Le carnet sélectionné doit être un compte actif.');
             }
@@ -132,19 +135,10 @@ class CreditController extends Controller
         }
 
         DB::beginTransaction();
-
         try {
             $data = $request->only([
-                'client_id',
-                'carnet_id',
-                'montant_demande',
-                'type',
-                'mode',
-                'periodicite',
-                'nombre_echeances',
-                'taux',
-                'taux_manuelle',
-                'date_debut',
+                'client_id', 'carnet_id', 'montant_demande', 'type', 'mode', 
+                'periodicite', 'nombre_echeances', 'taux', 'taux_manuelle', 'date_debut'
             ]);
 
             $schedule = CreditCalculator::buildSchedule($data);
@@ -152,13 +146,13 @@ class CreditController extends Controller
             $montantAccorde = $request->montant_demande;
             $dateFin = collect($schedule)->last()['date'] ?? $request->date_debut;
             $monthlyAmount = collect($schedule)->avg('total');
-            $blockedAmount = $guaranteeBase ?? 0.0;
+            $blockedAmount = (float) $guaranteeBase;
 
             $credit = Credit::create([
                 'credit_uid' => Str::uuid(),
                 'client_id' => $data['client_id'],
                 'carnet_id' => $data['carnet_id'] ?? null,
-                'admin_id' => auth()->id() ?? null,
+                'admin_id' => auth()->id(),
                 'montant_demande' => $data['montant_demande'],
                 'montant_accorde' => $montantAccorde,
                 'taux' => CreditCalculator::calculateRate($data['taux'], $data['taux_manuelle']),
@@ -167,8 +161,8 @@ class CreditController extends Controller
                 'mode' => $data['mode'],
                 'periodicite' => $data['periodicite'],
                 'nombre_echeances' => $data['nombre_echeances'],
-                'montant_echeance' => round($monthlyAmount, 2),
-                'interet_total' => round($interestTotal, 2),
+                'montant_echeance' => round($monthlyAmount, 0), // Arrondi XAF strict
+                'interet_total' => round($interestTotal, 0),    // Arrondi XAF strict
                 'montant_rembourse' => 0,
                 'blocked_amount' => $blockedAmount,
                 'statut' => 'pending',
@@ -186,16 +180,15 @@ class CreditController extends Controller
                     'credit_id' => $credit->id,
                     'echeance' => $item['numero'],
                     'due_date' => $item['date'],
-                    'montant_principal' => $item['principal'],
-                    'montant_interets' => $item['interest'],
-                    'montant_total' => $item['total'],
+                    'montant_principal' => round($item['principal'], 0),
+                    'montant_interets' => round($item['interest'], 0),
+                    'montant_total' => round($item['total'], 0),
                     'status' => 'pending',
                     'admin_id' => auth()->id(),
                 ]);
             }
 
             DB::commit();
-
             return redirect()->route('admin.credits.index')->with('success', 'Demande de crédit enregistrée avec succès.');
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -255,24 +248,26 @@ class CreditController extends Controller
             }
 
             $displayPenalty = $payment->penalite > 0 ? (float) $payment->penalite : $automaticPenalty;
-            $payment->computed_penalty = round($displayPenalty, 2);
+            $payment->computed_penalty = round($displayPenalty, 0); // Spécificité XAF
             $payment->display_status = $payment->status === 'paid'
                 ? 'paid'
                 : ($payment->status === 'partiel' ? 'partiel' : ($isLate ? 'late' : 'pending'));
+            
             $payment->can_pay = !$credit->payments()
                 ->where('echeance', '<', $payment->echeance)
                 ->whereIn('status', ['pending', 'partiel'])
                 ->exists();
+                
             $totalPenalty += $displayPenalty;
 
             return $payment;
         }));
 
         if ($latePaymentFound && $credit->statut === 'active') {
-            $credit->statut = 'in_arrears';
+            $credit->update(['statut' => 'in_arrears']);
         }
 
-        $credit->penalty_amount = round($totalPenalty, 2);
+        $credit->penalty_amount = round($totalPenalty, 0);
         $credit->payments = $payments;
         $credit->emergency_withdrawal_summary = $emergencyWithdrawals;
 
@@ -284,83 +279,95 @@ class CreditController extends Controller
     protected function applyEmergencyWithdrawal(Credit $credit, CreditPayment $payment)
     {
         if ($payment->status === 'paid') {
-            return;
+            return null;
         }
 
         $amountDue = ((float) $payment->montant_total + (float) $payment->penalite) - (float) $payment->montant_paye;
         if ($amountDue <= 0) {
-            return;
+            return null;
         }
 
         $carnet = $credit->carnet;
         if (!$carnet) {
-            return;
-        }
-
-        $withdrawn = 0.0;
-        foreach ($carnet->allLinkedCarnets() as $linkedCarnet) {
-            $cycles = $linkedCarnet->cycles()
-                ->where('statut', 'termine')
-                ->whereNull('retire_at')
-                ->orderBy('completed_at')
-                ->get();
-
-            foreach ($cycles as $cycle) {
-                $totalCollectes = (float) $cycle->collectes()->sum('montant');
-                $commission = (float) ($cycle->montant_journalier ?? 0);
-                $net = max(0, $totalCollectes - $commission);
-
-                if ($net <= 0) {
-                    continue;
-                }
-
-                Retrait::create([
-                    'cycle_id' => $cycle->id,
-                    'client_id' => $cycle->client_id,
-                    'carnet_id' => $cycle->carnet_id,
-                    'admin_id' => auth()->id(),
-                    'montant_total' => $totalCollectes,
-                    'commission' => $commission,
-                    'montant_net' => $net,
-                    'date_retrait' => now(),
-                    'note' => 'Prélèvement de secours automatique pour échéance en défaut',
-                ]);
-
-                $cycle->update(['retire_at' => now()]);
-                $withdrawn += $net;
-
-                if ($withdrawn >= $amountDue) {
-                    break 2;
-                }
-            }
-        }
-
-        if ($withdrawn <= 0) {
             return null;
         }
 
-        $paidBefore = (float) $payment->montant_paye;
-        $newPaid = min($paidBefore + $withdrawn, (float) $payment->montant_total + (float) $payment->penalite);
-        $paidDiff = $newPaid - $paidBefore;
+        $withdrawn = 0.0;
+        
+        DB::beginTransaction();
+        try {
+            foreach ($carnet->allLinkedCarnets() as $linkedCarnet) {
+                $cycles = $linkedCarnet->cycles()
+                    ->where('statut', 'termine')
+                    ->whereNull('retire_at')
+                    ->orderBy('completed_at')
+                    ->lockForUpdate() // Sécurité verrous concurrents
+                    ->get();
 
-        $payment->update([
-            'montant_paye' => round($newPaid, 2),
-            'status' => $newPaid >= (float) $payment->montant_total + (float) $payment->penalite ? 'paid' : 'partiel',
-            'date_paye' => $newPaid >= (float) $payment->montant_total + (float) $payment->penalite ? now() : null,
-            'admin_id' => auth()->id(),
-        ]);
+                foreach ($cycles as $cycle) {
+                    $totalCollectes = (float) $cycle->collectes()->sum('montant');
+                    $commission = (float) ($cycle->montant_journalier ?? 0);
+                    $net = max(0, $totalCollectes - $commission);
 
-        if ($paidDiff > 0) {
-            $credit->increment('montant_rembourse', round($paidDiff, 2));
+                    if ($net <= 0) {
+                        continue;
+                    }
+
+                    Retrait::create([
+                        'cycle_id' => $cycle->id,
+                        'client_id' => $cycle->client_id,
+                        'carnet_id' => $cycle->carnet_id,
+                        'admin_id' => auth()->id(),
+                        'montant_total' => $totalCollectes,
+                        'commission' => $commission,
+                        'montant_net' => $net,
+                        'date_retrait' => now(),
+                        'note' => 'Prélèvement de secours automatique pour échéance en défaut',
+                    ]);
+
+                    $cycle->update(['retire_at' => now()]);
+                    $withdrawn += $net;
+
+                    if ($withdrawn >= $amountDue) {
+                        break 2;
+                    }
+                }
+            }
+
+            if ($withdrawn <= 0) {
+                DB::rollBack();
+                return null;
+            }
+
+            $paidBefore = (float) $payment->montant_paye;
+            $newPaid = min($paidBefore + $withdrawn, (float) $payment->montant_total + (float) $payment->penalite);
+            $paidDiff = $newPaid - $paidBefore;
+
+            $payment->update([
+                'montant_paye' => round($newPaid, 0),
+                'status' => $newPaid >= ((float) $payment->montant_total + (float) $payment->penalite) ? 'paid' : 'partiel',
+                'date_paye' => $newPaid >= ((float) $payment->montant_total + (float) $payment->penalite) ? now() : null,
+                'admin_id' => auth()->id(),
+            ]);
+
+            if ($paidDiff > 0) {
+                $credit->increment('montant_rembourse', round($paidDiff, 0));
+            }
+
+            DB::commit();
+
+            return [
+                'payment_id' => $payment->id,
+                'echeance' => $payment->echeance,
+                'amount_withdrawn' => round($withdrawn, 0),
+                'amount_applied' => round($paidDiff, 0),
+                'note' => 'Prélèvement de secours automatique pour échéance en défaut',
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Emergency withdrawal error: ' . $e->getMessage());
+            return null;
         }
-
-        return [
-            'payment_id' => $payment->id,
-            'echeance' => $payment->echeance,
-            'amount_withdrawn' => round($withdrawn, 2),
-            'amount_applied' => round($paidDiff, 2),
-            'note' => 'Prélèvement de secours automatique pour échéance en défaut',
-        ];
     }
 
     public function updatePayment(Request $request, Credit $credit, CreditPayment $payment)
@@ -369,87 +376,94 @@ class CreditController extends Controller
             abort(404);
         }
 
-        if ($payment->status === 'paid') {
-            return back()->with('error', 'Impossible de modifier une échéance déjà payée.');
-        }
-
         $request->validate([
             'penalite' => 'nullable|numeric|min:0',
             'montant_paye' => 'nullable|numeric|min:0',
         ], [
-            'penalite.numeric' => 'La pénalité doit être un nombre.',
             'penalite.min' => 'La pénalité ne peut pas être négative.',
-            'montant_paye.numeric' => 'Le montant payé doit être un nombre.',
             'montant_paye.min' => 'Le montant payé ne peut pas être négatif.',
         ]);
 
-        $updates = [];
+        // Utilisation d'une transaction globale avec lock direct en écriture pour éviter le double clic au guichet
+        return DB::transaction(function () use ($request, $credit, $payment) {
+            
+            // Verrouiller la ligne de paiement pour empêcher une modification parallèle
+            $payment = CreditPayment::where('id', $payment->id)->lockForUpdate()->first();
 
-        if ($request->has('penalite')) {
-            $updates['penalite'] = $request->input('penalite');
-        }
-
-        if ($request->filled('montant_paye')) {
-            $amountPaye = (float) $request->input('montant_paye');
-            $currentPaid = (float) $payment->montant_paye;
-            $penalite = $updates['penalite'] ?? (float) $payment->penalite;
-            $totalDue = (float) $payment->montant_total + $penalite;
-            $remainingDue = round($totalDue - $currentPaid, 2);
-
-            $previousUnpaidExists = $credit->payments()
-                ->where('echeance', '<', $payment->echeance)
-                ->whereIn('status', ['pending', 'partiel'])
-                ->exists();
-
-            if ($previousUnpaidExists) {
-                return back()->with('error', 'Impossible de payer cette échéance tant que les échéances antérieures ne sont pas entièrement réglées.');
+            if ($payment->status === 'paid') {
+                return back()->with('error', 'Action annulée : cette échéance a déjà été encaissée ou soldée entre-temps.');
             }
 
-            if ($amountPaye <= 0) {
-                return back()->with('error', 'Le montant payé doit être supérieur à zéro.');
+            $updates = [];
+            $successMessage = 'Échéance mise à jour.';
+
+            // 1. Traitement des pénalités forcées manuellement
+            if ($request->has('penalite')) {
+                $updates['penalite'] = round($request->input('penalite'), 0);
             }
 
-            if ($amountPaye > $remainingDue) {
-                return back()->with('error', 'Le montant payé dépasse le montant restant de l\'échéance.');
+            // 2. Traitement d'un versement financier au guichet
+            if ($request->filled('montant_paye')) {
+                $amountPaye = round((float) $request->input('montant_paye'), 0);
+                $currentPaid = (float) $payment->montant_paye;
+                
+                // Prendre la nouvelle pénalité soumise ou celle déjà présente en base
+                $penalite = array_key_exists('penalite', $updates) ? $updates['penalite'] : (float) $payment->penalite;
+                $totalDue = (float) $payment->montant_total + $penalite;
+                $remainingDue = round($totalDue - $currentPaid, 0);
+
+                // Contrôle strict de l'ordre d'amortissement
+                $previousUnpaidExists = $credit->payments()
+                    ->where('echeance', '<', $payment->echeance)
+                    ->whereIn('status', ['pending', 'partiel'])
+                    ->exists();
+
+                if ($previousUnpaidExists) {
+                    return back()->with('error', 'Opération impossible : des échéances antérieures ne sont pas encore soldées.');
+                }
+
+                if ($amountPaye <= 0) {
+                    return back()->with('error', 'Le montant à encaisser doit être supérieur à zéro.');
+                }
+
+                if ($amountPaye > $remainingDue) {
+                    return back()->with('error', 'Le montant saisi excède le reste exigible de cette échéance.');
+                }
+
+                $newPaid = round($currentPaid + $amountPaye, 0);
+                $updates['montant_paye'] = $newPaid;
+
+                if ($newPaid >= $totalDue) {
+                    $updates['status'] = 'paid';
+                    $updates['date_paye'] = now();
+                    $successMessage = "Encaissement de " . number_format($amountPaye, 0, ',', ' ') . " FCFA effectué. Échéance entièrement réglée.";
+                } else {
+                    $updates['status'] = 'partiel';
+                    $updates['date_paye'] = null;
+                    $remaining = number_format($totalDue - $newPaid, 0, ',', ' ');
+                    $successMessage = "Encaissement partiel de " . number_format($amountPaye, 0, ',', ' ') . " FCFA enregistré. Reste à payer : {$remaining} FCFA.";
+                }
+
+                // Ajuster le cumulatif global remboursé sur la fiche de crédit principale
+                $credit->increment('montant_rembourse', $amountPaye);
             }
 
-            $newPaid = round($currentPaid + $amountPaye, 2);
-            $updates['montant_paye'] = $newPaid;
+            $updates['admin_id'] = auth()->id();
+            $payment->update($updates);
 
-            if ($newPaid >= $totalDue) {
-                $updates['status'] = 'paid';
-                $updates['date_paye'] = now();
-                $successMessage = 'Paiement enregistré, échéance réglée.';
-            } else {
-                $updates['status'] = 'partiel';
-                $updates['date_paye'] = null;
-                $remaining = number_format($totalDue - $newPaid, 2, ',', ' ');
-                $successMessage = "Paiement partiel enregistré. Solde restant : {$remaining} FCFA.";
+            // 3. Vérification de clôture finale du dossier crédit
+            $creditIsSettled = !$credit->payments()->where('status', '!=', 'paid')->exists();
+
+            if ($creditIsSettled) {
+                $credit->update([
+                    'statut' => 'solder',
+                    'blocked_amount' => 0,
+                ]);
+                $successMessage .= ' Le dossier de crédit est désormais entièrement soldé.';
             }
-        }
 
-        $updates['admin_id'] = auth()->id();
-        $payment->update($updates);
-
-        if (!empty($updates['montant_paye']) && $updates['montant_paye'] > 0) {
-            $credit->increment('montant_rembourse', round($updates['montant_paye'] - $currentPaid, 2));
-        }
-
-        // Check if all payments are paid and mark credit as settled
-        $allPaymentsPaid = $credit->payments()
-            ->where('status', '!=', 'paid')
-            ->doesntExist();
-
-        if ($allPaymentsPaid) {
-            $credit->update([
-                'statut' => 'solder',
-                'blocked_amount' => 0,
-            ]);
-
-            $successMessage = ($successMessage ?? 'Échéance mise à jour') . ' - Crédit entièrement remboursé et statut mis à jour.';
-        }
-
-        return back()->with('success', $successMessage ?? 'Échéance mise à jour avec succès.');
+            return back()->with('success', $successMessage);
+        });
     }
 
     public function approve(Request $request, Credit $credit)
@@ -464,12 +478,9 @@ class CreditController extends Controller
             'approved_at' => now(),
         ]);
 
-        return redirect()->route('admin.credits.show', $credit)->with('success', 'Crédit approuvé et activé.');
+        return redirect()->route('admin.credits.show', $credit)->with('success', 'Crédit approuvé et activé avec succès.');
     }
 
-    /**
-     * Solder un crédit actif avec les fonds disponibles des cycles de tontine.
-     */
     public function settleCreditWithTontine(Credit $credit)
     {
         $result = \App\Services\CreditSettlementService::settleCreditWithAvailableFunds($credit);

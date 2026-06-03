@@ -92,6 +92,9 @@ class PretInstructionController extends Controller
             $rules['montant_accorde'] = 'required|numeric|min:0';
             $rules['taux'] = 'required|numeric|min:0';
             $rules['date_debut'] = 'required|date';
+            $rules['nombre_echeances'] = 'required|integer|min:1';
+            $rules['periodicite'] = 'required|in:quinzaine,mensuelle,hebdomadaire';
+            $rules['mode'] = 'required|in:degressif,constant';
         }
         if ($request->input('action') === 'rejete') {
             $rules['motif'] = 'required|string';
@@ -106,6 +109,9 @@ class PretInstructionController extends Controller
             $credit->montant_accorde = $data['montant_accorde'];
             $credit->taux = $data['taux'];
             $credit->date_debut = $data['date_debut'];
+            $credit->nombre_echeances = $data['nombre_echeances'];
+            $credit->periodicite = $data['periodicite'];
+            $credit->mode = $data['mode'];
             $credit->approved_at = Carbon::now();
         } else {
             $credit->statut = 'rejected';

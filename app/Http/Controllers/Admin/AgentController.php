@@ -16,13 +16,29 @@ use Maatwebsite\Excel\Facades\Excel;
 class AgentController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource with filters.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $agents = Agent::paginate(10);
+        // 1. Récupération du terme de recherche
+        $search = $request->query('search');
+
+        // 2. Requête filtrée
+        $agents = Agent::query()
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nom', 'like', "%{$search}%")
+                      ->orWhere('code_agent', 'like', "%{$search}%")
+                      ->orWhere('telephone', 'like', "%{$search}%");
+                });
+            })
+            ->latest() // Trie par défaut
+            ->paginate(10)
+            ->withQueryString(); // IMPORTANT : préserve le paramètre ?search= dans les liens de pagination
+
         return view('admin.agents.index', compact('agents'));
     }
 
@@ -224,51 +240,8 @@ class AgentController extends Controller
         ]);
     }
 
-    /**
-     * Ajouter un bonus manuel à un agent.
-     */
-    public function storeBonus(Request $request, Agent $agent)
-    {
-        $request->validate([
-            'montant' => 'required|numeric|min:0',
-            'motif' => 'required|string|max:255',
-        ]);
-
-        \App\Models\Bonus::create([
-            'agent_id' => $agent->id,
-            'montant' => $request->montant,
-            'motif' => $request->motif,
-            'admin_id' => auth()->id(),
-            'date_attribution' => now()->toDateString(),
-        ]);
-
-        // Mettre à jour le portefeuille virtuel
-        $agent->increment('portefeuille_virtuel', $request->montant);
-
-        return redirect()->back()->with('success', 'Bonus ajouté avec succès.');
-    }
-
-    /**
-     * Calculer et enregistrer les commissions automatiques pour un agent.
-     */
-    public function calculateCommissions(Agent $agent)
-    {
-        $commission = $agent->calculateAutomaticCommissions();
-
-        if ($commission > 0) {
-            \App\Models\Bonus::create([
-                'agent_id' => $agent->id,
-                'montant' => $commission,
-                'motif' => 'Commission automatique sur cycles terminés',
-                'admin_id' => auth()->id(),
-                'date_attribution' => now()->toDateString(),
-            ]);
-
-            $agent->increment('portefeuille_virtuel', $commission);
-        }
-
-        return redirect()->back()->with('success', 'Commissions calculées et ajoutées.');
-    }
+   
+    
 
     public function resetPin(Agent $agent)
     {
@@ -287,12 +260,30 @@ class AgentController extends Controller
             ], 500);
         }
     }
-    public function export($format)
+public function export(Request $request, $format)
     {
-        $agents = Agent::all();
+        // 1. Récupérer le terme de recherche envoyé par l'URL
+        $search = $request->query('search');
 
+        // 2. Appliquer le même filtre que dans la méthode index()
+        $agents = Agent::query()
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nom', 'like', "%{$search}%")
+                      ->orWhere('code_agent', 'like', "%{$search}%")
+                      ->orWhere('telephone', 'like', "%{$search}%");
+                });
+            })
+            ->get(); // On utilise get() ici au lieu de all()
+
+        // Si aucun agent trouvé après filtrage
+        if ($agents->isEmpty()) {
+            return redirect()->back()->with('error', 'Aucun agent trouvé avec ces critères de recherche.');
+        }
+
+        // 3. Export CSV
         if ($format == 'csv') {
-            $filename = 'agents.csv';
+            $filename = 'agents_export_' . date('Y-m-d_His') . '.csv';
             $headers = [
                 'Content-Type' => 'text/csv',
                 'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -300,45 +291,44 @@ class AgentController extends Controller
 
             $callback = function () use ($agents) {
                 $handle = fopen('php://output', 'w');
-                fputcsv($handle, ['Nom', 'Téléphone', 'Email', 'Actif']);
+                fputcsv($handle, ['Nom', 'Code', 'Téléphone', 'Email', 'Actif']);
                 foreach ($agents as $agent) {
                     fputcsv($handle, [
-                        $agent->nom,
-                        $agent->telephone,
-                        $agent->email,
-                        $agent->actif ? 'Oui' : 'Non',
+                        $agent->nom, 
+                        $agent->code_agent, 
+                        $agent->telephone, 
+                        $agent->email, 
+                        $agent->actif ? 'Oui' : 'Non'
                     ]);
                 }
                 fclose($handle);
             };
 
             return response()->stream($callback, 200, $headers);
-        } elseif ($format == 'excel') {
+        } 
+        
+        // 4. Export Excel
+        elseif ($format == 'excel') {
             return Excel::download(new class($agents) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
                 private $agents;
-
-                public function __construct($agents)
-                {
-                    $this->agents = $agents;
-                }
-
-                public function collection()
-                {
-                    return collect($this->agents)->map(function ($agent) {
+                public function __construct($agents) { $this->agents = $agents; }
+                
+                public function collection() {
+                    return $this->agents->map(function ($agent) {
                         return [
                             'Nom' => $agent->nom,
+                            'Code' => $agent->code_agent,
                             'Téléphone' => $agent->telephone,
                             'Email' => $agent->email,
                             'Actif' => $agent->actif ? 'Oui' : 'Non',
                         ];
                     });
                 }
-
-                public function headings(): array
-                {
-                    return ['Nom', 'Téléphone', 'Email', 'Actif'];
+                
+                public function headings(): array {
+                    return ['Nom', 'Code', 'Téléphone', 'Email', 'Actif'];
                 }
-            }, 'agents.xlsx');
+            }, 'agents_export_' . date('Y-m-d') . '.xlsx');
         }
 
         return redirect()->back();

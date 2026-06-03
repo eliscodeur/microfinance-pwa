@@ -27,6 +27,7 @@ export default function Create({ clients }) {
     const isTypeFixedByCarnet = !!selectedCarnet;
     const pointageWarning = isTontineCarnetSelected && selectedCarnet?.total_pointages < selectedCarnet?.required_pointages;
 
+    // Gestion stricte du type de crédit selon le carnet sélectionné
     useEffect(() => {
         if (isCompteCarnetSelected && form.data.type !== 'compte') {
             form.setData('type', 'compte');
@@ -37,6 +38,7 @@ export default function Create({ clients }) {
         }
     }, [isCompteCarnetSelected, isTontineCarnetSelected, form.data.type]);
 
+    // Récupération asynchrone sécurisée des carnets du client
     useEffect(() => {
         if (!form.data.client_id) {
             setCarnets([]);
@@ -73,14 +75,18 @@ export default function Create({ clients }) {
                 }
             })
             .catch(err => {
-                console.error('Error fetching carnets:', err);
-                setCarnets([]);
+                if (err.name !== 'AbortError') {
+                    console.error('Error fetching carnets:', err);
+                    setCarnets([]);
+                }
             });
 
         return () => controller.abort();
     }, [form.data.client_id]);
 
+    // Génération interactive de l'échéancier
     const schedule = useMemo(() => buildScheduleFromForm(form.data), [form.data]);
+    
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 6;
     const pageCount = Math.max(1, Math.ceil(schedule.length / pageSize));
@@ -94,6 +100,7 @@ export default function Create({ clients }) {
         return schedule.slice(start, start + pageSize);
     }, [schedule, currentPage]);
 
+    // Calculs financiers globaux
     const totalInterest = useMemo(
         () => schedule.reduce((sum, row) => sum + row.interest, 0),
         [schedule],
@@ -121,6 +128,8 @@ export default function Create({ clients }) {
             showCancelButton: true,
             confirmButtonText: 'Oui, envoyer',
             cancelButtonText: 'Annuler',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
         }).then(result => {
             if (!result.isConfirmed) {
                 return;
@@ -135,7 +144,8 @@ export default function Create({ clients }) {
                         timer: 2000,
                         showConfirmButton: false,
                     });
-                    form.reset(
+                    // Correction Inertia : passage par un tableau pour réinitialiser les champs ciblés
+                    form.reset([
                         'montant_demande',
                         'type',
                         'mode',
@@ -143,14 +153,14 @@ export default function Create({ clients }) {
                         'nombre_echeances',
                         'taux',
                         'taux_manuelle',
-                        'date_debut',
-                    );
+                        'date_debut'
+                    ]);
                 },
                 onError: errors => {
                     if (Object.keys(errors).length) {
                         Swal.fire({
                             title: 'Erreur',
-                            text: 'Veuillez corriger les champs en surbrillance.',
+                            text: 'Voulez-vous corriger les champs en surbrillance ?',
                             icon: 'error',
                         });
                     }
@@ -185,9 +195,9 @@ export default function Create({ clients }) {
                             </ul>
                         </div>
                     )}
+                    
                     <div className="row gy-3">
                         <div className="col-md-6">
-                            {/* <span>Nombre de carnets : {carnets.length}</span> */}
                             <label className="form-label">Client</label>
                             <select
                                 className="form-select"
@@ -262,8 +272,8 @@ export default function Create({ clients }) {
                             <input
                                 type="number"
                                 className={`form-control ${form.errors.montant_demande ? 'is-invalid' : ''}`}
-                                value={form.data.montant_demande}
-                                onChange={e => form.setData('montant_demande', e.target.value)}
+                                value={form.data.montant_demande || ''}
+                                onChange={e => form.setData('montant_demande', parseFloat(e.target.value) || 0)}
                                 min="1000"
                                 required
                             />
@@ -282,13 +292,9 @@ export default function Create({ clients }) {
                                 disabled={isTypeFixedByCarnet}
                             >
                                 {selectedCarnet?.type === 'compte' ? (
-                                    <>
-                                        <option value="compte">Crédit sur compte</option>
-                                    </>
+                                    <option value="compte">Crédit sur compte</option>
                                 ) : selectedCarnet?.type === 'tontine' ? (
-                                    <>
-                                        <option value="quinzaine">Crédit quinzaine</option>
-                                    </>
+                                    <option value="quinzaine">Crédit quinzaine</option>
                                 ) : (
                                     <>
                                         <option value="">Choisir</option>
@@ -343,8 +349,8 @@ export default function Create({ clients }) {
                             <input
                                 type="number"
                                 className="form-control"
-                                value={form.data.nombre_echeances}
-                                onChange={e => form.setData('nombre_echeances', e.target.value)}
+                                value={form.data.nombre_echeances || ''}
+                                onChange={e => form.setData('nombre_echeances', parseInt(e.target.value, 10) || 0)}
                                 min="1"
                                 required
                             />
@@ -357,8 +363,8 @@ export default function Create({ clients }) {
                                 step="0.01"
                                 min="0"
                                 className="form-control"
-                                value={form.data.taux}
-                                onChange={e => form.setData('taux', e.target.value)}
+                                value={form.data.taux || ''}
+                                onChange={e => form.setData('taux', parseFloat(e.target.value) || 0)}
                                 required
                             />
                         </div>
@@ -369,11 +375,16 @@ export default function Create({ clients }) {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                className="form-control"
+                                className={`form-control ${form.data.taux_manuelle !== '' ? 'border-warning bg-light-warning' : ''}`}
                                 value={form.data.taux_manuelle}
-                                onChange={e => form.setData('taux_manuelle', e.target.value)}
+                                onChange={e => form.setData('taux_manuelle', e.target.value !== '' ? parseFloat(e.target.value) : '')}
                                 placeholder="Optionnel"
                             />
+                            {form.data.taux_manuelle !== '' && (
+                                <div className="form-text text-warning fw-medium">
+                                    Un taux dérogatoire manuel sera appliqué.
+                                </div>
+                            )}
                         </div>
 
                         <div className="col-md-12">
@@ -391,12 +402,13 @@ export default function Create({ clients }) {
                             )}
                         </div>
 
+                        {/* Blocs de résumés financiers */}
                         <div className="col-12">
                             <div className="row gy-3">
                                 <div className="col-md-4">
                                     <div className="border rounded-3 p-3 bg-light">
                                         <div className="text-muted">Montant total</div>
-                                        <div className="fs-4 fw-bold">
+                                        <div className="fs-4 fw-bold text-dark">
                                             {formatCurrency(totalDue)}
                                         </div>
                                     </div>
@@ -404,7 +416,7 @@ export default function Create({ clients }) {
                                 <div className="col-md-4">
                                     <div className="border rounded-3 p-3 bg-light">
                                         <div className="text-muted">Intérêt total</div>
-                                        <div className="fs-4 fw-bold">
+                                        <div className="fs-4 fw-bold text-dark">
                                             {formatCurrency(totalInterest)}
                                         </div>
                                     </div>
@@ -412,7 +424,7 @@ export default function Create({ clients }) {
                                 <div className="col-md-4">
                                     <div className="border rounded-3 p-3 bg-light">
                                         <div className="text-muted">Échéance moyenne</div>
-                                        <div className="fs-4 fw-bold">
+                                        <div className="fs-4 fw-bold text-dark">
                                             {formatCurrency(meanInstallment)}
                                         </div>
                                     </div>
@@ -420,13 +432,14 @@ export default function Create({ clients }) {
                             </div>
                         </div>
 
+                        {/* Tableau d'aperçu de l'échéancier */}
                         <div className="col-12">
                             <div className="card border-secondary">
                                 <div className="card-header bg-white">
                                     <strong>Aperçu des échéances</strong>
                                 </div>
                                 <div className="card-body p-0">
-                                    <table className="table table-sm mb-0">
+                                    <table className="table table-sm table-hover mb-0">
                                         <thead>
                                             <tr>
                                                 <th>#</th>
@@ -448,7 +461,7 @@ export default function Create({ clients }) {
                                             ))}
                                             {schedule.length === 0 && (
                                                 <tr>
-                                                    <td colSpan="5" className="text-center py-4">
+                                                    <td colSpan="5" className="text-center py-4 text-muted">
                                                         Remplissez le formulaire pour afficher le plan.
                                                     </td>
                                                 </tr>
@@ -456,6 +469,7 @@ export default function Create({ clients }) {
                                         </tbody>
                                     </table>
                                 </div>
+                                
                                 {schedule.length > pageSize && (
                                     <div className="card-footer bg-white border-top">
                                         <nav>
@@ -499,8 +513,8 @@ export default function Create({ clients }) {
                             </div>
                         </div>
 
-                        <div className="col-12 text-end">
-                            <button type="submit" className="btn btn-primary">
+                        <div className="col-12 text-end text-right">
+                            <button type="submit" className="btn btn-primary px-4">
                                 Enregistrer la demande
                             </button>
                         </div>

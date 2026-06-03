@@ -1,88 +1,5 @@
 (self["webpackChunk"] = self["webpackChunk"] || []).push([["resources_js_Pages_Credits_Show_jsx"],{
 
-/***/ "./resources/js/Components/BootstrapModal.jsx":
-/*!****************************************************!*\
-  !*** ./resources/js/Components/BootstrapModal.jsx ***!
-  \****************************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ BootstrapModal)
-/* harmony export */ });
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
-
-
-function BootstrapModal(_ref) {
-  var show = _ref.show,
-    title = _ref.title,
-    body = _ref.body,
-    onConfirm = _ref.onConfirm,
-    onClose = _ref.onClose,
-    _ref$confirmText = _ref.confirmText,
-    confirmText = _ref$confirmText === void 0 ? 'Oui' : _ref$confirmText,
-    _ref$cancelText = _ref.cancelText,
-    cancelText = _ref$cancelText === void 0 ? 'Annuler' : _ref$cancelText,
-    _ref$confirmVariant = _ref.confirmVariant,
-    confirmVariant = _ref$confirmVariant === void 0 ? 'primary' : _ref$confirmVariant,
-    _ref$hideCancel = _ref.hideCancel,
-    hideCancel = _ref$hideCancel === void 0 ? false : _ref$hideCancel;
-  if (!show) {
-    return null;
-  }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("div", {
-    className: "modal fade show d-block",
-    tabIndex: "-1",
-    role: "dialog",
-    "aria-modal": "true",
-    style: {
-      backgroundColor: 'rgba(0,0,0,0.5)'
-    },
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("div", {
-      className: "modal-dialog modal-dialog-centered",
-      role: "document",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
-        className: "modal-content",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
-          className: "modal-header",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("h5", {
-            className: "modal-title",
-            children: title
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("button", {
-            type: "button",
-            className: "btn-close",
-            "aria-label": "Fermer",
-            onClick: onClose
-          })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("div", {
-          className: "modal-body",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("p", {
-            children: body
-          })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
-          className: "modal-footer",
-          children: [!hideCancel && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("button", {
-            type: "button",
-            className: "btn btn-secondary",
-            onClick: onClose,
-            children: cancelText
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("button", {
-            type: "button",
-            className: "btn btn-".concat(confirmVariant),
-            onClick: onConfirm,
-            children: confirmText
-          })]
-        })]
-      })
-    })
-  });
-}
-
-/***/ }),
-
 /***/ "./resources/js/Layouts/AdminLayout.jsx":
 /*!**********************************************!*\
   !*** ./resources/js/Layouts/AdminLayout.jsx ***!
@@ -94,73 +11,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ AdminLayout)
 /* harmony export */ });
-/* harmony import */ var _inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @inertiajs/inertia-react */ "./node_modules/@inertiajs/inertia-react/dist/index.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
-
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 
 function AdminLayout(_ref) {
   var children = _ref.children;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("nav", {
-      className: "navbar navbar-expand-lg navbar-dark bg-dark",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
-        className: "container-fluid px-4",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-          href: "/admin/dashboard",
-          className: "navbar-brand",
-          children: "NANA ECO CONSULTING"
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("button", {
-          className: "navbar-toggler",
-          type: "button",
-          "data-bs-toggle": "collapse",
-          "data-bs-target": "#navbarNav",
-          "aria-controls": "navbarNav",
-          "aria-expanded": "false",
-          "aria-label": "Toggle navigation",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("span", {
-            className: "navbar-toggler-icon"
-          })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("div", {
-          className: "collapse navbar-collapse",
-          id: "navbarNav",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("ul", {
-            className: "navbar-nav ms-auto",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/clients",
-                className: "nav-link",
-                children: "Clients"
-              })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/carnets",
-                className: "nav-link",
-                children: "Carnets"
-              })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/credits",
-                className: "nav-link",
-                children: "Cr\xE9dits"
-              })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/prets",
-                className: "nav-link",
-                children: "Instruction Cr\xE9dit"
-              })
-            })]
-          })
-        })]
-      })
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("main", {
-      className: "container mt-4",
-      children: children
-    })]
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, {
+    children: children
   });
 }
 
@@ -183,8 +39,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
 /* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../Layouts/AdminLayout.jsx */ "./resources/js/Layouts/AdminLayout.jsx");
-/* harmony import */ var _Components_BootstrapModal_jsx__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../Components/BootstrapModal.jsx */ "./resources/js/Components/BootstrapModal.jsx");
+/* harmony import */ var sweetalert2_react_content__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! sweetalert2-react-content */ "./node_modules/sweetalert2-react-content/dist/sweetalert2-react-content.umd.js");
+/* harmony import */ var sweetalert2_react_content__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(sweetalert2_react_content__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../Layouts/AdminLayout.jsx */ "./resources/js/Layouts/AdminLayout.jsx");
 /* harmony import */ var _Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../Utils/creditHelpers */ "./resources/js/Utils/creditHelpers.js");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -207,42 +64,96 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
 
+var MySwal = sweetalert2_react_content__WEBPACK_IMPORTED_MODULE_4___default()((sweetalert2__WEBPACK_IMPORTED_MODULE_3___default()));
+
+// Nomenclature institutionnelle — Tons neutres et professionnels
+var CREDIT_STATUS_CONFIG = {
+  pending: {
+    label: 'En attente d\'instruction',
+    "class": 'badge bg-light text-secondary border border-secondary-subtle'
+  },
+  approved: {
+    label: 'Approuvé (Non décaissé)',
+    "class": 'badge bg-light text-info border border-info-subtle'
+  },
+  active: {
+    label: 'Sain / En cours',
+    "class": 'badge bg-light text-success border border-success-subtle'
+  },
+  in_arrears: {
+    label: 'En Souffrance / Impayé',
+    "class": 'badge bg-light text-danger border border-danger-subtle'
+  },
+  solder: {
+    label: 'Soldé',
+    "class": 'badge bg-light text-dark border'
+  },
+  solde: {
+    label: 'Soldé',
+    "class": 'badge bg-light text-dark border'
+  },
+  closed: {
+    label: 'Clôturé',
+    "class": 'badge bg-light text-muted border'
+  },
+  rejected: {
+    label: 'Rejeté',
+    "class": 'badge bg-light text-danger border border-danger-subtle'
+  }
+};
+var PAYMENT_STATUS_CONFIG = {
+  pending: {
+    label: 'À échoir',
+    "class": 'badge bg-light text-muted border border-secondary-subtle'
+  },
+  partiel: {
+    label: 'Impayé Partiel',
+    "class": 'badge bg-light text-info border border-info-subtle'
+  },
+  late: {
+    label: 'En Souffrance',
+    "class": 'badge bg-light text-danger border border-danger-subtle'
+  },
+  paid: {
+    label: 'Réglé',
+    "class": 'badge bg-light text-success border border-success-subtle'
+  }
+};
+var LABELS_MAPPING = {
+  compte: 'Prélèvement sur compte Épargne',
+  cash: 'Versement Espèces (Caisse)',
+  digital: 'Collecte Mobile Money / Numérique',
+  quinzaine: 'Quinzomadaire',
+  mensuel: 'Mensuelle',
+  mensuelle: 'Mensuelle'
+};
 function Show(_ref) {
-  var _credit$payments$data, _credit$payments, _credit$payments2, _credit$penalty_amoun, _credit$penalty_amoun2, _credit$emergency_wit;
+  var _credit$payments2, _credit$client, _credit$client2, _credit$client$code_c, _credit$client3, _credit$interet_total2, _credit$emergency_wit;
   var credit = _ref.credit;
   var flash = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.usePage)().props.flash;
+
+  // État local pour bloquer les boutons pendant les requêtes (Anti-double click)
   var _useState = (0,react__WEBPACK_IMPORTED_MODULE_2__.useState)(false),
     _useState2 = _slicedToArray(_useState, 2),
-    confirmOpen = _useState2[0],
-    setConfirmOpen = _useState2[1];
-  var payments = Array.isArray(credit.payments) ? credit.payments : (_credit$payments$data = (_credit$payments = credit.payments) === null || _credit$payments === void 0 ? void 0 : _credit$payments.data) !== null && _credit$payments$data !== void 0 ? _credit$payments$data : [];
+    isProcessing = _useState2[0],
+    setIsProcessing = _useState2[1];
+  var payments = (0,react__WEBPACK_IMPORTED_MODULE_2__.useMemo)(function () {
+    var _credit$payments$data, _credit$payments;
+    return Array.isArray(credit.payments) ? credit.payments : (_credit$payments$data = (_credit$payments = credit.payments) === null || _credit$payments === void 0 ? void 0 : _credit$payments.data) !== null && _credit$payments$data !== void 0 ? _credit$payments$data : [];
+  }, [credit.payments]);
   var pagination = Array.isArray(credit.payments) ? null : (_credit$payments2 = credit.payments) !== null && _credit$payments2 !== void 0 ? _credit$payments2 : null;
-  var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_2__.useState)(function () {
-      return payments.reduce(function (acc, payment) {
-        var _ref2, _payment$computed_pen;
-        return _objectSpread(_objectSpread({}, acc), {}, _defineProperty({}, payment.id, (_ref2 = (_payment$computed_pen = payment.computed_penalty) !== null && _payment$computed_pen !== void 0 ? _payment$computed_pen : payment.penalite) !== null && _ref2 !== void 0 ? _ref2 : 0));
-      }, {});
-    }),
+  var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_2__.useState)({}),
     _useState4 = _slicedToArray(_useState3, 2),
     penalties = _useState4[0],
     setPenalties = _useState4[1];
-  var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_2__.useState)(function () {
-      return payments.reduce(function (acc, payment) {
-        return _objectSpread(_objectSpread({}, acc), {}, _defineProperty({}, payment.id, ''));
-      }, {});
-    }),
-    _useState6 = _slicedToArray(_useState5, 2),
-    paymentAmounts = _useState6[0],
-    setPaymentAmounts = _useState6[1];
   (0,react__WEBPACK_IMPORTED_MODULE_2__.useEffect)(function () {
-    setPenalties(payments.reduce(function (acc, payment) {
-      var _ref3, _payment$computed_pen2;
-      return _objectSpread(_objectSpread({}, acc), {}, _defineProperty({}, payment.id, (_ref3 = (_payment$computed_pen2 = payment.computed_penalty) !== null && _payment$computed_pen2 !== void 0 ? _payment$computed_pen2 : payment.penalite) !== null && _ref3 !== void 0 ? _ref3 : 0));
-    }, {}));
-    setPaymentAmounts(payments.reduce(function (acc, payment) {
-      return _objectSpread(_objectSpread({}, acc), {}, _defineProperty({}, payment.id, ''));
-    }, {}));
-  }, [credit.payments]);
+    var initialPenalties = {};
+    payments.forEach(function (payment) {
+      var _ref2, _payment$computed_pen;
+      initialPenalties[payment.id] = (_ref2 = (_payment$computed_pen = payment.computed_penalty) !== null && _payment$computed_pen !== void 0 ? _payment$computed_pen : payment.penalite) !== null && _ref2 !== void 0 ? _ref2 : 0;
+    });
+    setPenalties(initialPenalties);
+  }, [payments]);
   var formatCurrency = function formatCurrency(value) {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
@@ -250,457 +161,584 @@ function Show(_ref) {
       maximumFractionDigits: 0
     }).format(value);
   };
-  var paymentClass = function paymentClass(status) {
-    switch (status) {
-      case 'paid':
-        return 'badge bg-success';
-      case 'late':
-        return 'badge bg-danger';
-      case 'pending':
-        return 'badge bg-warning text-dark';
-      case 'partiel':
-        return 'badge bg-info text-dark';
-      default:
-        return 'badge bg-secondary';
-    }
-  };
-  var creditStatusLabel = function creditStatusLabel(status) {
-    switch (status) {
-      case 'approved':
-        return 'Approuvé';
-      case 'active':
-        return 'Actif';
-      case 'pending':
-        return 'En attente';
-      case 'in_arrears':
-        return 'En retard';
-      case 'solder':
-      case 'solde':
-        return 'Soldé';
-      case 'closed':
-        return 'Clôturé';
-      case 'rejected':
-        return 'Rejeté';
-      default:
-        return 'Inconnu';
-    }
-  };
-  var paymentStatusLabel = function paymentStatusLabel(status) {
-    switch (status) {
-      case 'paid':
-        return 'Payé';
-      case 'late':
-        return 'En retard';
-      case 'pending':
-        return 'En attente';
-      case 'partiel':
-        return 'Partiel';
-      default:
-        return 'Inconnu';
-    }
-  };
-  var allPaymentsPaid = payments.length > 0 && payments.every(function (payment) {
-    return payment.status === 'paid';
+  var financialSummary = (0,react__WEBPACK_IMPORTED_MODULE_2__.useMemo)(function () {
+    var _ref3, _credit$montant_accor, _credit$interet_total, _credit$penalty_amoun, _credit$montant_rembo;
+    var principalAccorde = Number((_ref3 = (_credit$montant_accor = credit.montant_accorde) !== null && _credit$montant_accor !== void 0 ? _credit$montant_accor : credit.montant_demande) !== null && _ref3 !== void 0 ? _ref3 : 0);
+    var interetTotal = Number((_credit$interet_total = credit.interet_total) !== null && _credit$interet_total !== void 0 ? _credit$interet_total : 0);
+    var penalitesCumulees = Number((_credit$penalty_amoun = credit.penalty_amount) !== null && _credit$penalty_amoun !== void 0 ? _credit$penalty_amoun : 0);
+    var totalAttenduGlobal = principalAccorde + interetTotal + penalitesCumulees;
+    var totalRembourse = Number((_credit$montant_rembo = credit.montant_rembourse) !== null && _credit$montant_rembo !== void 0 ? _credit$montant_rembo : 0);
+    var resteARecouvrer = Math.max(0, totalAttenduGlobal - totalRembourse);
+    var encoursEnRetard = payments.filter(function (p) {
+      return p.status !== 'paid' && new Date(p.due_date) < new Date();
+    }).reduce(function (sum, p) {
+      var _p$penalite, _p$montant_paye;
+      return sum + (Number(p.montant_total) + Number((_p$penalite = p.penalite) !== null && _p$penalite !== void 0 ? _p$penalite : 0) - Number((_p$montant_paye = p.montant_paye) !== null && _p$montant_paye !== void 0 ? _p$montant_paye : 0));
+    }, 0);
+    return {
+      principalAccorde: principalAccorde,
+      interetTotal: interetTotal,
+      penalitesCumulees: penalitesCumulees,
+      totalAttenduGlobal: totalAttenduGlobal,
+      totalRembourse: totalRembourse,
+      resteARecouvrer: resteARecouvrer,
+      encoursEnRetard: encoursEnRetard
+    };
+  }, [credit, payments]);
+  var allPaymentsPaid = payments.length > 0 && payments.every(function (p) {
+    return p.status === 'paid';
   });
   var displayedCreditStatus = allPaymentsPaid ? 'solder' : credit.statut;
-  var lastPaymentDate = payments.reduce(function (latest, payment) {
-    if (!payment.date_paye) {
-      return latest;
-    }
-    var paymentDate = new Date(payment.date_paye);
-    if (Number.isNaN(paymentDate.getTime())) {
-      return latest;
-    }
-    return latest === null || paymentDate > latest ? paymentDate : latest;
-  }, null);
   var canPayInstallment = function canPayInstallment(payment) {
-    if (!['active', 'in_arrears'].includes(displayedCreditStatus)) {
-      return false;
-    }
-    if (payment.status === 'paid') {
-      return false;
-    }
-    if (payment.can_pay !== undefined) {
-      return payment.can_pay;
-    }
+    if (isProcessing) return false;
+    if (!['active', 'in_arrears'].includes(displayedCreditStatus)) return false;
+    if (payment.status === 'paid') return false;
+    if (payment.can_pay !== undefined) return payment.can_pay;
     return payments.filter(function (p) {
       return p.echeance < payment.echeance;
     }).every(function (p) {
       return p.status === 'paid';
     });
   };
-  var approve = function approve() {
-    setConfirmOpen(true);
-  };
-  var confirmApprove = function confirmApprove() {
-    setConfirmOpen(false);
-    _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.post("/admin/credits/".concat(credit.id, "/approve"));
-  };
   var savePenalty = function savePenalty(payment) {
-    var _ref4, _penalties$payment$id;
-    var amount = Number((_ref4 = (_penalties$payment$id = penalties[payment.id]) !== null && _penalties$payment$id !== void 0 ? _penalties$payment$id : payment.computed_penalty) !== null && _ref4 !== void 0 ? _ref4 : 0);
+    var _penalties$payment$id;
+    var amount = Math.round(Number((_penalties$payment$id = penalties[payment.id]) !== null && _penalties$payment$id !== void 0 ? _penalties$payment$id : 0));
     if (Number.isNaN(amount) || amount < 0) {
+      sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
+        title: 'Erreur',
+        text: 'Montant de pénalité invalide.',
+        icon: 'error'
+      });
       return;
     }
+    setIsProcessing(true);
     _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.patch("/admin/credits/".concat(credit.id, "/payments/").concat(payment.id), {
       penalite: amount
     }, {
       preserveScroll: true,
+      onStart: function onStart() {
+        return setIsProcessing(true);
+      },
+      onFinish: function onFinish() {
+        return setIsProcessing(false);
+      },
       onSuccess: function onSuccess() {
-        setPenalties(function (prev) {
-          return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, payment.id, amount));
+        sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
+          title: 'Mis à jour',
+          text: 'Pénalité enregistrée.',
+          icon: 'success',
+          timer: 1300,
+          showConfirmButton: false
         });
       }
     });
   };
-  var savePayment = function savePayment(payment) {
-    var _ref5, _penalties$payment$id2, _payment$montant_paye;
-    var amount = Number(paymentAmounts[payment.id]);
-    var penalty = Number((_ref5 = (_penalties$payment$id2 = penalties[payment.id]) !== null && _penalties$payment$id2 !== void 0 ? _penalties$payment$id2 : payment.computed_penalty) !== null && _ref5 !== void 0 ? _ref5 : 0);
-    var totalDue = Number(payment.montant_total) + penalty;
-    var paidAmount = Number((_payment$montant_paye = payment.montant_paye) !== null && _payment$montant_paye !== void 0 ? _payment$montant_paye : 0);
-    var remaining = Math.max(0, totalDue - paidAmount);
-    if (Number.isNaN(amount) || amount <= 0) {
-      sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
-        title: 'Montant invalide',
-        text: 'Le montant doit être supérieur à zéro.',
-        icon: 'error'
-      });
-      return;
-    }
-    if (amount > remaining) {
-      sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
-        title: 'Paiement trop élevé',
-        text: "Le montant d\xE9passe le solde restant de ".concat(formatCurrency(remaining), " pour cette \xE9ch\xE9ance."),
-        icon: 'error'
-      });
-      return;
-    }
-    sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
-      title: 'Confirmer le paiement ?',
-      text: "Vous allez enregistrer un paiement de ".concat(formatCurrency(amount), " pour l'\xE9ch\xE9ance #").concat(payment.echeance, "."),
-      icon: 'warning',
+  var triggerPaymentModal = function triggerPaymentModal(payment, remaining) {
+    var _penalties$payment$id2, _payment$montant_paye;
+    var cleanRemaining = Math.max(0, Math.round(remaining));
+    MySwal.fire({
+      title: "Guichet d'Encaissement \u2014 \xC9ch\xE9ance #".concat(payment.echeance),
+      html: "\n                <div style=\"text-align: left; font-size: 0.85rem; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.25rem; margin-bottom: 15px;\">\n                    <div style=\"display: flex; justify-content: space-between; margin-bottom: 4px;\"><span>\xC9ch\xE9ance Nue :</span> <strong>".concat(formatCurrency(payment.montant_total), "</strong></div>\n                    <div style=\"display: flex; justify-content: space-between; margin-bottom: 4px;\"><span>P\xE9nalit\xE9s appliqu\xE9es :</span> <strong>").concat(formatCurrency((_penalties$payment$id2 = penalties[payment.id]) !== null && _penalties$payment$id2 !== void 0 ? _penalties$payment$id2 : 0), "</strong></div>\n                    <div style=\"display: flex; justify-content: space-between; margin-bottom: 4px; color: #6c757d;\"><span>D\xE9j\xE0 per\xE7u :</span> <strong>").concat(formatCurrency((_payment$montant_paye = payment.montant_paye) !== null && _payment$montant_paye !== void 0 ? _payment$montant_paye : 0), "</strong></div>\n                    <hr style=\"margin: 8px 0; border: 0; border-top: 1px solid #dee2e6;\"/>\n                    <div style=\"display: flex; justify-content: space-between; color: #212529; font-weight: bold;\"><span>Reste Exigible :</span> <span>").concat(formatCurrency(cleanRemaining), "</span></div>\n                </div>\n                <div style=\"text-align: left;\">\n                    <label for=\"swal-input-amount\" style=\"font-weight: bold; font-size: 0.85rem; display: block; margin-bottom: 5px;\">Montant \xE0 encaisser (FCFA) :</label>\n                    <input \n                        id=\"swal-input-amount\" \n                        type=\"number\" \n                        class=\"form-control\" \n                        style=\"text-align: right; font-weight: bold;\"\n                        value=\"").concat(cleanRemaining, "\"\n                        min=\"1\" \n                        max=\"").concat(cleanRemaining, "\"\n                        step=\"1\"\n                    />\n                </div>\n            "),
       showCancelButton: true,
-      confirmButtonText: 'Oui, valider',
-      cancelButtonText: 'Annuler'
-    }).then(function (result) {
-      if (!result.isConfirmed) {
-        return;
-      }
-      _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.patch("/admin/credits/".concat(credit.id, "/payments/").concat(payment.id), {
-        montant_paye: amount
-      }, {
-        preserveScroll: true,
-        onSuccess: function onSuccess() {
-          setPaymentAmounts(function (prev) {
-            return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, payment.id, ''));
-          });
+      confirmButtonText: 'Valider',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#4f5d73',
+      cancelButtonColor: '#6c757d',
+      focusConfirm: true,
+      didOpen: function didOpen() {
+        // Focus automatique et sélection complète du montant pour saisie instantanée
+        var input = document.getElementById('swal-input-amount');
+        if (input) {
+          input.focus();
+          input.select();
         }
-      });
+      },
+      preConfirm: function preConfirm() {
+        var inputElement = document.getElementById('swal-input-amount');
+        var amount = Math.round(Number(inputElement.value));
+        if (!amount || Number.isNaN(amount) || amount <= 0) {
+          sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().showValidationMessage('Veuillez saisir un montant valide.');
+          return false;
+        }
+        if (amount > cleanRemaining) {
+          sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().showValidationMessage("Le montant saisi exc\xE8de le reste d\xFB.");
+          return false;
+        }
+        return amount;
+      }
+    }).then(function (result) {
+      if (result.isConfirmed && result.value) {
+        _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.patch("/admin/credits/".concat(credit.id, "/payments/").concat(payment.id), {
+          montant_paye: result.value
+        }, {
+          preserveScroll: true,
+          onStart: function onStart() {
+            return setIsProcessing(true);
+          },
+          onFinish: function onFinish() {
+            return setIsProcessing(false);
+          },
+          onSuccess: function onSuccess() {
+            sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
+              title: 'Succès',
+              text: 'Encaissement enregistré.',
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false
+            });
+          }
+        });
+      }
     });
   };
-  var closeConfirm = function closeConfirm() {
-    setConfirmOpen(false);
-  };
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_4__["default"], {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_5__["default"], {
     children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+      className: "container-fluid px-0",
+      style: {
+        color: '#2c3e50'
+      },
       children: [flash.success && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-        className: "alert alert-success",
-        role: "alert",
+        className: "alert alert-success d-flex align-items-center mb-3 small shadow-sm",
         children: flash.success
       }), flash.error && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-        className: "alert alert-danger",
-        role: "alert",
+        className: "alert alert-danger d-flex align-items-center mb-3 small shadow-sm",
         children: flash.error
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-        className: "d-flex justify-content-between align-items-center mb-4",
+        className: "d-flex justify-content-between align-items-center py-2 px-3 mb-3 bg-white border rounded shadow-sm",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("h1", {
-            className: "h3",
-            children: ["Cr\xE9dit #", credit.id]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("p", {
-            className: "text-muted mb-0",
-            children: "D\xE9tail du dossier de cr\xE9dit et \xE9ch\xE9ancier."
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+            className: "text-uppercase text-muted fs-8 fw-semibold tracking-wider",
+            children: "SIG \u2014 Portefeuille Cr\xE9dits"
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("h1", {
+            className: "fs-5 text-dark fw-bold mb-0",
+            children: ["Dossier de Pr\xEAt #CR-", credit.id]
           })]
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
             href: "/admin/credits",
-            className: "btn btn-outline-secondary me-2",
+            className: "btn btn-sm btn-outline-secondary px-3",
             children: "Retour"
           })
         })]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_Components_BootstrapModal_jsx__WEBPACK_IMPORTED_MODULE_5__["default"], {
-        show: confirmOpen,
-        title: "Confirmation",
-        body: "Approuver ce cr\xE9dit et activer l\u2019\xE9ch\xE9ancier ?",
-        onConfirm: confirmApprove,
-        onClose: closeConfirm,
-        confirmText: "Oui, approuver",
-        cancelText: "Annuler",
-        confirmVariant: "success"
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+        className: "row g-3 mb-4",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+          className: "col-md-3",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+            className: "card h-100 border bg-white shadow-sm p-3",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+              className: "text-uppercase text-muted fs-8 fw-bold",
+              children: "Encours Global"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h4", {
+              className: "fw-bold text-dark my-1",
+              children: formatCurrency(financialSummary.totalAttenduGlobal)
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+              className: "fs-8 text-muted border-top pt-1 mt-1",
+              children: "Capital + Int. + P\xE9n."
+            })]
+          })
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+          className: "col-md-3",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+            className: "card h-100 border bg-white shadow-sm p-3",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+              className: "text-uppercase text-muted fs-8 fw-bold",
+              children: "Total Recouvr\xE9"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h4", {
+              className: "fw-bold text-dark my-1",
+              children: formatCurrency(financialSummary.totalRembourse)
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+              className: "fs-8 text-muted border-top pt-1 mt-1",
+              children: ["Amorti \xE0 : ", financialSummary.totalAttenduGlobal > 0 ? Math.round(financialSummary.totalRembourse / financialSummary.totalAttenduGlobal * 100) : 0, "%"]
+            })]
+          })
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+          className: "col-md-3",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+            className: "card h-100 border bg-white shadow-sm p-3 border-start border-warning border-3",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+              className: "text-uppercase text-muted fs-8 fw-bold",
+              children: "Reste \xE0 Recouvrer"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h4", {
+              className: "fw-bold text-dark my-1",
+              children: formatCurrency(financialSummary.resteARecouvrer)
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+              className: "fs-8 text-secondary border-top pt-1 mt-1 fw-medium",
+              children: "Cr\xE9ance active"
+            })]
+          })
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+          className: "col-md-3",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+            className: "card h-100 border bg-white shadow-sm p-3 ".concat(financialSummary.encoursEnRetard > 0 ? 'border-start border-danger border-3' : ''),
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+              className: "text-uppercase text-muted fs-8 fw-bold",
+              children: "Portefeuille \xE0 Risque"
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h4", {
+              className: "fw-bold my-1 ".concat(financialSummary.encoursEnRetard > 0 ? 'text-danger' : 'text-dark'),
+              children: formatCurrency(financialSummary.encoursEnRetard)
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+              className: "fs-8 text-muted border-top pt-1 mt-1",
+              children: financialSummary.encoursEnRetard > 0 ? '⚠️ Arriérés échus' : 'Aucun retard'
+            })]
+          })
+        })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
         className: "row g-3 mb-4",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
           className: "col-md-4",
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-            className: "card shadow-sm p-3",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h5", {
-              className: "mb-3",
-              children: "Informations"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "Client :"
-              }), " ", credit.client.nom, " ", credit.client.prenom]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "Statut :"
-              }), " ", creditStatusLabel(displayedCreditStatus)]
-            }), allPaymentsPaid && credit.statut !== 'solder' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("p", {
-              className: "text-muted small mb-2",
-              children: "Statut harmonis\xE9 sur Sold\xE9 car toutes les \xE9ch\xE9ances sont r\xE9gl\xE9es."
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "Dernier paiement :"
-              }), ' ', lastPaymentDate ? (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatDateToFR)(lastPaymentDate.toISOString()) : '—']
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "Montant demand\xE9 :"
-              }), " ", formatCurrency(credit.montant_demande)]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "Taux appliqu\xE9 :"
-              }), " ", credit.taux, "%"]
-            })]
-          })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-          className: "col-md-4",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-            className: "card shadow-sm p-3",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h5", {
-              className: "mb-3",
-              children: "Conditions"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "Type :"
-              }), " ", credit.type]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "Mode :"
-              }), " ", credit.mode]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "P\xE9riodicit\xE9 :"
-              }), " ", credit.periodicite]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "\xC9ch\xE9ances :"
-              }), " ", credit.nombre_echeances]
-            })]
-          })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-          className: "col-md-4",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-            className: "card shadow-sm p-3",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h5", {
-              className: "mb-3",
-              children: "Chiffres cl\xE9s"
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "Int\xE9r\xEAt total :"
-              }), " ", formatCurrency(credit.interet_total)]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "P\xE9nalit\xE9s totales :"
-              }), " ", formatCurrency((_credit$penalty_amoun = credit.penalty_amount) !== null && _credit$penalty_amoun !== void 0 ? _credit$penalty_amoun : 0)]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "Montant total d\xFB :"
-              }), ' ', formatCurrency(Number(credit.montant_accorde) + Number(credit.interet_total) + Number((_credit$penalty_amoun2 = credit.penalty_amount) !== null && _credit$penalty_amoun2 !== void 0 ? _credit$penalty_amoun2 : 0))]
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("p", {
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                children: "Montant rembours\xE9 :"
-              }), " ", formatCurrency(credit.montant_rembourse)]
-            })]
-          })
-        })]
-      }), ((_credit$emergency_wit = credit.emergency_withdrawal_summary) === null || _credit$emergency_wit === void 0 ? void 0 : _credit$emergency_wit.length) > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.Fragment, {
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-          className: "alert alert-warning",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-            children: "Pr\xE9l\xE8vement automatique appliqu\xE9 :"
-          }), " des sommes ont \xE9t\xE9 pr\xE9lev\xE9es sur l'\xE9pargne disponible pour couvrir une ou plusieurs \xE9ch\xE9ances en d\xE9faut."]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-          className: "card shadow-sm mb-4 border-danger",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-            className: "card-header bg-white text-danger",
-            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-              children: "Pr\xE9l\xE8vements de secours automatiques"
-            })
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-            className: "card-body",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("p", {
-              className: "mb-3 text-muted",
-              children: "Les montants suivants ont \xE9t\xE9 retir\xE9s automatiquement et affect\xE9s aux paiements en d\xE9faut."
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("ul", {
-              className: "list-group list-group-flush",
-              children: credit.emergency_withdrawal_summary.map(function (item, index) {
-                return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("li", {
-                  className: "list-group-item px-0",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("strong", {
-                    children: ["\xC9ch\xE9ance #", item.echeance, " :"]
-                  }), " ", formatCurrency(item.amount_withdrawn), " pr\xE9lev\xE9s, dont ", formatCurrency(item.amount_applied), " appliqu\xE9s au paiement."]
-                }, index);
+            className: "card shadow-sm border h-100",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+              className: "card-header bg-light py-2 border-bottom",
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
+                className: "text-uppercase text-secondary fw-bold fs-8 mb-0",
+                children: "I. B\xE9n\xE9ficiaire / Membre"
+              })
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+              className: "card-body py-2",
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("table", {
+                className: "table table-sm table-borderless mb-0 fs-7",
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tbody", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-muted px-0",
+                      children: "Nom & Pr\xE9nom :"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("td", {
+                      className: "fw-bold text-end",
+                      children: [(_credit$client = credit.client) === null || _credit$client === void 0 ? void 0 : _credit$client.nom, " ", (_credit$client2 = credit.client) === null || _credit$client2 === void 0 ? void 0 : _credit$client2.prenom]
+                    })]
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-muted px-0",
+                      children: "Classe de Risque :"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-end",
+                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+                        className: (CREDIT_STATUS_CONFIG[displayedCreditStatus] || {})["class"],
+                        children: (CREDIT_STATUS_CONFIG[displayedCreditStatus] || {}).label
+                      })
+                    })]
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-muted px-0",
+                      children: "Compte \xC9pargne :"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-end fw-semibold text-monospace",
+                      children: (_credit$client$code_c = (_credit$client3 = credit.client) === null || _credit$client3 === void 0 ? void 0 : _credit$client3.code_compte) !== null && _credit$client$code_c !== void 0 ? _credit$client$code_c : 'N/A'
+                    })]
+                  })]
+                })
               })
             })]
-          })]
+          })
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+          className: "col-md-4",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+            className: "card shadow-sm border h-100",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+              className: "card-header bg-light py-2 border-bottom",
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
+                className: "text-uppercase text-secondary fw-bold fs-8 mb-0",
+                children: "II. Caract\xE9ristiques du Cr\xE9dit"
+              })
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+              className: "card-body py-2",
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("table", {
+                className: "table table-sm table-borderless mb-0 fs-7",
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tbody", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-muted px-0",
+                      children: "Ligne de Produit :"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "fw-semibold text-end",
+                      children: LABELS_MAPPING[credit.type] || credit.type
+                    })]
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-muted px-0",
+                      children: "Mode de D\xE9caissement :"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-end",
+                      children: LABELS_MAPPING[credit.mode] || credit.mode
+                    })]
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-muted px-0",
+                      children: "\xC9ch\xE9ancier :"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("td", {
+                      className: "text-end",
+                      children: [credit.nombre_echeances, " \xE9ch. (", LABELS_MAPPING[credit.periodicite] || credit.periodicite, ")"]
+                    })]
+                  })]
+                })
+              })
+            })]
+          })
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+          className: "col-md-4",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+            className: "card shadow-sm border h-100",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+              className: "card-header bg-light py-2 border-bottom",
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
+                className: "text-uppercase text-secondary fw-bold fs-8 mb-0",
+                children: "III. Structure Financi\xE8re"
+              })
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+              className: "card-body py-2",
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("table", {
+                className: "table table-sm table-borderless mb-0 fs-7",
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tbody", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-muted px-0",
+                      children: "Capital Octroy\xE9 :"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "fw-bold text-end text-dark",
+                      children: formatCurrency(financialSummary.principalAccorde)
+                    })]
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-muted px-0",
+                      children: "Taux Contractuel :"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("td", {
+                      className: "text-end fw-semibold",
+                      children: [credit.taux, "%"]
+                    })]
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-muted px-0",
+                      children: "Int\xE9r\xEAts Dus :"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-end text-dark fw-semibold",
+                      children: formatCurrency((_credit$interet_total2 = credit.interet_total) !== null && _credit$interet_total2 !== void 0 ? _credit$interet_total2 : 0)
+                    })]
+                  })]
+                })
+              })
+            })]
+          })
+        })]
+      }), ((_credit$emergency_wit = credit.emergency_withdrawal_summary) === null || _credit$emergency_wit === void 0 ? void 0 : _credit$emergency_wit.length) > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+        className: "card shadow-sm mb-4 border border-secondary",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+          className: "card-header bg-light py-2 border-bottom",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
+            className: "text-dark mb-0 fw-bold fs-8",
+            children: "\u26A0\uFE0F Recouvrement par Compensation (\xC9pargne de Garantie)"
+          })
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+          className: "card-body py-2",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+            className: "row g-2",
+            children: credit.emergency_withdrawal_summary.map(function (item, index) {
+              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                className: "col-md-4",
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                  className: "p-2 rounded bg-light border fs-8 text-dark",
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("strong", {
+                    children: ["\xC9ch\xE9ance #", item.echeance, " :"]
+                  }), " Retrait de ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+                    className: "fw-bold",
+                    children: formatCurrency(item.amount_withdrawn)
+                  }), "."]
+                })
+              }, index);
+            })
+          })
         })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-        className: "card shadow-sm",
+        className: "card shadow-sm border",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-          className: "card-header bg-white",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-            children: "\xC9ch\xE9ancier"
+          className: "card-header bg-light py-2 border-bottom",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h5", {
+            className: "card-title mb-0 fs-7 fw-bold text-dark",
+            children: "IV. Registre Comptable des \xC9ch\xE9ances et Amortissements"
           })
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
           className: "card-body p-0",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("table", {
-            className: "table mb-0",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("thead", {
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
-                  children: "#"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
-                  children: "Date"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
-                  children: "Principal"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
-                  children: "Int\xE9r\xEAts"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
-                  children: "Total"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
-                  children: "P\xE9nalit\xE9"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
-                  children: "Pay\xE9"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
-                  children: "Reste"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
-                  children: "Paiement"
-                })]
-              })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tbody", {
-              children: [payments.map(function (payment) {
-                var _payment$penalite, _payment$montant_paye2, _ref6, _penalties$payment$id3, _ref7, _payment$computed_pen3, _paymentAmounts$payme, _payment$display_stat, _payment$display_stat2, _payment$display_stat3, _payment$display_stat4;
-                var totalDue = Number(payment.montant_total) + Number((_payment$penalite = payment.penalite) !== null && _payment$penalite !== void 0 ? _payment$penalite : 0);
-                var paidAmount = Number((_payment$montant_paye2 = payment.montant_paye) !== null && _payment$montant_paye2 !== void 0 ? _payment$montant_paye2 : 0);
-                var remaining = Math.max(0, totalDue - paidAmount);
-                return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
-                    children: payment.echeance
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
-                    children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatDateToFR)(payment.due_date)
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
-                    children: formatCurrency(payment.montant_principal)
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
-                    children: formatCurrency(payment.montant_interets)
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
-                    children: formatCurrency(payment.montant_total)
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
-                    children: payment.status !== 'paid' && ['active', 'in_arrears'].includes(credit.statut) ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-                      className: "input-group",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
-                        type: "number",
-                        step: "0.01",
-                        min: "0",
-                        className: "form-control",
-                        value: (_ref6 = (_penalties$payment$id3 = penalties[payment.id]) !== null && _penalties$payment$id3 !== void 0 ? _penalties$payment$id3 : payment.computed_penalty) !== null && _ref6 !== void 0 ? _ref6 : 0,
-                        onChange: function onChange(e) {
-                          return setPenalties(function (prev) {
-                            return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, payment.id, e.target.value));
-                          });
-                        }
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
-                        type: "button",
-                        className: "btn btn-outline-secondary",
-                        onClick: function onClick() {
-                          return savePenalty(payment);
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+            className: "table-responsive",
+            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("table", {
+              className: "table table-sm table-bordered align-middle mb-0 text-nowrap border-light",
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("thead", {
+                className: "table-light text-uppercase fs-8 tracking-wider text-secondary border-bottom",
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                    className: "text-center bg-white",
+                    style: {
+                      width: '40px'
+                    },
+                    children: "N\xB0"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                    className: "bg-white",
+                    children: "Date Exigibilit\xE9"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                    className: "text-end bg-white",
+                    children: "Amort. Principal"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                    className: "text-end bg-white",
+                    children: "Int\xE9r\xEAts Dus"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                    className: "text-end bg-white",
+                    children: "\xC9ch\xE9ance Nue"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                    className: "text-center bg-white",
+                    style: {
+                      width: '140px'
+                    },
+                    children: "P\xE9nalit\xE9s (XAF)"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                    className: "text-end bg-white",
+                    children: "Montant Per\xE7u"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                    className: "text-end bg-white text-dark fw-bold",
+                    style: {
+                      backgroundColor: '#fdfefe'
+                    },
+                    children: "Reste \xC0 Payer (RAP)"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                    className: "ps-3 bg-white",
+                    style: {
+                      width: '200px'
+                    },
+                    children: "Guichet / Statut"
+                  })]
+                })
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tbody", {
+                className: "fs-7",
+                children: [payments.map(function (payment) {
+                  var _payment$penalite, _payment$montant_paye2, _penalties$payment$id3, _ref4, _payment$computed_pen2;
+                  var totalDue = Number(payment.montant_total) + Number((_payment$penalite = payment.penalite) !== null && _payment$penalite !== void 0 ? _payment$penalite : 0);
+                  var paidAmount = Number((_payment$montant_paye2 = payment.montant_paye) !== null && _payment$montant_paye2 !== void 0 ? _payment$montant_paye2 : 0);
+                  var remaining = Math.max(0, totalDue - paidAmount);
+                  var isOverdue = remaining > 0 && new Date(payment.due_date) < new Date();
+                  var dynamicStatus = 'pending';
+                  if (remaining === 0) {
+                    dynamicStatus = 'paid';
+                  } else if (paidAmount > 0 && remaining > 0) {
+                    dynamicStatus = 'partiel';
+                  } else if (isOverdue) {
+                    dynamicStatus = 'late';
+                  }
+                  var statusConfig = PAYMENT_STATUS_CONFIG[dynamicStatus];
+                  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                    style: isOverdue ? {
+                      backgroundColor: '#fffdfd'
+                    } : {},
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-center fw-bold text-muted",
+                      children: payment.echeance
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatDateToFR)(payment.due_date)
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-end text-monospace",
+                      children: formatCurrency(payment.montant_principal)
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-end text-monospace",
+                      children: formatCurrency(payment.montant_interets)
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-end text-monospace fw-semibold",
+                      children: formatCurrency(payment.montant_total)
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-center",
+                      children: remaining > 0 && ['active', 'in_arrears'].includes(credit.statut) ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                        className: "input-group input-group-sm mx-auto",
+                        style: {
+                          maxWidth: '110px'
                         },
-                        children: "Enregistrer"
-                      })]
-                    }) : formatCurrency((_ref7 = (_payment$computed_pen3 = payment.computed_penalty) !== null && _payment$computed_pen3 !== void 0 ? _payment$computed_pen3 : payment.penalite) !== null && _ref7 !== void 0 ? _ref7 : 0)
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
-                    children: formatCurrency(paidAmount)
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
-                    children: formatCurrency(remaining)
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("td", {
-                    children: [payment.status !== 'paid' && ['active', 'in_arrears'].includes(credit.statut) ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-                      className: "d-flex gap-2 align-items-center",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-                        className: "input-group",
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
                           type: "number",
-                          step: "0.01",
+                          step: "1",
                           min: "0",
-                          className: "form-control",
-                          placeholder: "Montant",
-                          value: (_paymentAmounts$payme = paymentAmounts[payment.id]) !== null && _paymentAmounts$payme !== void 0 ? _paymentAmounts$payme : '',
+                          disabled: isProcessing,
+                          className: "form-control text-end text-monospace fs-7 px-1 py-0",
+                          value: (_penalties$payment$id3 = penalties[payment.id]) !== null && _penalties$payment$id3 !== void 0 ? _penalties$payment$id3 : '',
                           onChange: function onChange(e) {
-                            return setPaymentAmounts(function (prev) {
+                            return setPenalties(function (prev) {
                               return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, payment.id, e.target.value));
                             });
                           }
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
+                          className: "btn btn-outline-secondary px-2 py-0 border-start-0",
                           type: "button",
-                          className: "btn btn-outline-secondary",
                           onClick: function onClick() {
-                            return savePayment(payment);
+                            return savePenalty(payment);
                           },
-                          disabled: !canPayInstallment(payment),
-                          children: "Payer"
+                          disabled: isProcessing,
+                          children: "\u2713"
                         })]
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
-                        className: paymentClass((_payment$display_stat = payment.display_status) !== null && _payment$display_stat !== void 0 ? _payment$display_stat : payment.status),
-                        children: paymentStatusLabel((_payment$display_stat2 = payment.display_status) !== null && _payment$display_stat2 !== void 0 ? _payment$display_stat2 : payment.status)
+                      }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+                        className: "text-muted text-monospace fs-7",
+                        children: formatCurrency((_ref4 = (_payment$computed_pen2 = payment.computed_penalty) !== null && _payment$computed_pen2 !== void 0 ? _payment$computed_pen2 : payment.penalite) !== null && _ref4 !== void 0 ? _ref4 : 0)
+                      })
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-end text-secondary text-monospace",
+                      children: formatCurrency(paidAmount)
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                      className: "text-end text-monospace fw-bold ".concat(remaining > 0 ? 'text-dark' : 'text-success'),
+                      style: {
+                        backgroundColor: '#fafbfc'
+                      },
+                      children: formatCurrency(remaining)
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("td", {
+                      className: "ps-3",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                        className: "d-flex align-items-center gap-2",
+                        children: [remaining > 0 && ['active', 'in_arrears'].includes(credit.statut) ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
+                          className: "btn btn-xs btn-outline-dark px-2 py-0 fs-8 fw-semibold",
+                          type: "button",
+                          onClick: function onClick() {
+                            return triggerPaymentModal(payment, remaining);
+                          },
+                          disabled: !canPayInstallment(payment) || isProcessing,
+                          style: {
+                            borderRadius: '3px'
+                          },
+                          children: "Encaisser"
+                        }) : null, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+                          className: statusConfig["class"],
+                          style: {
+                            fontSize: '11px',
+                            padding: '3px 6px'
+                          },
+                          children: statusConfig.label
+                        })]
+                      }), !canPayInstallment(payment) && remaining > 0 && ['active', 'in_arrears'].includes(credit.statut) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                        className: "fs-9 text-muted mt-1",
+                        children: "\uD83D\uDD12 Attente \xE9ch\xE9ance pr\xE9c\xE9dente"
                       })]
-                    }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
-                        className: paymentClass((_payment$display_stat3 = payment.display_status) !== null && _payment$display_stat3 !== void 0 ? _payment$display_stat3 : payment.status),
-                        children: paymentStatusLabel((_payment$display_stat4 = payment.display_status) !== null && _payment$display_stat4 !== void 0 ? _payment$display_stat4 : payment.status)
-                      }), payment.status !== 'paid' && !['active', 'in_arrears'].includes(credit.statut) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-                        className: "small text-muted mt-1",
-                        children: "Paiement disponible apr\xE8s approbation et d\xE9caissement."
-                      })]
-                    }), !canPayInstallment(payment) && payment.status !== 'paid' && ['active', 'in_arrears'].includes(credit.statut) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-                      className: "small text-muted mt-1",
-                      children: "Paiement bloqu\xE9 tant que l\u2019\xE9ch\xE9ance pr\xE9c\xE9dente n\u2019est pas r\xE9gl\xE9e."
                     })]
-                  })]
-                }, payment.id);
-              }), payments.length === 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("tr", {
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
-                  colSpan: "9",
-                  className: "text-center py-4",
-                  children: "Aucun \xE9ch\xE9ancier disponible."
-                })
+                  }, payment.id);
+                }), payments.length === 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("tr", {
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                    colSpan: "9",
+                    className: "text-center py-4 text-muted bg-white",
+                    children: "Aucune \xE9criture disponible."
+                  })
+                })]
               })]
-            })]
+            })
           })
         })]
       }), pagination && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-        className: "mt-3 d-flex justify-content-end gap-2",
+        className: "mt-2 d-flex justify-content-end gap-1 bg-white p-1 rounded border",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
-          className: "btn btn-outline-secondary",
+          className: "btn btn-xs btn-link text-secondary text-decoration-none fs-7 px-2 py-0",
           onClick: function onClick() {
             return _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.visit(pagination.prev_page_url);
           },
-          disabled: !pagination.prev_page_url,
-          children: "Pr\xE9c\xE9dent"
+          disabled: !pagination.prev_page_url || isProcessing,
+          children: "\xAB Pr\xE9c\xE9dent"
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
-          className: "btn btn-outline-secondary",
+          className: "btn btn-xs btn-link text-secondary text-decoration-none fs-7 px-2 py-0",
           onClick: function onClick() {
             return _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.visit(pagination.next_page_url);
           },
-          disabled: !pagination.next_page_url,
-          children: "Suivant"
+          disabled: !pagination.next_page_url || isProcessing,
+          children: "Suivant \xBB"
         })]
       })]
     })
@@ -774,18 +812,36 @@ function buildScheduleFromForm(form) {
   var taux = calculateRate(form.taux, form.taux_manuelle) / 100;
   var nombre = Math.max(1, Number(form.nombre_echeances || 1));
   var mode = form.mode || 'fixe';
-  var periodDaysCount = periodDays(form.periodicite || 'mensuelle');
+  var periodicite = form.periodicite || 'mensuelle';
   var start = form.date_debut || new Date().toISOString().slice(0, 10);
-  var startDate = parseDateString(start);
+
+  // Utilise votre fonction de parsing ou crée une date locale sécurisée
+  var startDate = typeof parseDateString === 'function' ? parseDateString(start) : new Date(start + 'T00:00:00'); // Évite les décalages de fuseau horaire au parsing
+
   var principalBase = Math.round(montant / nombre * 100) / 100;
   var remaining = montant;
   var schedule = [];
   for (var i = 1; i <= nombre; i += 1) {
+    // 1. Calcul des intérêts (Fixe ou Dégressif)
     var interest = mode === 'degressif' ? Math.round(remaining * taux * 100) / 100 : Math.round(montant * taux * 100) / 100;
+
+    // 2. Ajustement de la dernière échéance pour vider le capital restant dû
     var principal = i === nombre ? Math.round(remaining * 100) / 100 : principalBase;
     var total = Math.round((principal + interest) * 100) / 100;
+
+    // 3. Gestion dynamique et précise de la date d'échéance
     var dueDate = new Date(startDate);
-    dueDate.setDate(dueDate.getDate() + (i - 1) * periodDaysCount);
+    if (periodicite === 'mensuelle') {
+      // Ajoute exactement (i - 1) mois (Ex: 1er Janvier -> 1er Février -> 1er Mars)
+      dueDate.setMonth(dueDate.getMonth() + (i - 1));
+    } else if (periodicite === 'quinzaine') {
+      // Ajoute 14 jours par échéance
+      dueDate.setDate(dueDate.getDate() + (i - 1) * 14);
+    } else {
+      // Fallback si vous utilisez periodDays pour d'autres cas spécifiques
+      var periodDaysCount = typeof periodDays === 'function' ? periodDays(periodicite) : 30;
+      dueDate.setDate(dueDate.getDate() + (i - 1) * periodDaysCount);
+    }
     schedule.push({
       numero: i,
       date: dueDate.toISOString().slice(0, 10),
@@ -793,10 +849,146 @@ function buildScheduleFromForm(form) {
       interest: interest,
       total: total
     });
+
+    // 4. Mise à jour du capital restant pour le prochain tour
     remaining = Math.round((remaining - principal) * 100) / 100;
   }
   return schedule;
 }
+
+/***/ }),
+
+/***/ "./node_modules/sweetalert2-react-content/dist/sweetalert2-react-content.umd.js":
+/*!**************************************************************************************!*\
+  !*** ./node_modules/sweetalert2-react-content/dist/sweetalert2-react-content.umd.js ***!
+  \**************************************************************************************/
+/***/ (function(module, __unused_webpack_exports, __webpack_require__) {
+
+// sweetalert2-react-content v5.1.2
+
+(function (global, factory) {
+   true ? module.exports = factory(__webpack_require__(/*! react */ "./node_modules/react/index.js"), __webpack_require__(/*! react-dom/client */ "./node_modules/react-dom/client.js")) :
+  0;
+})(this, (function (React, client) { 'use strict';
+
+  const mounts = [{
+    key: 'title',
+    getter: swal => swal.getTitle()
+  }, {
+    key: 'html',
+    getter: swal => swal.getHtmlContainer()
+  }, {
+    key: 'confirmButtonText',
+    getter: swal => swal.getConfirmButton()
+  }, {
+    key: 'denyButtonText',
+    getter: swal => swal.getDenyButton()
+  }, {
+    key: 'cancelButtonText',
+    getter: swal => swal.getCancelButton()
+  }, {
+    key: 'footer',
+    getter: swal => swal.getFooter()
+  }, {
+    key: 'closeButtonHtml',
+    getter: swal => swal.getCloseButton()
+  }, {
+    key: 'iconHtml',
+    getter: swal => swal.getIconContent()
+  }, {
+    key: 'loaderHtml',
+    getter: swal => swal.getLoader()
+  }];
+
+  const noop = () => {};
+  function withReactContent(ParentSwal) {
+    /* Returns `params` separated into a tuple of `reactParams` (the React params that need to be rendered)
+    and`otherParams` (all the other parameters, with any React params replaced with a space ' ') */
+    function extractReactParams(params) {
+      const reactParams = {};
+      const otherParams = {};
+      const mountKeys = mounts.map(mount => mount.key);
+      Object.entries(params).forEach(_ref => {
+        let [key, value] = _ref;
+        if (mountKeys.includes(key) && /*#__PURE__*/React.isValidElement(value)) {
+          reactParams[key] = value;
+          otherParams[key] = ' ';
+        } else {
+          otherParams[key] = value;
+        }
+      });
+      return [reactParams, otherParams];
+    }
+    function render(swal, reactParams) {
+      Object.entries(reactParams).forEach(_ref2 => {
+        let [key, value] = _ref2;
+        const mount = mounts.find(mount => mount.key === key);
+        const domElement = mount.getter(ParentSwal);
+        const root = client.createRoot(domElement);
+        root.render(value);
+        swal.__roots.push(root);
+      });
+    }
+    function unrender(swal) {
+      swal.__roots.forEach(root => {
+        root.unmount();
+      });
+      swal.__roots = [];
+    }
+    return class extends ParentSwal {
+      static argsToParams(args) {
+        if (/*#__PURE__*/React.isValidElement(args[0]) || /*#__PURE__*/React.isValidElement(args[1])) {
+          const params = {};
+          ['title', 'html', 'icon'].forEach((name, index) => {
+            if (args[index] !== undefined) {
+              params[name] = args[index];
+            }
+          });
+          return params;
+        } else {
+          return ParentSwal.argsToParams(args);
+        }
+      }
+      _main(params, mixinParams) {
+        this.__roots = [];
+        this.__params = Object.assign({}, mixinParams, params);
+        const [reactParams, otherParams] = extractReactParams(this.__params);
+        const superWillOpen = otherParams.willOpen || noop;
+        const superDidOpen = otherParams.didOpen || noop;
+        const superDidDestroy = otherParams.didDestroy || noop;
+        return super._main(Object.assign({}, otherParams, {
+          willOpen: popup => {
+            render(this, reactParams);
+            superWillOpen(popup);
+          },
+          didOpen: popup => {
+            // read more about why this setTimeout is needed here:
+            // https://github.com/reactwg/react-18/discussions/5 (What about the render callback?)
+            setTimeout(() => {
+              superDidOpen(popup);
+            });
+          },
+          didDestroy: popup => {
+            superDidDestroy(popup);
+            unrender(this);
+          }
+        }));
+      }
+      update(params) {
+        Object.assign(this.__params, params);
+        unrender(this);
+        const [reactParams, otherParams] = extractReactParams(this.__params);
+        super.update(otherParams);
+        render(this, reactParams);
+      }
+    };
+  }
+
+  return withReactContent;
+
+}));
+//# sourceMappingURL=sweetalert2-react-content.umd.js.map
+
 
 /***/ }),
 

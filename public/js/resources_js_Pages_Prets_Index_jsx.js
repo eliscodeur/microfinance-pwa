@@ -11,73 +11,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ AdminLayout)
 /* harmony export */ });
-/* harmony import */ var _inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @inertiajs/inertia-react */ "./node_modules/@inertiajs/inertia-react/dist/index.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
-
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 
 function AdminLayout(_ref) {
   var children = _ref.children;
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("nav", {
-      className: "navbar navbar-expand-lg navbar-dark bg-dark",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
-        className: "container-fluid px-4",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-          href: "/admin/dashboard",
-          className: "navbar-brand",
-          children: "NANA ECO CONSULTING"
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("button", {
-          className: "navbar-toggler",
-          type: "button",
-          "data-bs-toggle": "collapse",
-          "data-bs-target": "#navbarNav",
-          "aria-controls": "navbarNav",
-          "aria-expanded": "false",
-          "aria-label": "Toggle navigation",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("span", {
-            className: "navbar-toggler-icon"
-          })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("div", {
-          className: "collapse navbar-collapse",
-          id: "navbarNav",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("ul", {
-            className: "navbar-nav ms-auto",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/clients",
-                className: "nav-link",
-                children: "Clients"
-              })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/carnets",
-                className: "nav-link",
-                children: "Carnets"
-              })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/credits",
-                className: "nav-link",
-                children: "Cr\xE9dits"
-              })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("li", {
-              className: "nav-item",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.Link, {
-                href: "/admin/prets",
-                className: "nav-link",
-                children: "Instruction Cr\xE9dit"
-              })
-            })]
-          })
-        })]
-      })
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("main", {
-      className: "container mt-4",
-      children: children
-    })]
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.Fragment, {
+    children: children
   });
 }
 
@@ -108,27 +47,50 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
 
-var statusLabel = function statusLabel(statut) {
+// Badges de statut professionnels et soft
+
+var renderStatusBadge = function renderStatusBadge(statut) {
   switch (statut) {
     case 'pending':
     case 'soumis':
     case 'en_etude':
-      return 'En étude';
+      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+        className: "badge bg-secondary-subtle text-secondary border px-2.5 py-1.5 fw-medium",
+        children: "En \xE9tude"
+      });
     case 'approved':
     case 'approuve':
-      return 'Approuvé';
+      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+        className: "badge bg-success-subtle text-success border px-2.5 py-1.5 fw-medium",
+        children: "Approuv\xE9"
+      });
     case 'active':
-      return 'Décaissement effectué';
+      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+        className: "badge bg-primary-subtle text-primary border px-2.5 py-1.5 fw-medium",
+        children: "Actif"
+      });
     case 'in_arrears':
-      return 'En retard';
+      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+        className: "badge bg-danger-subtle text-danger border px-2.5 py-1.5 fw-medium",
+        children: "En retard"
+      });
     case 'solder':
     case 'solde':
-      return 'Soldé';
+      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+        className: "badge bg-info-subtle text-info border px-2.5 py-1.5 fw-medium",
+        children: "Sold\xE9"
+      });
     case 'rejected':
     case 'rejete':
-      return 'Rejeté';
+      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+        className: "badge bg-light text-muted border px-2.5 py-1.5 fw-medium",
+        children: "Rejet\xE9"
+      });
     default:
-      return statut;
+      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+        className: "badge bg-light text-dark border px-2.5 py-1.5 fw-medium",
+        children: statut
+      });
   }
 };
 var formatCurrency = function formatCurrency(amount) {
@@ -142,13 +104,9 @@ var formatCurrency = function formatCurrency(amount) {
   }).format(Number(amount));
 };
 var formatDateToFR = function formatDateToFR(value) {
-  if (!value) {
-    return '—';
-  }
+  if (!value) return '—';
   var parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
+  if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleDateString('fr-FR', {
     day: '2-digit',
     month: '2-digit',
@@ -166,25 +124,69 @@ function Index(props) {
     _useState2 = _slicedToArray(_useState, 2),
     tab = _useState2[0],
     setTab = _useState2[1];
+  var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(''),
+    _useState4 = _slicedToArray(_useState3, 2),
+    searchQuery = _useState4[0],
+    setSearchQuery = _useState4[1];
+
+  // Filtrage local simple et propre par nom ou prénom de client
+  var filterByClientName = function filterByClientName(list) {
+    return list.filter(function (c) {
+      var fullname = c.client ? "".concat(c.client.nom, " ").concat(c.client.prenom).toLowerCase() : '';
+      return fullname.includes(searchQuery.toLowerCase());
+    });
+  };
+  var filteredNonApprouves = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
+    return filterByClientName(creditsNonApprouves);
+  }, [creditsNonApprouves, searchQuery]);
+  var filteredApprouves = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
+    return filterByClientName(creditsApprouves);
+  }, [creditsApprouves, searchQuery]);
+  var filteredHistorique = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
+    return filterByClientName(historique);
+  }, [historique, searchQuery]);
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_2__["default"], {
     children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
-        className: "d-flex justify-content-between align-items-center mb-4",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+      className: "container-fluid px-4 py-3 bg-light-subtle",
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+        className: "d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-4 gap-3",
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("h1", {
-            className: "h3",
+            className: "h4 mb-1 text-dark fw-bold",
             children: "Gestion des dossiers de cr\xE9dit"
           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("p", {
-            className: "text-muted mb-0",
-            children: "Onglets de suivi, dossier en attente, approuv\xE9 et historique."
+            className: "text-muted small mb-0",
+            children: "Suivi des demandes, arbitrage des dossiers et archivage des flux actifs."
           })]
-        })
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
+          style: {
+            maxWidth: '300px'
+          },
+          className: "w-100",
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
+            className: "input-group input-group-sm",
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
+              className: "input-group-text bg-white text-muted border-end-0",
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("i", {
+                className: "bi bi-search"
+              })
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("input", {
+              type: "text",
+              className: "form-control form-control-sm border-start-0 ps-0 text-muted",
+              placeholder: "Rechercher un client...",
+              value: searchQuery,
+              onChange: function onChange(e) {
+                return setSearchQuery(e.target.value);
+              }
+            })]
+          })
+        })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("ul", {
-        className: "nav nav-tabs mt-3",
+        className: "nav nav-tabs border-bottom-0 small mb-3 gap-1",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("li", {
           className: "nav-item",
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
-            className: "nav-link ".concat(tab === 'pending' ? 'active' : ''),
+            className: "nav-link border-0 rounded-3 px-3 py-2 fw-medium ".concat(tab === 'pending' ? 'bg-white shadow-sm text-dark border-bottom-0' : 'text-muted bg-transparent'),
             onClick: function onClick() {
               return setTab('pending');
             },
@@ -193,7 +195,7 @@ function Index(props) {
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("li", {
           className: "nav-item",
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
-            className: "nav-link ".concat(tab === 'approved' ? 'active' : ''),
+            className: "nav-link border-0 rounded-3 px-3 py-2 fw-medium ".concat(tab === 'approved' ? 'bg-white shadow-sm text-dark border-bottom-0' : 'text-muted bg-transparent'),
             onClick: function onClick() {
               return setTab('approved');
             },
@@ -202,7 +204,7 @@ function Index(props) {
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("li", {
           className: "nav-item",
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
-            className: "nav-link ".concat(tab === 'history' ? 'active' : ''),
+            className: "nav-link border-0 rounded-3 px-3 py-2 fw-medium ".concat(tab === 'history' ? 'bg-white shadow-sm text-dark border-bottom-0' : 'text-muted bg-transparent'),
             onClick: function onClick() {
               return setTab('history');
             },
@@ -210,151 +212,279 @@ function Index(props) {
           })
         })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
-        className: "tab-content mt-3",
+        className: "tab-content",
         children: [tab === 'pending' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
-          className: "card shadow-sm",
+          className: "card shadow-sm border-light rounded-3 overflow-hidden",
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
-            className: "card-body p-0",
+            className: "table-responsive",
+            style: {
+              maxHeight: '500px'
+            },
             children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("table", {
-              className: "table table-hover mb-0",
+              className: "table table-sm table-hover align-middle mb-0 text-secondary",
+              style: {
+                fontSize: '13px'
+              },
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("thead", {
-                className: "table-light",
+                className: "table-light sticky-top",
                 children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tr", {
+                  className: "text-muted text-uppercase",
+                  style: {
+                    fontSize: '11px',
+                    trackingMultiplier: 1
+                  },
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "ps-3 py-2.5 text-start",
+                    style: {
+                      width: '80px'
+                    },
                     children: "#"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-start",
                     children: "Client"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-end",
+                    style: {
+                      width: '180px'
+                    },
                     children: "Montant demand\xE9"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-start ps-4",
+                    children: "Conditions"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-center",
+                    style: {
+                      width: '150px'
+                    },
                     children: "Statut"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-end pe-3",
+                    style: {
+                      width: '140px'
+                    },
                     children: "Actions"
                   })]
                 })
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("tbody", {
-                children: creditsNonApprouves.length > 0 ? creditsNonApprouves.map(function (c) {
-                  var _c$montant_demande, _c$statut;
+                children: filteredNonApprouves.length > 0 ? filteredNonApprouves.map(function (c) {
+                  var _c$montant_demande, _c$periodicite, _c$nombre_echeances, _c$mode, _c$statut;
                   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tr", {
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                      children: c.id
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("td", {
+                      className: "ps-3 fw-semibold text-dark",
+                      children: ["#", c.id]
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                      className: "text-dark fw-medium",
                       children: c.client ? "".concat(c.client.nom, " ").concat(c.client.prenom) : '—'
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                      className: "text-end font-monospace fw-semibold text-dark",
                       children: formatCurrency((_c$montant_demande = c.montant_demande) !== null && _c$montant_demande !== void 0 ? _c$montant_demande : c.montant)
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("td", {
+                      className: "ps-4 text-capitalize text-muted",
+                      children: [(_c$periodicite = c.periodicite) !== null && _c$periodicite !== void 0 ? _c$periodicite : '—', " \u2022 ", (_c$nombre_echeances = c.nombre_echeances) !== null && _c$nombre_echeances !== void 0 ? _c$nombre_echeances : '—', " \xE9chs \u2022 ", (_c$mode = c.mode) !== null && _c$mode !== void 0 ? _c$mode : '—']
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                      children: statusLabel((_c$statut = c.statut) !== null && _c$statut !== void 0 ? _c$statut : c.status)
+                      className: "text-center",
+                      children: renderStatusBadge((_c$statut = c.statut) !== null && _c$statut !== void 0 ? _c$statut : c.status)
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
+                      className: "text-end pe-3",
+                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
                         href: "/admin/prets/".concat(c.id),
-                        className: "btn btn-sm btn-primary",
-                        children: "Ouvrir le dossier"
+                        className: "btn btn-sm btn-outline-secondary px-2 py-1",
+                        style: {
+                          fontSize: '12px'
+                        },
+                        children: ["Arbitrer ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("i", {
+                          className: "bi bi-chevron-right ms-1"
+                        })]
                       })
                     })]
                   }, c.id);
                 }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("tr", {
                   children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                    colSpan: "5",
-                    className: "text-center py-4",
-                    children: "Aucun dossier en attente."
+                    colSpan: "6",
+                    className: "text-center text-muted py-4 small",
+                    children: "Aucun dossier en attente d'approbation."
                   })
                 })
               })]
             })
           })
         }), tab === 'approved' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
-          className: "card shadow-sm",
+          className: "card shadow-sm border-light rounded-3 overflow-hidden",
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
-            className: "card-body p-0",
+            className: "table-responsive",
+            style: {
+              maxHeight: '500px'
+            },
             children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("table", {
-              className: "table table-hover mb-0",
+              className: "table table-sm table-hover align-middle mb-0 text-secondary",
+              style: {
+                fontSize: '13px'
+              },
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("thead", {
-                className: "table-light",
+                className: "table-light sticky-top",
                 children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tr", {
+                  className: "text-muted text-uppercase",
+                  style: {
+                    fontSize: '11px'
+                  },
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "ps-3 py-2.5 text-start",
+                    style: {
+                      width: '80px'
+                    },
                     children: "#"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-start",
                     children: "Client"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-end",
+                    style: {
+                      width: '180px'
+                    },
                     children: "Montant accord\xE9"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-start ps-4",
+                    children: "Conditions d'octroi"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-center",
+                    style: {
+                      width: '150px'
+                    },
                     children: "Statut"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-end pe-3",
+                    style: {
+                      width: '140px'
+                    },
                     children: "Actions"
                   })]
                 })
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("tbody", {
-                children: creditsApprouves.length > 0 ? creditsApprouves.map(function (c) {
-                  var _ref, _c$montant_accorde, _c$statut2;
+                children: filteredApprouves.length > 0 ? filteredApprouves.map(function (c) {
+                  var _ref, _c$montant_accorde, _c$periodicite2, _c$nombre_echeances2, _c$mode2, _c$statut2;
                   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tr", {
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                      children: c.id
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("td", {
+                      className: "ps-3 fw-semibold text-dark",
+                      children: ["#", c.id]
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                      className: "text-dark fw-medium",
                       children: c.client ? "".concat(c.client.nom, " ").concat(c.client.prenom) : '—'
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                      className: "text-end font-monospace fw-bold text-success",
                       children: formatCurrency((_ref = (_c$montant_accorde = c.montant_accorde) !== null && _c$montant_accorde !== void 0 ? _c$montant_accorde : c.montant_demande) !== null && _ref !== void 0 ? _ref : c.montant)
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("td", {
+                      className: "ps-4 text-capitalize text-muted",
+                      children: [(_c$periodicite2 = c.periodicite) !== null && _c$periodicite2 !== void 0 ? _c$periodicite2 : '—', " \u2022 ", (_c$nombre_echeances2 = c.nombre_echeances) !== null && _c$nombre_echeances2 !== void 0 ? _c$nombre_echeances2 : '—', " \xE9chs \u2022 ", (_c$mode2 = c.mode) !== null && _c$mode2 !== void 0 ? _c$mode2 : '—']
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                      children: statusLabel((_c$statut2 = c.statut) !== null && _c$statut2 !== void 0 ? _c$statut2 : c.status)
+                      className: "text-center",
+                      children: renderStatusBadge((_c$statut2 = c.statut) !== null && _c$statut2 !== void 0 ? _c$statut2 : c.status)
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
+                      className: "text-end pe-3",
+                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
                         href: "/admin/prets/".concat(c.id),
-                        className: "btn btn-sm btn-primary",
-                        children: "Ouvrir le dossier"
+                        className: "btn btn-sm btn-outline-primary px-2 py-1",
+                        style: {
+                          fontSize: '12px'
+                        },
+                        children: ["D\xE9caissement ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("i", {
+                          className: "bi bi-chevron-right ms-1"
+                        })]
                       })
                     })]
                   }, c.id);
                 }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("tr", {
                   children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                    colSpan: "5",
-                    className: "text-center py-4",
-                    children: "Aucun dossier approuv\xE9."
+                    colSpan: "6",
+                    className: "text-center text-muted py-4 small",
+                    children: "Aucun dossier approuv\xE9 en attente de fonds."
                   })
                 })
               })]
             })
           })
         }), tab === 'history' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
-          className: "card shadow-sm",
+          className: "card shadow-sm border-light rounded-3 overflow-hidden",
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
-            className: "card-body p-0",
+            className: "table-responsive",
+            style: {
+              maxHeight: '500px'
+            },
             children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("table", {
-              className: "table table-hover mb-0",
+              className: "table table-sm table-hover align-middle mb-0 text-secondary",
+              style: {
+                fontSize: '13px'
+              },
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("thead", {
-                className: "table-light",
+                className: "table-light sticky-top",
                 children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tr", {
+                  className: "text-muted text-uppercase",
+                  style: {
+                    fontSize: '11px'
+                  },
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "ps-3 py-2.5 text-start",
+                    style: {
+                      width: '80px'
+                    },
                     children: "#"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-start",
                     children: "Client"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
-                    children: "Montant"
+                    className: "text-end",
+                    style: {
+                      width: '180px'
+                    },
+                    children: "Montant final"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-start ps-4",
+                    children: "Conditions"
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
+                    className: "text-center",
+                    style: {
+                      width: '150px'
+                    },
                     children: "Statut"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
-                    children: "Date"
+                    className: "text-end pe-3",
+                    style: {
+                      width: '140px'
+                    },
+                    children: "Derni\xE8re mise \xE0 jour"
                   })]
                 })
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("tbody", {
-                children: historique.length > 0 ? historique.map(function (c) {
-                  var _ref2, _c$montant_accorde2, _c$statut3;
+                children: filteredHistorique.length > 0 ? filteredHistorique.map(function (c) {
+                  var _ref2, _c$montant_accorde2, _c$periodicite3, _c$nombre_echeances3, _c$mode3, _c$statut3;
                   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tr", {
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                      children: c.id
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("td", {
+                      className: "ps-3 fw-semibold text-muted",
+                      children: ["#", c.id]
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                      className: "text-dark",
                       children: c.client ? "".concat(c.client.nom, " ").concat(c.client.prenom) : '—'
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                      className: "text-end font-monospace fw-semibold text-dark",
                       children: formatCurrency((_ref2 = (_c$montant_accorde2 = c.montant_accorde) !== null && _c$montant_accorde2 !== void 0 ? _c$montant_accorde2 : c.montant_demande) !== null && _ref2 !== void 0 ? _ref2 : c.montant)
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("td", {
+                      className: "ps-4 text-capitalize text-muted",
+                      children: [(_c$periodicite3 = c.periodicite) !== null && _c$periodicite3 !== void 0 ? _c$periodicite3 : '—', " \u2022 ", (_c$nombre_echeances3 = c.nombre_echeances) !== null && _c$nombre_echeances3 !== void 0 ? _c$nombre_echeances3 : '—', " \xE9chs \u2022 ", (_c$mode3 = c.mode) !== null && _c$mode3 !== void 0 ? _c$mode3 : '—']
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                      children: statusLabel((_c$statut3 = c.statut) !== null && _c$statut3 !== void 0 ? _c$statut3 : c.status)
+                      className: "text-center",
+                      children: renderStatusBadge((_c$statut3 = c.statut) !== null && _c$statut3 !== void 0 ? _c$statut3 : c.status)
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                      className: "text-end pe-3 font-monospace text-muted",
+                      style: {
+                        fontSize: '12px'
+                      },
                       children: formatDateToFR(c.updated_at)
                     })]
                   }, c.id);
                 }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("tr", {
                   children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                    colSpan: "5",
-                    className: "text-center py-4",
-                    children: "Aucun historique disponible."
+                    colSpan: "6",
+                    className: "text-center text-muted py-4 small",
+                    children: "Aucun historique disponible dans cette section."
                   })
                 })
               })]

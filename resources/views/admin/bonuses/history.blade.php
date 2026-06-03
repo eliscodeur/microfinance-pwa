@@ -86,11 +86,10 @@
                 </table>
             </div>
         </div>
-        @if($paiements->hasPages())
-        <div class="card-footer bg-white py-3">
-            {{ $paiements->links() }}
+
+        <div class="mt-3">
+            {{ $paiements->links('pagination::bootstrap-5') }}
         </div>
-        @endif
     </div>
 </div>
 

@@ -2,7 +2,31 @@ import { Inertia } from '@inertiajs/inertia';
 import { Link } from '@inertiajs/inertia-react';
 import AdminLayout from '../../Layouts/AdminLayout.jsx';
 
+// Regroupement des configurations de statuts pour une maintenance plus propre
+const STATUS_CONFIG = {
+    pending: { label: 'En attente', class: 'badge bg-warning text-dark' },
+    approved: { label: 'Approuvé', class: 'badge bg-success' },
+    active: { label: 'Actif', class: 'badge bg-primary' },
+    in_arrears: { label: 'En retard', class: 'badge bg-danger' },
+    solder: { label: 'Soldé', class: 'badge bg-success' },
+    closed: { label: 'Clôturé', class: 'badge bg-secondary' },
+    rejected: { label: 'Rejeté', class: 'badge bg-dark' },
+};
+
+const TYPE_LABELS = {
+    compte: 'Sur compte',
+    quinzaine: 'Quinzaine',
+    mensuel: 'Mensuel',
+};
+
+const PERIODICITE_LABELS = {
+    quinzaine: 'Quinzaine',
+    mensuelle: 'Mensuelle',
+};
+
 export default function Index({ credits }) {
+    
+    // Formatage monétaire strict (XAF)
     const formatCurrency = value =>
         new Intl.NumberFormat('fr-FR', {
             style: 'currency',
@@ -10,142 +34,144 @@ export default function Index({ credits }) {
             maximumFractionDigits: 0,
         }).format(value);
 
-    const statusClass = status => {
-        switch (status) {
-            case 'approved':
-                return 'badge bg-success';
-            case 'active':
-                return 'badge bg-primary';
-            case 'pending':
-                return 'badge bg-warning text-dark';
-            case 'in_arrears':
-                return 'badge bg-danger';
-            case 'closed':
-                return 'badge bg-secondary';
-            case 'rejected':
-                return 'badge bg-dark';
-            case 'solder':
-                return 'badge bg-success';
-            default:
-                return 'badge bg-info';
+    // Formatage des dates du format ISO/DB vers le format FR
+    const formatDate = dateString => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) 
+            ? dateString 
+            : date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const getStatusBadge = status => {
+        const config = STATUS_CONFIG[status] || { label: 'Inconnu', class: 'badge bg-info' };
+        return <span className={config.class}>{config.label}</span>;
+    };
+
+    // Actions de pagination via le nouveau router Inertia
+    const handlePagination = url => {
+        if (url) {
+            router.visit(url, {
+                preserveState: true,
+                preserveScroll: true,
+            });
         }
-    };
-
-    const statusLabel = status => {
-        switch (status) {
-            case 'approved':
-                return 'Approuvé';
-            case 'active':
-                return 'Actif';
-            case 'pending':
-                return 'En attente';
-            case 'in_arrears':
-                return 'En retard';
-            case 'closed':
-                return 'Clôturé';
-            case 'rejected':
-                return 'Rejeté';
-            case 'solder':
-                return 'Soldé';
-            default:
-                return 'Inconnu';
-        }
-    };
-
-    const prevPage = () => {
-        if (credits.prev_page_url) Inertia.visit(credits.prev_page_url);
-    };
-
-    const nextPage = () => {
-        if (credits.next_page_url) Inertia.visit(credits.next_page_url);
     };
 
     return (
         <AdminLayout>
             <div>
+                {/* Header Section */}
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h1 className="h3">Gestion des crédits</h1>
+                        <h1 className="h3 mb-1 fw-bold text-dark">Gestion des crédits</h1>
                         <p className="text-muted mb-0">
-                            Liste des demandes et crédits clients.
+                            Liste des demandes et suivi des encours crédits clients.
                         </p>
                     </div>
-                    <Link href="/admin/credits/create" className="btn btn-primary">
-                        Nouvelle demande
+                    <Link href="/admin/credits/create" className="btn btn-primary shadow-sm d-flex align-items-center gap-2">
+                        <i className="bi bi-plus-lg"></i> Nouvelle demande
                     </Link>
                 </div>
 
-                <div className="card shadow-sm">
+                {/* Table Card */}
+                <div className="card shadow-sm border-0">
                     <div className="card-body p-0">
-                        <table className="table table-hover mb-0">
-                            <thead className="table-light">
-                                <tr>
-                                    <th>#</th>
-                                    <th>Client</th>
-                                    <th>Montant</th>
-                                    <th>Type</th>
-                                    <th>Périodicité</th>
-                                    <th>Statut</th>
-                                    <th>Échéances</th>
-                                    <th>Créé le</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {credits.data.map(credit => (
-                                    <tr key={credit.id}>
-                                        <td>{credit.id}</td>
-                                        <td>
-                                            {credit.client.nom} {credit.client.prenom}
-                                        </td>
-                                        <td>{formatCurrency(credit.montant_demande)}</td>
-                                        <td>{credit.type}</td>
-                                        <td>{credit.periodicite}</td>
-                                        <td>
-                                            <span className={statusClass(credit.statut)}>
-                                                {statusLabel(credit.statut)}
-                                            </span>
-                                        </td>
-                                        <td>{credit.nombre_echeances}</td>
-                                        <td>{credit.created_at}</td>
-                                        <td>
-                                            <Link
-                                                href={`/admin/credits/${credit.id}`}
-                                                className="btn btn-sm btn-outline-primary"
-                                            >
-                                                Voir
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {credits.data.length === 0 && (
+                        <div className="table-responsive">
+                            <table className="table table-hover align-middle mb-0">
+                                <thead className="table-light text-uppercase fs-7 text-muted">
                                     <tr>
-                                        <td colSpan="9" className="text-center py-4">
-                                            Aucun crédit trouvé.
-                                        </td>
+                                        <th className="ps-4" style={{ width: '80px' }}>#</th>
+                                        <th>Client</th>
+                                        <th>Montant</th>
+                                        <th>Type</th>
+                                        <th>Périodicité</th>
+                                        <th>Statut</th>
+                                        <th>Échéances</th>
+                                        <th>Créé le</th>
+                                        <th className="pe-4 text-end" style={{ width: '100px' }}>Actions</th>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {credits.data.map(credit => (
+                                        <tr key={credit.id}>
+                                            <td className="ps-4 fw-medium text-secondary">#{credit.id}</td>
+                                            <td className="fw-semibold text-dark">
+                                                {credit.client ? `${credit.client.nom} ${credit.client.prenom}` : 'Client inconnu'}
+                                            </td>
+                                            <td className="fw-bold text-dark">
+                                                {formatCurrency(credit.montant_demande)}
+                                            </td>
+                                            <td>
+                                                <span className="text-capitalize">
+                                                    {TYPE_LABELS[credit.type] || credit.type}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className="text-capitalize">
+                                                    {PERIODICITE_LABELS[credit.periodicite] || credit.periodicite}
+                                                </span>
+                                            </td>
+                                            <td>{getStatusBadge(credit.statut)}</td>
+                                            <td>
+                                                <span className="badge bg-light text-dark border">
+                                                    {credit.nombre_echeances} échéances
+                                                </span>
+                                            </td>
+                                            <td className="text-muted">{formatDate(credit.created_at)}</td>
+                                            <td className="pe-4 text-end">
+                                                <Link
+                                                    href={`/admin/credits/${credit.id}`}
+                                                    className="btn btn-sm btn-outline-primary px-3 rounded-pill"
+                                                >
+                                                    Voir
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+
+                                    {credits.data.length === 0 && (
+                                        <tr>
+                                            <td colSpan="9" className="text-center py-5 text-muted">
+                                                <div className="py-3">
+                                                    <i className="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                                                    Aucun dossier de crédit trouvé dans le système.
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-3 d-flex justify-content-end">
-                    <button
-                        className="btn btn-outline-secondary"
-                        onClick={prevPage}
-                        disabled={!credits.prev_page_url}
-                    >
-                        Précédent
-                    </button>
-                    <button
-                        className="btn btn-outline-secondary ms-2"
-                        onClick={nextPage}
-                        disabled={!credits.next_page_url}
-                    >
-                        Suivant
-                    </button>
-                </div>
+                {/* Section Pagination Professionnelle */}
+                {credits.links && credits.links.length > 3 && (
+                    <div className="mt-4 d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm">
+                        <div className="text-muted small">
+                            Affichage de {credits.from || 0} à {credits.to || 0} sur {credits.total} demandes
+                        </div>
+                        <nav>
+                            <ul className="pagination mb-0 pagination-sm">
+                                {credits.links.map((link, index) => (
+                                    <li 
+                                        key={index} 
+                                        className={`page-item ${link.active ? 'active' : ''} ${!link.url ? 'disabled' : ''}`}
+                                    >
+                                        <button
+                                            type="button"
+                                            className="page-link"
+                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                            onClick={() => handlePagination(link.url)}
+                                            disabled={!link.url}
+                                        />
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
+                    </div>
+                )}
             </div>
         </AdminLayout>
     );

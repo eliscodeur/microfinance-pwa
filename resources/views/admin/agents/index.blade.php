@@ -1,90 +1,103 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Gestion des Agents</h2>
-    <div>
-        <a href="{{ route('admin.agents.export', 'csv') }}" class="btn btn-outline-secondary btn-sm">Exporter CSV</a>
-        <a href="{{ route('admin.agents.export', 'excel') }}" class="btn btn-outline-success btn-sm">Exporter Excel</a>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-1">Gestion des Agents</h2>
+            <p class="text-muted mb-0">Liste complète et pilotage des accès agents.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.agents.export', array_merge(request()->query(), ['format' => 'csv'])) }}" class="btn btn-outline-secondary">Exporter CSV</a>
+            <a href="{{ route('admin.agents.export', array_merge(request()->query(), ['format' => 'excel'])) }}" class="btn btn-outline-success">Exporter Excel</a>
+        </div>
     </div>
-</div>
 
-<table class="table table-hover border">
-    <thead class="table-light">
-        <tr>
-            <th>Code Agent</th>
-            <th>Nom</th>
-            <th>Téléphone</th>
-            @can('Activer/Désactiver')
-            <th class="text-center">Actif</th>
-            @endcan
-            @can('Gérer Synchros')  
-            <th class="text-center">Synchro</th>
-            @endcan
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach($agents as $agent)
-        <tr id="agent-row-{{ $agent->id }}">
-            <td><span class="badge bg-light text-dark border">{{ $agent->code_agent }}</span></td>
-            <td><strong>{{ $agent->nom }}</strong></td>
-            <td>{{ $agent->telephone }}</td>
-            
-            @can('Activer/Désactiver')
-            <td class="text-center">
-                
-                <button type="button" id="btn-status-{{ $agent->id }}" 
-                        class="btn btn-link p-0 border-0 shadow-none" 
-                        onclick="fastToggleStatus({{ $agent->id }}, {{ $agent->actif ? 'true' : 'false' }})">
-                    @if($agent->actif)
-                        <i class="bi bi-toggle2-on text-success" style="font-size: 1.8rem;"></i>
-                    @else
-                        <i class="bi bi-toggle2-off text-secondary" style="font-size: 1.8rem;"></i>
-                    @endif
-                </button>
-                    
-            </td>
-            @endcan
-            @can('Gérer Sync')
-            <td class="text-center">
-                <button type="button" id="btn-sync-{{ $agent->id }}" 
-                        class="btn btn-link p-0 border-0" 
-                        onclick="confirmSync({{ $agent->id }}, {{ $agent->can_sync ? 'true' : 'false' }}, '{{ addslashes($agent->nom) }}')">
-                    @if($agent->can_sync)
-                        <i class="bi bi-cloud-check-fill text-primary" style="font-size: 1.5rem;"></i>
-                    @else
-                        <i class="bi bi-cloud-slash text-muted" style="font-size: 1.5rem;"></i>
-                    @endif
-                </button>   
-            </td>
-            @endcan
-
-            <td>
-                <div class="d-flex gap-1">
-                    <a href="{{ route('admin.agents.show', $agent->id) }}" class="btn btn-sm btn-info text-white">
-                        <i class="bi bi-eye"></i>
-                    </a>
-                    @can('Modifier données')   
-                    <a href="{{ route('admin.agents.edit', $agent->id) }}" class="btn btn-sm btn-warning">
-                        <i class="bi bi-pencil"></i>
-                    </a>
-                    @endcan
-                    @can('Supprimer données')
-                        <button type="button" class="btn btn-sm btn-danger" 
-                        onclick="confirmDelete({{ $agent->id }}, '{{ addslashes($agent->nom) }}')" title="Supprimer">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                    @endcan
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form action="{{ route('admin.agents.index') }}" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-10">
+                    <label class="form-label fw-bold">Recherche</label>
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Rechercher par nom, code ou téléphone..." 
+                               value="{{ request('search') }}">
+                        <button class="btn btn-primary" type="submit">Rechercher</button>
+                        @if(request()->has('search'))
+                            <a href="{{ route('admin.agents.index') }}" class="btn btn-outline-danger">Réinitialiser</a>
+                        @endif
+                    </div>
                 </div>
-            </td>
-        </tr>
-        @endforeach
-    </tbody>
-</table>
+            </form>
+        </div>
+    </div>
 
-<div class="mt-3">
-    {{ $agents->links('pagination::bootstrap-5') }}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle border">
+            <thead class="table-light">
+                <tr>
+                    <th>Code Agent</th>
+                    <th>Nom</th>
+                    <th>Téléphone</th>
+                    @can('Activer/Désactiver')
+                        <th class="text-center">Actif</th>
+                    @endcan
+                    @can('Gérer Synchros')
+                        <th class="text-center">Synchro</th>
+                    @endcan
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($agents as $agent)
+                <tr id="agent-row-{{ $agent->id }}">
+                    <td><span class="badge bg-light text-dark border">{{ $agent->code_agent }}</span></td>
+                    <td><strong>{{ $agent->nom }}</strong></td>
+                    <td>{{ $agent->telephone }}</td>
+                    
+                    @can('Activer/Désactiver')
+                    <td class="text-center">
+                        <button type="button" id="btn-status-{{ $agent->id }}" 
+                                class="btn btn-link p-0 border-0 shadow-none" 
+                                onclick="fastToggleStatus({{ $agent->id }}, {{ $agent->actif ? 'true' : 'false' }})">
+                            <i class="bi {{ $agent->actif ? 'bi-toggle2-on text-success' : 'bi-toggle2-off text-secondary' }}" style="font-size: 1.8rem;"></i>
+                        </button>
+                    </td>
+                    @endcan
+                    
+                    @can('Gérer Synchros')
+                    <td class="text-center">
+                        <button type="button" id="btn-sync-{{ $agent->id }}" 
+                                class="btn btn-link p-0 border-0" 
+                                onclick="confirmSync({{ $agent->id }}, {{ $agent->can_sync ? 'true' : 'false' }}, '{{ addslashes($agent->nom) }}')">
+                            <i class="bi {{ $agent->can_sync ? 'bi-cloud-check-fill text-primary' : 'bi-cloud-slash text-muted' }}" style="font-size: 1.5rem;"></i>
+                        </button>
+                    </td>
+                    @endcan
+
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{{ route('admin.agents.show', $agent->id) }}" class="btn btn-sm btn-info text-white"><i class="bi bi-eye"></i></a>
+                            @can('Modifier données')
+                            <a href="{{ route('admin.agents.edit', $agent->id) }}" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+                            @endcan
+                            @can('Supprimer données')
+                            <button type="button" class="btn btn-sm btn-danger" 
+                                    onclick="confirmDelete({{ $agent->id }}, '{{ addslashes($agent->nom) }}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            @endcan
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-3">
+        {{ $agents->appends(request()->query())->links('pagination::bootstrap-5') }}
+    </div>
 </div>
 
 <div class="modal fade" id="syncModal" tabindex="-1" aria-hidden="true">
