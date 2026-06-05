@@ -63,37 +63,34 @@
         
         <div class="mt-5">
             <h6 class="text-uppercase text-muted fw-bold mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">Derniers envois</h6>
-            
-            @forelse(auth()->user()->agent->syncBatches()->latest()->take(5)->get() as $batch)
-                <div class="d-flex align-items-center bg-white p-3 rounded-3 shadow-sm mb-2">
-                    
-                    @if($batch->status === 'approved')
-                        <i class="bi bi-check-circle-fill text-success fs-5 me-3"></i>
-                    @elseif($batch->status === 'rejected')
-                        <i class="bi bi-x-circle-fill text-danger fs-5 me-3"></i>
-                    @else
-                        <i class="bi bi-clock-history text-warning fs-5 me-3"></i>
-                    @endif
-
-                    <div class="flex-grow-1">
-                        <small class="text-muted d-block">{{ $batch->created_at->format('d/m/Y H:i') }}</small>
-                        <span class="small text-dark fw-medium">
-                            {{ $batch->nb_collectes }} collectes - {{ number_format($batch->total_montant, 0, ',', ' ') }} FCFA
-                        </span>
+            <div id="sync-batches-container">
+                @forelse(auth()->user()->agent->syncBatches()->latest()->take(5)->get() as $batch)
+                    <div class="d-flex align-items-center bg-white p-3 rounded-3 shadow-sm mb-2">
+                        @if($batch->status === 'approved')
+                            <i class="bi bi-check-circle-fill text-success fs-5 me-3"></i>
+                        @elseif($batch->status === 'rejected')
+                            <i class="bi bi-x-circle-fill text-danger fs-5 me-3"></i>
+                        @else
+                            <i class="bi bi-clock-history text-warning fs-5 me-3"></i>
+                        @endif
+                        <div class="flex-grow-1">
+                            <small class="text-muted d-block">{{ $batch->created_at->format('d/m/Y H:i') }}</small>
+                            <span class="small text-dark fw-medium">
+                                {{ $batch->nb_collectes }} collectes - {{ number_format($batch->total_montant, 0, ',', ' ') }} FCFA
+                            </span>
+                        </div>
+                        @if($batch->status === 'approved')
+                            <span class="badge rounded-pill bg-success-subtle text-success">Validé</span>
+                        @elseif($batch->status === 'rejected')
+                            <span class="badge rounded-pill bg-danger-subtle text-danger">Rejeté</span>
+                        @else
+                            <span class="badge rounded-pill bg-warning-subtle text-warning">En attente</span>
+                        @endif
                     </div>
-
-                    @if($batch->status === 'approved')
-                        <span class="badge rounded-pill bg-success-subtle text-success">Validé</span>
-                    @elseif($batch->status === 'rejected')
-                        <span class="badge rounded-pill bg-danger-subtle text-danger">Rejeté</span>
-                    @else
-                        <span class="badge rounded-pill bg-warning-subtle text-warning">En attente</span>
-                    @endif
-
-                </div>
-            @empty
-                <div class="text-center py-3 text-muted small">Aucun historique récent.</div>
-            @endforelse
+                @empty
+                    <div class="text-center py-3 text-muted small">Aucun historique récent.</div>
+                @endforelse
+            </div>
         </div>
     </div>
     
@@ -335,8 +332,6 @@
                 body: JSON.stringify(syncJob) // Contient maintenant le matricule
             });
 
-  
-
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "Erreur envoi");
 
@@ -440,7 +435,7 @@
                 showConfirmButton: false
             });
             
-            setTimeout(() => { window.location.href = "{{ route('pwa.index') }}"; }, 1500);
+            // setTimeout(() => { window.location.href = "{{ route('pwa.index') }}"; }, 1500);
 
         } catch (error) {
             Swal.fire('Erreur', 'Échec de mise à jour locale.', 'error');
@@ -530,5 +525,73 @@
         clearPendingSyncJob();
         location.reload();
     }
+
+    async function renderSyncBatches() {
+        const container = document.getElementById('sync-batches-container');
+        const database = getAgentDB();
+        await database.open();
+        // 1. Récupération des 5 derniers batchs depuis Dexie
+        const batches = await database.sync_batches
+            .orderBy('created_at')
+            .reverse()
+            .limit(5)
+            .toArray();
+
+        // 2. Si vide
+        if (batches.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                    <p class="small mb-0">Aucun historique récent trouvé.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // 3. Génération du HTML
+        container.innerHTML = batches.map(batch => {
+            // Logique des icônes et badges
+            const isApproved = batch.status === 'approved';
+            const isRejected = batch.status === 'rejected';
+            
+            const iconClass = isApproved ? 'bi-check-circle-fill text-success' : 
+                            isRejected ? 'bi-x-circle-fill text-danger' : 'bi-clock-history text-warning';
+            
+            const badgeClass = isApproved ? 'bg-success-subtle text-success' : 
+                            isRejected ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning';
+            
+            const statusText = isApproved ? 'Validé' : (isRejected ? 'Rejeté' : 'En attente');
+
+            // Formats
+            const date = new Date(batch.created_at).toLocaleString('fr-FR', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            const montant = new Intl.NumberFormat('fr-FR').format(batch.total_montant);
+
+            return `
+                <div class="d-flex align-items-center bg-white p-3 rounded-3 shadow-sm mb-2">
+                    <i class="bi ${iconClass} fs-5 me-3"></i>
+                    <div class="flex-grow-1">
+                        <small class="text-muted d-block">${date}</small>
+                        <span class="small text-dark fw-medium">
+                            ${batch.nb_collectes} collectes - ${montant} FCFA
+                        </span>
+                    </div>
+                    <span class="badge rounded-pill ${badgeClass}">${statusText}</span>
+                </div>
+            `;
+        }).join('');
+    }
+// On surveille la table syncBatches
+    // const database = getAgentDB();
+    // await database.open().catch(err => console.error("Erreur ouverture DB:", err));
+    // Dexie.liveQuery(() => {
+    //     return database.sync_batches.orderBy('created_at').reverse().limit(5).toArray();
+    // }).subscribe({
+    //     next: (batches) => renderSyncBatches(), // Appelle le rendu quand les données changent
+    //     error: (err) => console.error(err)
+    // });
+    window.addEventListener('offline', renderSyncBatches);
 </script>
 @endsection

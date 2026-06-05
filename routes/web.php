@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\AgentController;
 use App\Http\Controllers\Admin\ClientController;
@@ -105,6 +106,19 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::post('prets/{id}/decaisser', [PretInstructionController::class, 'decaisser'])->name('prets.decaisser')->middleware('can:Gérer Crédits');
 });
 
+Route::get('/api/sync-batches/partial', function (Request $request) {
+    $since = $request->query('since');
+    $sinceDate = \Carbon\Carbon::parse($since);
+    
+    $batches = \App\Models\SyncBatch::where('created_at', '>', $sinceDate)->latest()->get();
+
+    if ($batches->isEmpty()) return response()->json(['html' => '']); 
+
+    return response()->json([
+        'html' => view('admin.partials.sync-table-rows', compact('batches'))->render(),
+        'serverTime' => now()->toDateTimeString() // On envoie l'heure exacte du serveur
+    ]);
+});
 
 // --- ESPACE AGENT (PWA / MOBILE) ---
 

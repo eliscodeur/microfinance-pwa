@@ -10,6 +10,7 @@ use App\Models\Client;
 use App\Models\Carnet;               
 use App\Models\Agent;               
 use App\Models\Cycle;
+use App\Models\SyncBatch;
 use App\Models\Collecte;
 use App\Models\Bonus;
 use App\Models\Paiement;
@@ -171,6 +172,10 @@ class PwaController extends Controller
                 ]);
             }
 
+            $syncBatches = SyncBatch::where('agent_id', $agent->id)
+                ->latest()
+                ->take(10)
+                ->get(['id', 'sync_uuid', 'status', 'nb_collectes', 'total_montant', 'nb_cycles', 'created_at']);
             // 7. Verrouillage et réponse
             $agent->update(['can_sync' => false]); 
 
@@ -197,7 +202,7 @@ class PwaController extends Controller
                     'volume_historique_global'         => (float) ($volumeHistoriqueGlobal ?? 0),
                     'total_historique_cycles_termines' => (int) $totalHistoriqueCyclesTermines
                 ],
-                
+                'sync_batches' => $syncBatches,
                 'server_date' => now()->format('Y-m-d'),
             ]);
 

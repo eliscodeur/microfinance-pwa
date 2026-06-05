@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SyncBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use App\Events\SyncBatchCreated;
 class SyncBatchController extends Controller
 {
     public function index(Request $request)

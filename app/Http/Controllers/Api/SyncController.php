@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Agent;
 use App\Models\Bonus;
@@ -19,6 +19,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Events\SyncBatchCreated;
+use Pusher\Pusher;
 
 class SyncController extends Controller
 {
@@ -75,6 +77,7 @@ class SyncController extends Controller
             ], 403);
         }
 
+        Auth::login($agent->user);
         // Idempotence — on retourne le batch existant si déjà reçu
         $existingBatch = SyncBatch::where('sync_uuid', $request->sync_uuid)->first();
         if ($existingBatch) {
@@ -216,83 +219,6 @@ class SyncController extends Controller
         }
     }
 
-    /**
-     * Construit le payload complet pour l'agent (initial data + après approbation).
-     */
-    // private function buildSyncPayload(Agent $agent): array
-    // {
-    //     $clients = Client::where('agent_id', $agent->id)
-    //         ->whereHas('carnets', fn($q) => $q->where('statut', 'actif')->where('type', 'tontine'))
-    //         ->get();
-
-    //     $clientIds = $clients->pluck('id');
-
-    //     $carnets = Carnet::whereIn('client_id', $clientIds)
-    //         ->where('statut', 'actif')
-    //         ->where('type', 'tontine')
-    //         ->withCount(['cycles as total_cycles_termines' => fn($q) => $q->where('statut', 'termine')])
-    //         ->get();
-
-    //     $cycles = Cycle::whereIn('carnet_id', $carnets->pluck('id'))
-    //         ->where(fn($q) => $q
-    //             ->where('statut', 'en_cours')
-    //             ->orWhere(fn($q2) => $q2->where('statut', 'termine')->whereNull('retire_at'))
-    //         )
-    //         ->with(['collectes', 'retraits'])
-    //         ->get()
-    //         ->map(function ($cycle) {
-    //             $totalCollectes   = (float) $cycle->collectes->sum('montant');
-    //             $totalDejaRetire  = (float) $cycle->retraits->sum('montant_net');
-    //             $commission       = (float) ($cycle->montant_journalier ?? 0);
-
-    //             $cycle->solde_restant_net = max(0, $totalCollectes - $commission - $totalDejaRetire);
-
-    //             // Injecte cycle_uid dans chaque retrait pour faciliter le filtrage Dexie
-    //             $cycle->retraits->each(function ($retrait) use ($cycle) {
-    //                 $retrait->cycle_uid = $cycle->cycle_uid;
-    //                 $retrait->synced    = 1;
-    //             });
-
-    //             return $cycle;
-    //         });
-
-    //     // ✅ filter() protège contre les relations null
-    //     $collectes = $cycles->pluck('collectes')->filter()->flatten()->map(function ($col) {
-    //         $col->synced = 1;
-    //         return $col;
-    //     });
-
-    //     $retraits = $cycles->pluck('retraits')->filter()->flatten();
-
-    //     $bonusEnAttente = Bonus::where('agent_id', $agent->id)
-    //         ->where('statut', 'en_attente')
-    //         ->orderBy('date_attribution', 'desc')
-    //         ->get();
-
-    //     $historiquePaiements = Paiement::where('agent_id', $agent->id)
-    //         ->with(['bonuses'])
-    //         ->orderBy('created_at', 'desc')
-    //         ->limit(10)
-    //         ->get();
-
-    //     return [
-    //         'success' => true,
-    //         'agent'   => [
-    //             'id'       => $agent->id,
-    //             'nom'      => $agent->nom,
-    //             'pin_hash' => $agent->pin_hash,
-    //         ],
-    //         'clients'               => $clients,
-    //         'carnets'               => $carnets,
-    //         'cycles'                => $cycles->makeHidden(['collectes', 'retraits']),
-    //         'collectes'             => $collectes,
-    //         'retraits'              => $retraits,
-    //         'bonus_en_attente'      => $bonusEnAttente,
-    //         'historique_paiements'  => $historiquePaiements,
-    //         'server_date'           => now()->toDateString(),
-    //     ];
-    // }
-
     private function buildSyncPayload(Agent $agent): array
     {
         $clients = Client::where('agent_id', $agent->id)
@@ -381,6 +307,11 @@ class SyncController extends Controller
             ->where('clients.agent_id', $agent->id)
             ->where('cycles.statut', 'termine')
             ->count();
+        
+        $syncBatches = SyncBatch::where('agent_id', $agent->id)
+            ->latest()
+            ->take(10)
+            ->get(['id', 'sync_uuid', 'status', 'nb_collectes', 'total_montant', 'nb_cycles', 'created_at']);
 
         return [
             'success' => true,
@@ -396,7 +327,7 @@ class SyncController extends Controller
             'retraits'              => $retraits,
             'bonus_en_attente'      => $bonusEnAttente,
             'historique_paiements'  => $historiquePaiements,
-            
+            'sync_batches'          => $syncBatches,
             // Bloc statistique épuré
             'stats_performance'     => [
                 'historique_courbe'                => $historiqueVolumeMensuel,

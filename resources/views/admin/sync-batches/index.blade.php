@@ -36,42 +36,11 @@
                     <th></th>
                 </tr>
             </thead>
-            <tbody>
-                @forelse($batches as $batch)
-                    <tr>
-                        <td>
-                            <div class="fw-bold">{{ $batch->agent->nom ?? 'Agent' }}</div>
-                            <div class="small text-muted">{{ $batch->agent->code_agent ?? '--' }}</div>
-                        </td>
-                        <!-- <td class="small">{{ $batch->sync_uuid }}</td> -->
-                        <td>{{ $batch->nb_cycles }}</td>
-                        <td>{{ $batch->nb_collectes }}</td>
-                        <td>{{ number_format((float) $batch->total_montant, 0, ',', ' ') }} FCFA</td>
-                        <td>
-                           @php
-                                $title = "en attente"; // Valeur par défaut
-                                if($batch->status === "approved") {
-                                    $title = "Approuvée";
-                                } elseif($batch->status === "rejected") {
-                                    $title = "rejetée";
-                                } elseif($batch->status ==="cancelled") {
-                                    $title = "Annulée";
-                                }
-                            @endphp
-                            <span class="badge bg-{{ $batch->status === 'pending_review' ? 'warning text-dark' : ($batch->status === 'approved' ? 'success' : ($batch->status === 'rejected' ? 'danger' : 'secondary')) }}">
-                                {{ $title }}
-                            </span>
-                        </td>
-                        <td class="small">{{ $batch->created_at?->format('d/m/Y H:i') }}</td>
-                        <td>
-                            <a href="{{ route('admin.sync-batches.show', $batch) }}" class="btn btn-sm btn-primary">Verifier</a>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-5">Aucun lot de synchronisation pour ce filtre.</td>
-                    </tr>
-                @endforelse
+            <tbody id="sync-batches-table-body">
+                <tr id="empty-row" style="display: {{ $batches->isEmpty() ? 'table-row' : 'none' }};">
+                    <td colspan="8" class="text-center text-muted py-5">Aucun lot de synchronisation pour ce filtre.</td>
+                </tr>
+                @include('admin.partials.sync-table-rows', ['batches' => $batches])
             </tbody>
         </table>
     </div>
@@ -80,4 +49,29 @@
 <div class="mt-3">
     {{ $batches->links('pagination::bootstrap-5') }}
 </div>
+<script>
+    // On initialise avec l'heure actuelle côté serveur
+    let lastRefreshTime = "{{ now()->toDateTimeString() }}";
+    
+    function refreshTable() {
+        fetch(`/api/sync-batches/partial?since=${encodeURIComponent(lastRefreshTime)}`)
+            .then(response => response.json()) // On attend du JSON maintenant
+            .then(data => {
+                if (data.html && data.html.trim() !== "") {
+                    document.getElementById('sync-batches-table-body').insertAdjacentHTML('afterbegin', data.html);
+                    
+                    const emptyRow = document.getElementById('empty-row');
+                    if (emptyRow) {
+                        emptyRow.style.display = 'none';
+                    }
+                    // On met à jour avec l'heure exacte du serveur !
+                    lastRefreshTime = data.serverTime; 
+                }
+            })
+            .catch(err => console.error("Erreur :", err));
+    }
+
+    setInterval(refreshTable, 3000);
+</script>
 @endsection
+

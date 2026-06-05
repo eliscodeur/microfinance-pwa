@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('BROADCAST_DRIVER', 'null'),
+    'default' => env('BROADCAST_DRIVER', 'pusher'),
 
     /*
     |--------------------------------------------------------------------------
@@ -30,19 +30,25 @@ return [
 
     'connections' => [
 
-        'pusher' => [
-            'driver' => 'pusher',
-            'key' => env('PUSHER_APP_KEY'),
-            'secret' => env('PUSHER_APP_SECRET'),
-            'app_id' => env('PUSHER_APP_ID'),
-            'options' => [
-                'cluster' => env('PUSHER_APP_CLUSTER'),
-                'useTLS' => true,
-            ],
-            'client_options' => [
-                // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+    'pusher' => [
+        'driver' => 'pusher',
+        'key' => '123456',
+        'secret' => '123456',
+        'app_id' => '123456',
+        'options' => [
+            'cluster' => 'mt1',
+            'useTLS' => false,
+            'scheme' => 'http',
+            'host' => '127.0.0.1', // Assurez-vous que c'est bien l'IP d'écoute
+            'port' => 6001,
+            'encrypted' => false,
+            // AJOUTEZ CETTE LIGNE : cela force l'utilisation du port 6001 sans chercher ailleurs
+            'curl_options' => [
+                CURLOPT_PORT => 6001,
             ],
         ],
+        'client_options' => [],
+    ],
 
         'ably' => [
             'driver' => 'ably',

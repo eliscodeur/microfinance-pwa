@@ -28,7 +28,7 @@ export function getAgentDB() {
 
     // Création de la nouvelle base
     const db = new Dexie(`TontineDB_${matricule}`);
-    db.version(3).stores({
+    db.version(4).stores({
         agents: 'id, matricule, synced',
         clients: 'id, nom, prenom, telephone',
         carnets: 'id, client_id, numero',
@@ -36,7 +36,8 @@ export function getAgentDB() {
         collectes: '++id, &collecte_uid, cycle_uid, cycle_id, synced',
         bonus_en_attente: 'id, agent_id, type, statut, date_attribution',
         paiements_valides: 'id, reference, montant_total, type, created_at',
-        agent_stats: 'id'
+        agent_stats: 'id',
+        sync_batches: 'id, sync_uuid, status, nb_collectes, total_montant, nb_cycles, created_at'
     });
     
     dbInstance = db;
@@ -53,6 +54,7 @@ export const db = {
     get cycles() { return getAgentDB()?.cycles; },
     get collectes() { return getAgentDB()?.collectes; },
     get agent_stats() { return getAgentDB()?.agent_stats; },
+    get sync_batches() { return getAgentDB()?.sync_batches; },  
     open: () => getAgentDB()?.open(),
     isOpen: () => getAgentDB()?.isOpen() ?? false,
     table: (name) => getAgentDB()?.table(name)
@@ -62,6 +64,8 @@ export const db = {
  * Remplit la base de données avec les données du serveur
  */
 export async function populateDatabase(data, options = {}) {
+    // console.log(data);
+    // return; // STOP - POUR TESTER LE LOG SANS TOUCHER À LA BASE
     const database = getAgentDB();
     if (!database) throw new Error("Base de données non initialisée.");
 
@@ -78,7 +82,8 @@ export async function populateDatabase(data, options = {}) {
             database.agents,
             database.bonus_en_attente, 
             database.paiements_valides,
-            database.agent_stats
+            database.agent_stats,
+            database.sync_batches
         ], async () => {
             
             if (replaceAll) {
@@ -89,6 +94,7 @@ export async function populateDatabase(data, options = {}) {
                 await database.bonus_en_attente.clear(); 
                 await database.paiements_valides.clear();
                 await database.agent_stats.clear();
+                await database.sync_batches.clear();
             }
 
             // 1. Mise à jour de l'agent (pour le pin_hash notamment)
@@ -103,6 +109,7 @@ export async function populateDatabase(data, options = {}) {
             // 2. Clients et Carnets
             if (data.clients?.length) await database.clients.bulkPut(data.clients);
             if (data.carnets?.length) await database.carnets.bulkPut(data.carnets);
+            if (data.sync_batches?.length) await database.sync_batches.bulkPut(data.sync_batches);
 
             // 3. Fusion des retraits dans les cycles
             if (data.cycles?.length) {
@@ -139,7 +146,8 @@ export async function populateDatabase(data, options = {}) {
                 }));
                 await database.collectes.bulkPut(normalizedCollectes);
             }
-
+            
+            
             if (data.bonus_en_attente) {
                 try {
                     await database.bonus_en_attente.clear();
