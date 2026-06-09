@@ -230,9 +230,18 @@ class SyncController extends Controller
         $carnets = Carnet::whereIn('client_id', $clientIds)
             ->where('statut', 'actif')
             ->where('type', 'tontine')
+            ->with('categoryTontine') 
             ->withCount(['cycles as total_cycles_termines' => fn($q) => $q->where('statut', 'termine')])
-            ->get();
-
+            ->get()
+            ->map(function ($carnet) {
+                $data = $carnet->toArray();
+                if ($carnet->categoryTontine) {
+                    $data['nombre_cycles'] = $carnet->categoryTontine->nombre_cycles;
+                    $data['nom_categorie'] = $carnet->categoryTontine->libelle;
+                }
+                
+                return $data;
+            });
         $cycles = Cycle::whereIn('carnet_id', $carnets->pluck('id'))
             ->where(fn($q) => $q
                 ->where('statut', 'en_cours')

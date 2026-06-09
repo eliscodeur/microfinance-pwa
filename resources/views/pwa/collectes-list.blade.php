@@ -285,6 +285,11 @@
 
         if (result.isConfirmed) {
             const activeDB = getAgentDB();
+            const col = await activeDB.collectes.get(id);
+            const cycle = await activeDB.cycles.get(col.cycle_id);
+            const cycleId = cycle.id;
+            // return;
+            await activeDB.cycles.update(cycleId, { statut: "en_cours" });
             await activeDB.collectes.delete(id);
             Swal.fire({
                 title: 'Supprimé !',

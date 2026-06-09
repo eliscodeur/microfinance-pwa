@@ -358,7 +358,29 @@
         rowBtn.setAttribute('onclick', `confirmSync(${agent.id}, ${isNowSynced}, '${String(agent.nom).replace(/'/g, "\\'")}')`);
     }
 
-    // La synchronisation en temps réel via Laravel Echo a été désactivée.
-    // Si tu veux réactiver plus tard, implémente un autre mécanisme de websocket ou SSE.
+    function updateSyncIcons() {
+        fetch("{{ route('admin.agents.sync-status') }}")
+            .then(response => response.json())
+            .then(data => {
+                // 'data' est un objet comme {1: 0, 2: 1, 3: 0}
+                for (const [agentId, canSync] of Object.entries(data)) {
+                    const icon = document.querySelector(`#btn-sync-${agentId} i`);
+                    
+                    if (icon) {
+                        // On définit les classes de base + le style
+                        const baseClass = "bi";
+                        const statusClass = (canSync == 1) ? "bi-cloud-check-fill text-primary" : "bi-cloud-slash text-muted";
+                        
+                        // Application des classes et conservation du style
+                        icon.className = `${baseClass} ${statusClass}`;
+                        icon.style.fontSize = "1.5rem";
+                    }
+                }
+            })
+            .catch(error => console.error('Erreur polling:', error));
+    }
+
+    // Lancer la mise à jour toutes les 3 secondes
+    setInterval(updateSyncIcons, 3000);
 </script>
 @endsection

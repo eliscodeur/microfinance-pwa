@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use App\Models\Agent;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\AgentController;
 use App\Http\Controllers\Admin\ClientController;
@@ -52,7 +53,9 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('/cycles', [AdminCycleController::class, 'index'])->name('cycles.index');
     Route::patch('/cycles/{cycle}/mark-withdrawn', [AdminCycleController::class, 'markWithdrawn'])->name('cycles.mark-withdrawn');
     Route::patch('/agents/{id}/toggle-sync', [AgentController::class, 'toggleSync'])->name('agents.toggle-sync');
-    
+    Route::get('/agents/sync-status', function () {
+        return response()->json(Agent::pluck('can_sync', 'id'));
+    })->name('agents.sync-status');
     Route::resource('agents', AgentController::class)->middleware('can:Gérer Agents');
     Route::patch('agents/{agent}/toggle-status', [AgentController::class, 'toggleStatus'])->name('agents.toggleStatus');
     Route::get('agents/export/{format}', [AgentController::class, 'export'])->name('agents.export');
@@ -160,4 +163,7 @@ Route::middleware('throttle:sync')->prefix('pwa')->name('pwa.')->group(function 
 //     Route::get('/sync-batches/{syncUuid}/status', [SyncController::class, 'batchStatus'])->name('sync-batches.status');
 //     Route::post('/sync-batches/{syncUuid}/cancel', [SyncController::class, 'cancelBatch'])->name('sync-batches.cancel');
 // });
+Route::get('/api/ping', function () {
+    return response()->json(['status' => 'ok']);
+});
 Route::middleware(['auth:sanctum', 'role:Agent', 'throttle:sync'])->post('/sync', [SyncController::class, 'synchroniser']);

@@ -73,7 +73,18 @@ class PwaController extends Controller
             $carnets = Carnet::whereIn('client_id', $clientIds)
                 ->where('statut', 'actif')
                 ->where('type', 'tontine')
-                ->get();
+                ->with('categoryTontine') 
+                ->withCount(['cycles as total_cycles_termines' => fn($q) => $q->where('statut', 'termine')])
+                ->get()
+                ->map(function ($carnet) {
+                    $data = $carnet->toArray();
+                    if ($carnet->categoryTontine) {
+                        $data['nombre_cycles'] = $carnet->categoryTontine->nombre_cycles;
+                        $data['nom_categorie'] = $carnet->categoryTontine->libelle;
+                    }
+                    
+                    return $data;
+                });
             
             $carnetIds = $carnets->pluck('id');
 

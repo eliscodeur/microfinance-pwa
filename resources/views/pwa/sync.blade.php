@@ -162,28 +162,45 @@
     /**
      * Pilote l'affichage visuel de l'état de connexion de l'agent en temps réel
      */
-    function updateNetworkStatus() {
+    async function updateNetworkStatus() {
         const badge = document.getElementById('network-status-badge');
         const text = document.getElementById('network-status-text');
         const btnSync = document.getElementById('btn-sync');
 
         if (!badge || !text) return;
 
-        if (navigator.onLine) {
-            // État En Ligne
-            badge.className = "badge rounded-pill px-3 py-2 shadow-sm border small transition-status bg-online";
+        // 1. Détection rapide (état de base)
+        const isSystemOnline = navigator.onLine;
+        // 2. Si le système dit "en ligne", on vérifie si on a VRAIMENT accès à Internet
+        let isActuallyOnline = isSystemOnline;
+        if (isSystemOnline) {
+            try {
+                // On tente un ping très rapide et léger vers votre propre serveur
+                // On ajoute un timestamp pour éviter le cache
+                const response = await fetch('/api/ping?t=' + Date.now(), { 
+                    method: 'HEAD', 
+                    signal: AbortSignal.timeout(2000) // 2 secondes max
+                });
+                isActuallyOnline = response.ok;
+            } catch (e) {
+                isActuallyOnline = false; // Connexion "fantôme" détectée !
+            }
+        }
+
+        // 3. Mise à jour de l'UI
+        if (isActuallyOnline) {
+            badge.className = "badge rounded-pill ... bg-online";
             text.innerText = "En ligne";
             if (btnSync) {
                 btnSync.disabled = false;
                 btnSync.innerHTML = `<i class="bi bi-cloud-arrow-up-fill me-2"></i> SYNCHRONISER MAINTENANT`;
             }
         } else {
-            // État Hors-Ligne (Pas d'accès internet)
-            badge.className = "badge rounded-pill px-3 py-2 shadow-sm border small transition-status bg-offline";
-            text.innerText = "Hors-ligne";
+            badge.className = "badge rounded-pill ... bg-offline";
+            text.innerText = isSystemOnline ? "Connexion limitée (no data)" : "Hors-ligne";
             if (btnSync) {
                 btnSync.disabled = true;
-                btnSync.innerHTML = `<i class="bi bi-wifi-off me-2"></i> CONNEXION REQUISE`;
+                btnSync.innerHTML = `<i class="bi bi-wifi-off me-2"></i> RECONNEXION EN COURS...`;
             }
         }
     }
@@ -191,12 +208,10 @@
     // Écouteurs d'événements matériels système pour intercepter les coupures de réseau
     window.addEventListener('online', updateNetworkStatus);
     window.addEventListener('offline', updateNetworkStatus);
-
+    setInterval(updateNetworkStatus, 30000);
     // Première exécution au chargement complet de la structure DOM
     document.addEventListener('DOMContentLoaded', () => {
         updateNetworkStatus();
-        
-        // --- TON SCRIPT DE SYNCHRONISATION DEXIE / API (Déjà existant) PEUT SUIVRE ICI ---
     });
 </script>
 
@@ -435,7 +450,7 @@
                 showConfirmButton: false
             });
             
-            // setTimeout(() => { window.location.href = "{{ route('pwa.index') }}"; }, 1500);
+            setTimeout(() => { window.location.href = "{{ route('pwa.index') }}"; }, 1500);
 
         } catch (error) {
             Swal.fire('Erreur', 'Échec de mise à jour locale.', 'error');
@@ -476,6 +491,7 @@
             if (!res.ok) throw new Error("Session expirée");
 
             const result = await res.json();
+            console.log("Données initiales reçues:", result);
            
             const payload = result.data || result;
 
@@ -583,15 +599,6 @@
             `;
         }).join('');
     }
-// On surveille la table syncBatches
-    // const database = getAgentDB();
-    // await database.open().catch(err => console.error("Erreur ouverture DB:", err));
-    // Dexie.liveQuery(() => {
-    //     return database.sync_batches.orderBy('created_at').reverse().limit(5).toArray();
-    // }).subscribe({
-    //     next: (batches) => renderSyncBatches(), // Appelle le rendu quand les données changent
-    //     error: (err) => console.error(err)
-    // });
     window.addEventListener('offline', renderSyncBatches);
 </script>
 @endsection

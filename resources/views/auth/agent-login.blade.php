@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Connexion Agent - NANA Eco Consulting</title>
     
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/pwa/manifest.json">
     <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bootstrap-icons.css') }}">
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
@@ -157,8 +157,16 @@
 </script>
 <script>
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js'); // Enregistrement simple, pas d'aspiration.
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // Optionnel : afficher un message "Mise à jour disponible"
+                        console.log("Nouvelle version dispo ! Rafraîchissez pour appliquer.");
+                    }
+                });
+            });
         });
     }
 </script>
@@ -399,7 +407,9 @@
         if (token) {
             localStorage.setItem('auth_token', token);
         }
-
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ action: 'cachePrivatePages' });
+        }
         window.location.href = "/pwa/sync";
     }
         
@@ -425,7 +435,10 @@
         showInstallPromotion();
     });
 
+    let isPromoting = false; // Flag global
     async function showInstallPromotion() {
+        if (isPromoting) return; // Empêche l'affichage multiple
+        isPromoting = true;
         const { isConfirmed } = await Swal.fire({
             title: 'Installation Requise',
             text: "Pour utiliser l'outil de collecte en mode sécurisé et hors-ligne, vous devez l'installer sur votre écran d'accueil.",
@@ -471,6 +484,7 @@
                 showInstallPromotion();
             }
         }
+        isPromoting = false;
     }
 
     window.addEventListener('appinstalled', (evt) => {
@@ -495,9 +509,6 @@
                 </div>
             `;
         }
-        
-        // Option 2 (Bonus) : Tenter un window.close() au cas où, mais ne compte pas trop dessus
-        // window.close(); 
     });
 </script>
 </body>

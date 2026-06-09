@@ -7,7 +7,7 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-3"><div class="card p-3"><div class="small text-muted">En attente</div><div class="fs-4 fw-bold text-warning">{{ $totals['pending_review'] }}</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div class="small text-muted">En attente</div><div class="fs-4 fw-bold text-warning" id="pending-review-count">{{ $totals['pending_review'] }}</div></div></div>
     <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Validées</div><div class="fs-4 fw-bold text-success">{{ $totals['approved'] }}</div></div></div>
     <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Refusées</div><div class="fs-4 fw-bold text-danger">{{ $totals['rejected'] }}</div></div></div>
     <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Annulées</div><div class="fs-4 fw-bold text-secondary">{{ $totals['cancelled'] }}</div></div></div>
@@ -58,8 +58,11 @@
             .then(response => response.json()) // On attend du JSON maintenant
             .then(data => {
                 if (data.html && data.html.trim() !== "") {
-                    document.getElementById('sync-batches-table-body').insertAdjacentHTML('afterbegin', data.html);
-                    
+                    const tbody = document.getElementById('sync-batches-table-body');
+                    tbody.insertAdjacentHTML('afterbegin', data.html);
+                    const rows = Array.from(tbody.getElementsByTagName('tr'));
+                    const actualRowCount = rows.filter(row => row.id !== 'empty-row' && row.style.display !== 'none');
+                    document.getElementById('pending-review-count').textContent = actualRowCount.length;
                     const emptyRow = document.getElementById('empty-row');
                     if (emptyRow) {
                         emptyRow.style.display = 'none';

@@ -99,9 +99,17 @@
             }
 
             currentClientId = carnet.client_id;
-            const client = await activeDB.clients.get(Number(currentClientId));
-            
-            // Injection stricte dans les conteneurs d'affichage du Header
+            const [client, cycles, toutesCollectes] = await Promise.all([
+                activeDB.clients.get(Number(currentClientId)),
+                activeDB.cycles.where('carnet_id').equals(carnet.id).toArray(),
+                activeDB.collectes.toArray()
+            ]);
+
+            // Vérification logique des cycles terminés vs limite catégorie
+            const nbCyclesMax = Number(carnet.category_tontine?.nombre_cycles || 0);
+            const nbCyclesTermines = cycles.filter(c => c.statut === 'termine').length;
+            const estBloque = nbCyclesMax > 0 && nbCyclesTermines >= nbCyclesMax;
+
             document.getElementById('client-nom').innerText = client ? `${client.nom} ${client.prenom}` : "Client #" + currentClientId;
             
             const carnetBadge = document.getElementById('carnet-numero');
@@ -110,26 +118,25 @@
                 carnetBadge.style.display = 'inline-block';
             }
 
-            const cycles = await activeDB.cycles.where('carnet_id').equals(carnet.id).toArray();
             const cycleActif = cycles.find(c => c.statut === 'en_cours');
 
             if (cycleActif) {
                 await afficherActionCollecte(cycleActif);
             } else {
-                const toutesCollectes = await activeDB.collectes.toArray();
                 const solde = calculerSolde(cycles, toutesCollectes);
                 const aDesTermines = cycles.some(c => c.statut === 'termine' && !c.retire_at);
-                afficherActionCreation(carnet.id, solde, aDesTermines);
+                
+                // Passer estBloque à la fonction de rendu
+                afficherActionCreation(carnet.id, solde, aDesTermines, estBloque, nbCyclesMax);
             }
 
             document.getElementById('loader').classList.add('d-none');
             document.getElementById('content-collecte').classList.remove('d-none');
         } catch (e) { 
             console.error("Init Error:", e); 
-            document.getElementById('loader').innerHTML = "<div class='alert alert-danger'>Erreur de chargement des données locales.</div>";
+            document.getElementById('loader').innerHTML = "<div class='alert alert-danger'>Erreur de chargement.</div>";
         }
     }
-
     // --- 2. RENDER ---
     async function afficherActionCollecte(cycle) {
         const stats = await getStats(cycle.cycle_uid);
@@ -202,7 +209,18 @@
         `;
     }
 
-    function afficherActionCreation(carnetId, solde, displaySolde) {
+    function afficherActionCreation(carnetId, solde, displaySolde,estBloque, nbMax) {
+        if (estBloque) {
+            document.getElementById('zone-action').innerHTML = `
+                <div class="card border-0 shadow-sm p-5 text-center bg-light">
+                    <i class="bi bi-lock-fill fs-1 text-danger mb-3"></i>
+                    <h5 class="fw-bold">Carnet Clôturé</h5>
+                    <p class="text-muted">Ce carnet a atteint sa limite de ${nbMax} cycles. Aucune nouvelle tontine ne peut être ouverte.</p>
+                </div>
+            `;
+            // Trigger optionnel de SweetAlert si l'agent clique sur une zone de contrôle
+            return;
+        }
         document.getElementById('zone-action').innerHTML = `
             <div class="card border-0 shadow-sm p-4 text-center animate__animated animate__fadeInUp" style="border-radius: 24px;">
                 <div class="mx-auto mb-3 d-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle" style="width: 60px; height: 60px;">
@@ -290,9 +308,9 @@
             }
 
             const carnet = await activeDB.carnets.get(Number(cid));
-            
-            let dateDebut = new Date();
-            let dateFin = new Date(dateDebut);
+            let dateDebut = new Date(); // Date du jour
+            let dateFin = calculerDateFin(dateDebut);
+
             let joursAjoutes = 0;
             while (joursAjoutes < 31) {
                 dateFin.setDate(dateFin.getDate() + 1);
@@ -381,7 +399,7 @@
             agent_id: Number(agentId),
             pointage: parseInt(nb),
             montant: parseInt(nb * mise),
-            date: new Date().toISOString().split('T')[0],
+            date_saisie: new Date().toISOString(),
             synced: 0
         });
 
@@ -467,6 +485,45 @@
             const commission = collectesDuCycle.length > 0 ? c.montant_journalier : 0;
             return acc + (sommeCollectes - commission);
         }, 0);
+    }
+
+        /**
+     * Calcule la date de fin après 31 jours de collecte
+     * Exclut uniquement les dimanches et les jours fériés FIXES.
+     */
+    function calculerDateFin(dateDepart) {
+        const nbJours = 31;
+        // Liste des jours fériés FIXES au Togo
+        const feriesFixes = [
+            '01-01', // Jour de l'an
+            '04-27', // Indépendance
+            '05-01', // Fête du travail
+            '06-21', // Martyr (Note : 21 juin est férié au Togo)
+            '08-15', // Assomption
+            '11-01', // Toussaint
+            '12-25'  // Noël
+        ];
+
+        let dateCourante = new Date(dateDepart);
+        let joursCollectes = 0;
+
+        while (joursCollectes < nbJours) {
+            dateCourante.setDate(dateCourante.getDate() + 1);
+
+            const estDimanche = dateCourante.getDay() === 0;
+            
+            // On formate la date en 'MM-DD' pour comparer avec notre liste fixe
+            const moisJour = ('0' + (dateCourante.getMonth() + 1)).slice(-2) + '-' + 
+                            ('0' + dateCourante.getDate()).slice(-2);
+            
+            const estFerieFixe = feriesFixes.includes(moisJour);
+
+            // On compte le jour seulement si ce n'est pas un dimanche et pas un férié fixe
+            if (!estDimanche && !estFerieFixe) {
+                joursCollectes++;
+            }
+        }
+        return dateCourante;
     }
 
     /**
