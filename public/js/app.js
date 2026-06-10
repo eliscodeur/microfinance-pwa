@@ -4271,28 +4271,6 @@ function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { 
 function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
 function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
-// import './bootstrap';
-// import React from 'react';
-// import { createRoot } from 'react-dom/client';
-// import { createInertiaApp } from '@inertiajs/inertia-react';
-// import { InertiaProgress } from '@inertiajs/progress';
-
-// createInertiaApp({
-//     resolve: async name => {
-//         const page = await import(`./Pages/${name}.jsx`);
-//         return page.default;
-//     },
-//     setup({ el, App, props, plugin }) {
-//         const root = createRoot(el);
-//         root.render(
-//             <React.StrictMode>
-//                 <App {...props} />
-//             </React.StrictMode>,
-//         );
-//     },
-// });
-
-// InertiaProgress.init();
 
 
 
@@ -4363,7 +4341,7 @@ if (el && initialPage) {
   _inertiajs_progress__WEBPACK_IMPORTED_MODULE_4__.InertiaProgress.init();
 } else {
   // Si on est sur une page Blade classique sans élément #app
-  console.log("Mode Blade : Inertia ignoré sur cette page.");
+  // console.log("Mode Blade : Inertia ignoré sur cette page.");
 }
 
 /***/ }),

@@ -23,10 +23,12 @@ class CategoryTontineController extends Controller
                 'libelle' => 'required|string|max:255|unique:categories_tontine,libelle',
                 'prix' => 'required|numeric|min:0',
                 'nombre_cycles' => 'required|integer|min:1',
-                'description' => 'nullable|string',
+                'description' => 'required|integer|min:1',
             ], [
                 'libelle.unique' => 'Ce nom de catégorie existe déjà.',
                 'libelle.required' => 'Le libellé est obligatoire.',
+                'description.required' => 'La base de crédit est obligatoire.',
+                'description.min' => 'La base de crédit doit être un nombre positif.',
             ]);
 
             CategoryTontine::create($validated);
@@ -61,10 +63,12 @@ class CategoryTontineController extends Controller
                 'libelle' => 'required|string|max:255|unique:categories_tontine,libelle,' . $id,
                 'prix' => 'required|numeric|min:0',
                 'nombre_cycles' => 'required|integer|min:1',
-                'description' => 'nullable|string',
+                'description' => 'required|integer|min:1',
             ], [
                 'libelle.unique' => 'Désolé, ce libellé est déjà utilisé par une autre catégorie.',
                 'libelle.required' => 'Le libellé ne peut pas être vide.',
+                'description.required' => 'La base de crédit est obligatoire.',
+                'description.min' => 'La base de crédit doit être un nombre positif.',
             ]);
 
             // 2. Récupération et mise à jour

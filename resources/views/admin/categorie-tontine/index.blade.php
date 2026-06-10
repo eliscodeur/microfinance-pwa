@@ -21,7 +21,7 @@
                             <th class="ps-4">Libellé</th>
                             <th>Prix (FCFA)</th>
                             <th>Cycles</th>
-                            <th>Description</th>
+                            <th>Base de credit(jours)</th>
                             <th class="text-end pe-4">Actions</th>
                         </tr>
                     </thead>
@@ -35,7 +35,7 @@
                                 </span>
                             </td>
                             <td><i class="bi bi-arrow-repeat me-1"></i> {{ $category->nombre_cycles }} cycles</td>
-                            <td class="text-muted small">{{ Str::limit($category->description, 40) }}</td>
+                            <td class="text-muted small">{{ $category->description }}</td>
                             <td class="text-end pe-4">
                                 <div class="btn-group">
                                     <button class="btn btn-sm btn-light edit-btn" 
@@ -94,8 +94,8 @@
                     </div>
                 </div>
                 <div class="mb-0">
-                    <label class="form-label small fw-bold">Description</label>
-                    <textarea name="description" class="form-control" rows="2"></textarea>
+                    <label class="form-label small fw-bold">Base de crédit (jours)</label>
+                    <input type="number" name="description" class="form-control" required>
                 </div>
             </div>
             <div class="modal-footer border-top-0">
@@ -130,8 +130,8 @@
                     </div>
                 </div>
                 <div class="mb-0">
-                    <label class="form-label small fw-bold">Description</label>
-                    <textarea name="description" id="edit_description" class="form-control" rows="2"></textarea>
+                    <label class="form-label small fw-bold">Base de credit (jours)</label>
+                    <input type="number" name="description" id="edit_description" class="form-control" required>
                 </div>
             </div>
             <div class="modal-footer border-top-0">
@@ -178,9 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('edit_libelle').value = btn.dataset.libelle || '';
             document.getElementById('edit_prix').value = btn.dataset.prix || 0;
             document.getElementById('edit_cycles').value = btn.dataset.cycles || 0;
-            
-            const desc = btn.dataset.description;
-            document.getElementById('edit_description').value = (desc === 'null' || !desc) ? '' : desc;
+            document.getElementById('edit_description').value = btn.dataset.description || 0;
 
             // Mise à jour dynamique de l'action du formulaire avec l'ID
             editForm.action = `/admin/categories/${btn.dataset.id}`;
