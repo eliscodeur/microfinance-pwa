@@ -170,38 +170,49 @@ class CarnetController extends Controller
     public function getCarnetsByClient($clientId)
     {
         try {
+            // 1. Eager loading : on charge uniquement le nécessaire
             $carnets = Carnet::with([
-                'categoryTontine', 'parent',
-                'cycles.collectes', 'depots', 'retraits'
+                'categoryTontine',
+                'cycles' => function($q) { $q->whereNull('retire_at')->with('collectes'); },
+                'depots',
+                'retraits',
+                'credits' => function($q) { $q->where('statut', 'active'); }
             ])
-                ->where('client_id', (int) $clientId)
-                ->where('statut', 'actif')
-                ->whereDoesntHave('credits', fn($q) => $q->where('statut', 'active'))
-                ->get()
-                ->map(function (Carnet $carnet) {
-                    $category        = $carnet->categoryTontine;
-                    $requiredPointages = $category ? $category->minimumPointagesRequired() : null;
-                    return [
-                        'id'                => $carnet->id,
-                        'numero'            => $carnet->numero,
-                        'type'              => $carnet->type,
-                        'category'          => $category ? $category->libelle : null,
-                        'nombre_cycles'     => $category ? $category->nombre_cycles : null,
-                        'required_pointages'=> $requiredPointages,
-                        'total_pointages'   => $carnet->totalPointages(),
-                        'available_savings' => $carnet->availableSavings(),
-                        'guarantee_base'    => $carnet->guaranteeBase(),
-                        'linked_tontine'    => $carnet->parent ? [
-                            'id'     => $carnet->parent->id,
-                            'numero' => $carnet->parent->numero,
-                        ] : null,
-                    ];
-                });
+            ->where('client_id', (int) $clientId)
+            ->where('statut', 'actif')
+            ->get();
 
-            return response()->json($carnets);
+            // 2. Transformation : on délègue les calculs au modèle
+            $formattedCarnets = $carnets->map(function (Carnet $carnet) {
+                
+                // Logique conditionnelle basée sur le type
+                $solde = ($carnet->type === 'compte') 
+                    ? $carnet->solde_disponible 
+                    : $carnet->activeCycleSavings();
+
+                // On récupère le montant de la mise via le cycle en cours ou la catégorie
+                $mise = $carnet->cycles->first()->montant_journalier ?? ($carnet->categoryTontine->montant_cotisation ?? 0);
+
+                return [
+                    'id'                 => $carnet->id,
+                    'numero'             => $carnet->numero,
+                    'type'               => $carnet->type,
+                    'statut'             => $carnet->statut,
+                    'date_creation'      => $carnet->created_at->format('Y-m-d'),
+                    'solde'              => $solde,
+                    'solde_bloque'       => $carnet->credits->sum('montant_demande'),
+                    'mise'               => $mise,
+                    'total_pointages'    => $carnet->totalPointages(),
+                    'required_pointages' => $carnet->categoryTontine?->minimumPointagesRequired() ?? 0,
+                    'date_fin_cycle'     => null, 
+                ];
+            });
+
+            return response()->json($formattedCarnets);
+                
         } catch (\Exception $e) {
-            \Log::error('getCarnetsByClient: ' . $e->getMessage());
-            return response()->json(['error' => $e->getMessage()], 500);
+            \Log::error('getCarnetsByClient Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Une erreur est survenue lors de la récupération des carnets.'], 500);
         }
     }
 

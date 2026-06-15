@@ -10,6 +10,7 @@ class Carnet extends Model
 {
     use HasFactory;
 
+    protected $appends = ['solde_tontine_non_retire'];
     protected $casts = [
         'date_debut' => 'date',
     ];
@@ -59,6 +60,7 @@ class Carnet extends Model
      */
 public function getSoldeTontineNonRetireAttribute(): float
 {
+    \Log::info("DEBUG CARNET {$this->id} : " . $this->cycles->count() . " cycles chargés.");
     // On ne calcule que pour les cycles terminés qui n'ont pas encore leur date de retrait final
     $cyclesPrets = $this->cycles
         ->where('statut', 'termine')
@@ -74,6 +76,7 @@ public function getSoldeTontineNonRetireAttribute(): float
         $soldeRestant = $totalCollectes - $commissionFixe - $totalDejaRetire;
 
         // On retourne le cumul, mais jamais en dessous de 0
+     \Log::info("DEBUG CYCLE {$cycle->id} : Collectes = {$totalCollectes}");
         return $carry + max(0, $soldeRestant);
     }, 0);
 }

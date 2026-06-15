@@ -75,6 +75,7 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
 
     Route::get('/carnets/get-tontines/{clientId}', [CarnetController::class, 'getTontinesByClient'])->name('carnets.get-tontines');
     Route::get('/carnets/get-by-client/{clientId}', [CarnetController::class, 'getCarnetsByClient'])->name('carnets.get-by-client');
+    Route::get('/carnets/get-by-client-credit/{clientId}', [CreditController::class, 'getCarnetsByClient'])->name('carnets.get-by-client-credit');
     Route::get('/carnets', [CarnetController::class, 'index'])->name('carnets.index')->middleware('can:Gérer Carnets');
     Route::get('/carnets/{carnet}', [CarnetController::class, 'show'])->name('carnets.show')->middleware('can:Gérer Carnets');
     Route::post('/carnets/store', [CarnetController::class, 'store'])->name('carnets.store')->middleware('can:Gérer Carnets');

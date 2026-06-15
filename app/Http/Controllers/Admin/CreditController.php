@@ -38,7 +38,42 @@ class CreditController extends Controller
 
     public function create()
     {
-        $clients = Client::orderBy('nom')->orderBy('prenom')->get(['id', 'nom', 'prenom']);
+        $clients = Client::with([
+            'carnets' => function ($query) {
+                $query->where('statut', 'actif')
+                    ->whereDoesntHave('credits', function($q) {
+                        $q->where('statut', 'active');
+                    })
+                    ->with([
+                        'categoryTontine',
+                        'cycles' => function($q) { $q->whereNull('retire_at')->with('collectes'); },
+                        'depots',
+                        'retraits',
+                        'credits' 
+                    ]);
+            }
+        ])
+        ->orderBy('nom')
+        ->orderBy('prenom')
+        ->get()
+        ->map(function ($client) {
+            $client->carnets = $client->carnets->map(function ($carnet) {
+                  return [
+                    'id'                 => $carnet->id,
+                    'numero'             => $carnet->numero,
+                    'type'               => $carnet->type,
+                    'category'           => $carnet->categoryTontine?->libelle,
+                    'solde'              => ($carnet->type === 'compte') ? $carnet->solde_disponible : $carnet->activeCycleSavings(),
+                    'solde_bloque'       => $carnet->credits->sum('montant_demande'),
+                    'solde_tontine' => $carnet->solde_tontine_non_retire,
+                    'mise'               => $carnet->cycles->first()?->montant_journalier ?? 0,
+                    'total_pointages'    => $carnet->totalPointages(),
+                    'required_pointages' => $carnet->categoryTontine?->minimumPointagesRequired() ?? 0,
+                ];
+            });
+           
+            return $client;
+        });
 
         return Inertia::render('Credits/Create', [
             'clients' => $clients,
@@ -74,16 +109,26 @@ class CreditController extends Controller
         $guaranteeBase = 0;
 
         if ($request->filled('carnet_id')) {
-            $carnet = Carnet::with('categoryTontine')
-                ->where('id', $request->carnet_id)
-                ->where('client_id', $request->client_id)
-                ->where('statut', 'actif')
-                ->first();
+            // Ajout du pré-chargement global ici aussi
+            $carnet = Carnet::with([
+                'categoryTontine',
+                'cycles.collectes',
+                'depots',
+                'retraits',
+                'credits' => function($q) {
+                    $q->where('statut', 'active');
+                }
+            ])
+            ->where('id', $request->carnet_id)
+            ->where('client_id', $request->client_id)
+            ->where('statut', 'actif')
+            ->first();
 
             if (!$carnet) {
                 return back()->withInput()->with('error', 'Le carnet sélectionné est invalide ou n’appartient pas au client.');
             }
-
+            
+   
             $carnetHasActiveCredit = Credit::where('carnet_id', $request->carnet_id)
                 ->whereIn('statut', ['pending', 'approved', 'active', 'in_arrears'])
                 ->exists();
