@@ -208,7 +208,7 @@
     // Écouteurs d'événements matériels système pour intercepter les coupures de réseau
     window.addEventListener('online', updateNetworkStatus);
     window.addEventListener('offline', updateNetworkStatus);
-    setInterval(updateNetworkStatus, 30000);
+    setInterval(updateNetworkStatus, 3000);
     // Première exécution au chargement complet de la structure DOM
     document.addEventListener('DOMContentLoaded', () => {
         updateNetworkStatus();
@@ -297,7 +297,7 @@
             const auth = await authRes.json();
 
             if (!auth.can_sync) {
-                Swal.fire('Non autorisé', 'Votre autorisation a expiré.', 'warning');
+                Swal.fire('Non autorisé', 'Veuillez contacter votre administrateur.', 'warning');
                 return;
             }
             lancerProcessus(cycles, collectes, agents);
@@ -328,7 +328,7 @@
             const agentMatricule = getMatricule(); 
 
             const syncJob = {
-                matricule: agentMatricule, // 👈 Ajout crucial pour ton Laravel mis à jour
+                matricule: agentMatricule, 
                 sync_uuid: `sync-${agentMatricule}-${Date.now()}`,
                 cycles: cycles,
                 collectes: collectes,
@@ -431,11 +431,11 @@
         updateStatusUI("Mise à jour locale...");
         
         try {
-            await fetch("{{ route('pwa.lock-sync') }}", { 
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
-            });
+            // await fetch("{{ route('pwa.lock-sync') }}", { 
+            //     method: 'POST',
+            //     credentials: 'same-origin',
+            //     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
+            // });
 
             if (serverData.data) {
                 await populateDatabase(serverData.data, { replaceAll: true });

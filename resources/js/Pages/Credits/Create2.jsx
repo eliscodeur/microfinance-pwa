@@ -2,7 +2,7 @@ import { Link, useForm } from '@inertiajs/inertia-react';
 import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import AdminLayout from '../../Layouts/AdminLayout.jsx';
-import { buildScheduleFromForm, formatCurrency, formatDateToFR } from '../../Utils/creditHelpers';
+import { buildScheduleFromForm, formatCurrency, formatDateToFR } from '../../Utils/creditHelpers.js';
 
 export default function Create({ clients }) {
     const form = useForm({

@@ -27,7 +27,9 @@ export default function Create({ clients }) {
 
     const [carnets, setCarnets] = useState([]);
     const [activeTab, setActiveTab] = useState('identification');
-    const [clientSearch, setClientSearch] = useState(''); 
+    const [clientSearch, setClientSearch] = useState('');
+    const [carnetDetails, setCarnetDetails] = useState(null);
+    const [loadingDetails, setLoadingDetails] = useState(false); 
     
     const selectedCarnet = carnets.find(carnet => String(carnet.id) === String(form.data.carnet_id));
     
@@ -108,6 +110,45 @@ export default function Create({ clients }) {
 
         return () => controller.abort();
     }, [form.data.client_id]);
+
+    // Fetch carnet details when carnet_id changes
+    useEffect(() => {
+        if (!form.data.carnet_id || !selectedCarnet) {
+            setCarnetDetails(null);
+            return;
+        }
+
+        setLoadingDetails(true);
+        const controller = new AbortController();
+        const url = `/admin/carnets/details/${form.data.carnet_id}`;
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            signal: controller.signal,
+        })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    setCarnetDetails(data);
+                }
+                setLoadingDetails(false);
+            })
+            .catch(err => {
+                if (err.name !== 'AbortError') {
+                    console.error('Error fetching carnet details:', err);
+                    setCarnetDetails(null);
+                }
+                setLoadingDetails(false);
+            });
+
+        return () => controller.abort();
+    }, [form.data.carnet_id, selectedCarnet]);
 
     const handleTabChange = (targetTab) => {
         // Validation renforcée pour bloquer l'accès aux onglets suivants sans carnet
@@ -317,80 +358,204 @@ export default function Create({ clients }) {
                                     2. État du support de garantie
                                 </legend>
 
-                                {selectedCarnet && (
-                                    <div className="card bg-light border-0 shadow-sm mb-4">
-                                        <div className="card-header bg-white border-bottom-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
-                                            <h5 className="mb-0 text-primary">
-                                                <i className={`bi ${isCompteCarnetSelected ? 'bi-piggy-bank' : 'bi-wallet2'} me-2`}></i>
-                                                {isCompteCarnetSelected ? 'Compte Épargne' : 'Carnet de Tontine'} N° {selectedCarnet.numero}
-                                            </h5>
-                                            <span className={`badge ${selectedCarnet.statut === 'actif' ? 'bg-success' : 'bg-secondary'}`}>
-                                                {selectedCarnet.statut ? selectedCarnet.statut.toUpperCase() : 'ACTIF'}
-                                            </span>
+                                {loadingDetails && (
+                                    <div className="text-center py-5">
+                                        <div className="spinner-border text-primary" role="status">
+                                            <span className="visually-hidden">Chargement...</span>
                                         </div>
-                                        <div className="card-body row g-4">
-                                            
-                                            {/* Détails Communs */}
-                                            <div className="col-md-4">
-                                                <div className="text-muted small mb-1">Date d'ouverture</div>
-                                                <div className="fw-bold">{formatDateToFR(selectedCarnet.date_creation || selectedCarnet.created_at)}</div>
+                                        <p className="text-muted mt-2">Chargement des détails du carnet...</p>
+                                    </div>
+                                )}
+
+                                {carnetDetails && carnetDetails.type === 'tontine' && carnetDetails.cycles && (
+                                    <div className="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
+                                        {/* En-tête Tontine unifié */}
+                                        <div className="d-flex justify-content-between align-items-center p-3 p-md-4 border-bottom border-light">
+                                            <div className="d-flex align-items-center">
+                                                <div 
+                                                    className="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded me-3" 
+                                                    style={{ width: '40px', height: '40px' }}
+                                                >
+                                                    <i className="bi bi-wallet2 fs-5"></i>
+                                                </div>
+                                                <div className="lh-sm">
+                                                    <div className="fw-bold text-dark" style={{ fontSize: '0.9rem' }}>
+                                                        Carnet de Tontine
+                                                    </div>
+                                                    <div className="text-muted" style={{ fontSize: '0.8rem' }}>
+                                                        N° {selectedCarnet.numero}
+                                                    </div>
+                                                </div>
                                             </div>
+                                            <div>
+                                                {/* Badge de compteur adouci */}
+                                                <span 
+                                                    className="badge bg-light text-secondary border fw-medium rounded-pill px-3 py-2" 
+                                                    style={{ fontSize: '0.75rem' }}
+                                                >
+                                                    {carnetDetails.cycles.length} Cycle{carnetDetails.cycles.length > 1 ? 's' : ''}
+                                                </span>
+                                            </div>
+                                        </div>
 
-                                            {/* Détails spécifiques TONTINE */}
-                                            {isTontineCarnetSelected && (
-                                                <>
-                                                    <div className="col-md-4">
-                                                        <div className="text-muted small mb-1">Mise unitaire</div>
-                                                        <div className="fw-bold text-dark">{formatCurrency(selectedCarnet.mise)}</div>
-                                                    </div>
-                                                    <div className="col-md-4">
-                                                        <div className="text-muted small mb-1">Solde disponible (Base de remboursement)</div>
-                                                        <div className="fw-bold text-success fs-5">{formatCurrency(selectedCarnet?.solde_tontine)}</div>
-                                                    </div>
-                                                  
-                                                    <div className="col-md-6">
-                                                        <div className="text-muted small mb-1">Progression des pointages</div>
-                                                        <div className="d-flex align-items-center">
-                                                            <div className="fw-bold me-2">{selectedCarnet.total_pointages || 0} / {selectedCarnet.required_pointages || 0}</div>
-                                                            <div className="progress flex-grow-1" style={{ height: '8px' }}>
-                                                                <div className={`progress-bar ${pointageWarning ? 'bg-warning' : 'bg-success'}`} 
-                                                                     role="progressbar" 
-                                                                     style={{ width: `${Math.min(100, ((selectedCarnet.total_pointages || 0) / (selectedCarnet.required_pointages || 1)) * 100)}%` }}>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="col-md-6">
-                                                        <div className="text-muted small mb-1">Date fin théorique du cycle</div>
-                                                        <div className="fw-bold">{formatDateToFR(selectedCarnet.date_fin_cycle) || 'Non définie'}</div>
-                                                    </div>
-                                                </>
-                                            )}
-
-                                            {/* Détails spécifiques COMPTE ÉPARGNE */}
-                                            {isCompteCarnetSelected && (
-                                                <>
-                                                    <div className="col-md-4">
-                                                        <div className="text-muted small mb-1">Solde disponible</div>
-                                                        <div className="fw-bold text-success fs-5">{formatCurrency(selectedCarnet?.solde)}</div>
-                                                    </div>
-                                                    <div className="col-md-4">
-                                                        <div className="text-muted small mb-1">Solde bloqué (Garanties)</div>
-                                                        <div className="fw-bold text-danger">{formatCurrency(selectedCarnet?.solde_bloque || 0)}</div>
-                                                    </div>
-                                                </>
-                                            )}
+                                        {/* Tableau des Cycles épuré */}
+                                        <div className="table-responsive">
+                                            <table className="table table-borderless table-hover align-middle mb-0">
+                                                <thead className="border-bottom border-light">
+                                                    <tr>
+                                                        <th className="text-muted fw-semibold text-uppercase py-3 ps-4" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Période</th>
+                                                        <th className="text-muted fw-semibold text-uppercase py-3" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Fin Prévue</th>
+                                                        <th className="text-muted fw-semibold text-uppercase py-3" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Fin Réelle</th>
+                                                        <th className="text-muted fw-semibold text-uppercase py-3 text-center" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Mise</th>
+                                                        <th className="text-muted fw-semibold text-uppercase py-3 text-center" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Pointages</th>
+                                                        <th className="text-muted fw-semibold text-uppercase py-3 text-center" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Statut</th>
+                                                        <th className="text-muted fw-semibold text-uppercase py-3 text-center pe-4" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>État</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {carnetDetails.cycles.map((cycle, idx) => (
+                                                        <tr key={idx}>
+                                                            <td className="ps-4 fw-medium text-dark" style={{ fontSize: '0.85rem' }}>
+                                                                {cycle.date_debut}
+                                                            </td>
+                                                            <td className="text-muted" style={{ fontSize: '0.8rem' }}>
+                                                                {cycle.date_fin_prevue || '-'}
+                                                            </td>
+                                                            <td className="text-muted" style={{ fontSize: '0.8rem' }}>
+                                                                {cycle.date_cloture_reelle || '-'}
+                                                            </td>
+                                                            
+                                                            {/* Mise : retrait du badge bleu flashy, on laisse le texte propre */}
+                                                            <td className="text-center fw-semibold text-dark" style={{ fontSize: '0.85rem' }}>
+                                                                {formatCurrency(cycle.mise)}
+                                                            </td>
+                                                            
+                                                            <td className="text-center text-muted" style={{ fontSize: '0.85rem' }}>
+                                                                {cycle.total_pointages}
+                                                            </td>
+                                                            
+                                                            {/* Statut : Badges transparents (opacity-10) et arrondis (pill) */}
+                                                            <td className="text-center">
+                                                                <span 
+                                                                    className={`badge rounded-pill fw-medium ${cycle.statut === 'termine' ? 'bg-success bg-opacity-10 text-success' : cycle.statut === 'en_cours' ? 'bg-primary bg-opacity-10 text-primary' : 'bg-secondary bg-opacity-10 text-secondary'}`} 
+                                                                    style={{ fontSize: '0.75rem' }}
+                                                                >
+                                                                    {cycle.statut === 'en_cours' ? 'En cours' : cycle.statut === 'termine' ? 'Terminé' : cycle.statut}
+                                                                </span>
+                                                            </td>
+                                                            
+                                                            {/* Retard : Badges transparents également */}
+                                                            <td className="text-center pe-4">
+                                                                <span 
+                                                                    className={`badge rounded-pill fw-medium ${cycle.en_retard ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success'}`} 
+                                                                    style={{ fontSize: '0.75rem' }}
+                                                                >
+                                                                    {cycle.en_retard ? 'En retard' : 'À jour'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* L'alerte se déclenche ici de façon bien visible */}
-                                {pointageWarning && (
-                                    <div className="alert alert-warning shadow-sm d-flex align-items-center">
-                                        <i className="bi bi-exclamation-triangle-fill fs-3 me-3 text-warning"></i>
-                                        <div>
-                                            <strong>Pointages insuffisants :</strong> Ce carnet n'a pas atteint le minimum requis pour prétendre à un octroi standard. Une validation managériale pourrait être nécessaire.
+                                {carnetDetails && carnetDetails.type === 'compte' && (
+                                    <div>
+                                        {/* En-tête Compte */}
+                                        <div className="card border-0 shadow-sm mb-4 rounded-4">
+                                            <div className="card-body p-3 p-md-4">
+                                                {/* En-tête : Type de compte et Numéro */}
+                                                <div className="d-flex align-items-center mb-3">
+                                                    <div 
+                                                        className="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded me-3" 
+                                                        style={{ width: '40px', height: '40px' }}
+                                                    >
+                                                        <i className="bi bi-piggy-bank fs-5"></i>
+                                                    </div>
+                                                    <div className="lh-sm">
+                                                        <div className="fw-bold text-dark" style={{ fontSize: '0.9rem' }}>
+                                                            Compte Épargne
+                                                        </div>
+                                                        <div className="text-muted" style={{ fontSize: '0.8rem' }}>
+                                                            N° {selectedCarnet.numero}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Corps : Solde disponible */}
+                                                <div className="mt-2">
+                                                    <div 
+                                                        className="text-muted text-uppercase fw-semibold mb-1" 
+                                                        style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}
+                                                    >
+                                                        Solde disponible
+                                                    </div>
+                                                    <div className="fw-bolder text-dark" style={{ fontSize: '1.75rem', lineHeight: '1' }}>
+                                                        {formatCurrency(carnetDetails.solde)}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
+
+                                        {/* Historique des Transactions */}
+                                        <div className="card border-0 shadow-sm">
+                                            <div className="card-header bg-light border-bottom pt-3 pb-2">
+                                                <h6 className="mb-0 text-secondary fw-bold">10 Derniers mouvements</h6>
+                                            </div>
+                                            <div className="card-body p-0">
+                                                {carnetDetails.historique && carnetDetails.historique.length > 0 ? (
+                                                    <div className="list-group list-group-flush">
+                                                        {carnetDetails.historique.map((transaction, idx) => (
+                                                            <div key={idx} className="list-group-item d-flex justify-content-between align-items-center px-3 py-2 border-light">
+                                                                
+                                                                <div className="d-flex align-items-center gap-2 flex-grow-1">
+                                                                    {/* Icône adoucie et plus petite */}
+                                                                    <div 
+                                                                        className={`d-flex align-items-center justify-content-center rounded ${transaction.type_transaction === 'Dépôt' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'}`} 
+                                                                        style={{ width: '32px', height: '32px' }}
+                                                                    >
+                                                                        <i className={`bi ${transaction.type_transaction === 'Dépôt' ? 'bi-arrow-down-short' : 'bi-arrow-up-short'} fs-5`}></i>
+                                                                    </div>
+                                                                    
+                                                                    {/* Détails du texte plus compacts */}
+                                                                    <div className="lh-sm">
+                                                                        <div className="fw-medium text-dark" style={{ fontSize: '0.85rem' }}>
+                                                                            {transaction.type_transaction}
+                                                                        </div>
+                                                                        <small className="text-muted" style={{ fontSize: '0.70rem' }}>
+                                                                            {transaction.date}
+                                                                        </small>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Montant aligné à droite, typographie nette */}
+                                                                <div className="text-end">
+                                                                    <div className={`fw-semibold ${transaction.type_transaction === 'Dépôt' ? 'text-success' : 'text-danger'}`} style={{ fontSize: '0.85rem' }}>
+                                                                        {transaction.type_transaction === 'Dépôt' ? '+' : '-'} {formatCurrency(transaction.montant)}
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    /* État vide (Empty state) plus discret */
+                                                    <div className="p-3 text-center text-muted">
+                                                        <i className="bi bi-journal-text fs-4 opacity-50 d-block mb-1"></i>
+                                                        <span style={{ fontSize: '0.8rem' }}>Aucune transaction récente</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {!loadingDetails && !carnetDetails && selectedCarnet && (
+                                    <div className="alert alert-warning">
+                                        <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                                        Impossible de charger les détails du carnet.
                                     </div>
                                 )}
 

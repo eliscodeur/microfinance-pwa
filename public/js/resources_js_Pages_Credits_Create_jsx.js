@@ -95,6 +95,14 @@ function Create(_ref) {
     _useState6 = _slicedToArray(_useState5, 2),
     clientSearch = _useState6[0],
     setClientSearch = _useState6[1];
+  var _useState7 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null),
+    _useState8 = _slicedToArray(_useState7, 2),
+    carnetDetails = _useState8[0],
+    setCarnetDetails = _useState8[1];
+  var _useState9 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false),
+    _useState0 = _slicedToArray(_useState9, 2),
+    loadingDetails = _useState0[0],
+    setLoadingDetails = _useState0[1];
   var selectedCarnet = carnets.find(function (carnet) {
     return String(carnet.id) === String(form.data.carnet_id);
   });
@@ -173,6 +181,41 @@ function Create(_ref) {
       return controller.abort();
     };
   }, [form.data.client_id]);
+
+  // Fetch carnet details when carnet_id changes
+  (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
+    if (!form.data.carnet_id || !selectedCarnet) {
+      setCarnetDetails(null);
+      return;
+    }
+    setLoadingDetails(true);
+    var controller = new AbortController();
+    var url = "/admin/carnets/details/".concat(form.data.carnet_id);
+    fetch(url, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      signal: controller.signal
+    }).then(function (response) {
+      if (!response.ok) throw new Error("HTTP error! status: ".concat(response.status));
+      return response.json();
+    }).then(function (data) {
+      if (data.success) {
+        setCarnetDetails(data);
+      }
+      setLoadingDetails(false);
+    })["catch"](function (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Error fetching carnet details:', err);
+        setCarnetDetails(null);
+      }
+      setLoadingDetails(false);
+    });
+    return function () {
+      return controller.abort();
+    };
+  }, [form.data.carnet_id, selectedCarnet]);
   var handleTabChange = function handleTabChange(targetTab) {
     // Validation renforcée pour bloquer l'accès aux onglets suivants sans carnet
     if (['details', 'simulation', 'resumes'].includes(targetTab)) {
@@ -202,10 +245,10 @@ function Create(_ref) {
   var schedule = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
     return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.buildScheduleFromForm)(form.data);
   }, [form.data]);
-  var _useState7 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(1),
-    _useState8 = _slicedToArray(_useState7, 2),
-    currentPage = _useState8[0],
-    setCurrentPage = _useState8[1];
+  var _useState1 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(1),
+    _useState10 = _slicedToArray(_useState1, 2),
+    currentPage = _useState10[0],
+    setCurrentPage = _useState10[1];
   var pageSize = 6;
   var pageCount = Math.max(1, Math.ceil(schedule.length / pageSize));
   (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
@@ -482,114 +525,300 @@ function Create(_ref) {
             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("legend", {
               className: "text-uppercase h6 text-secondary border-bottom pb-2 mb-4",
               children: "2. \xC9tat du support de garantie"
-            }), selectedCarnet && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-              className: "card bg-light border-0 shadow-sm mb-4",
+            }), loadingDetails && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              className: "text-center py-5",
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                className: "spinner-border text-primary",
+                role: "status",
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                  className: "visually-hidden",
+                  children: "Chargement..."
+                })
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
+                className: "text-muted mt-2",
+                children: "Chargement des d\xE9tails du carnet..."
+              })]
+            }), carnetDetails && carnetDetails.type === 'tontine' && carnetDetails.cycles && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              className: "card border-0 shadow-sm mb-4 rounded-4 overflow-hidden",
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                className: "card-header bg-white border-bottom-0 pt-3 pb-0 d-flex justify-content-between align-items-center",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("h5", {
-                  className: "mb-0 text-primary",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
-                    className: "bi ".concat(isCompteCarnetSelected ? 'bi-piggy-bank' : 'bi-wallet2', " me-2")
-                  }), isCompteCarnetSelected ? 'Compte Épargne' : 'Carnet de Tontine', " N\xB0 ", selectedCarnet.numero]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
-                  className: "badge ".concat(selectedCarnet.statut === 'actif' ? 'bg-success' : 'bg-secondary'),
-                  children: selectedCarnet.statut ? selectedCarnet.statut.toUpperCase() : 'ACTIF'
-                })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                className: "card-body row g-4",
+                className: "d-flex justify-content-between align-items-center p-3 p-md-4 border-bottom border-light",
                 children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                  className: "col-md-4",
+                  className: "d-flex align-items-center",
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "text-muted small mb-1",
-                    children: "Date d'ouverture"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                    className: "fw-bold",
-                    children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatDateToFR)(selectedCarnet.date_creation || selectedCarnet.created_at)
-                  })]
-                }), isTontineCarnetSelected && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                    className: "col-md-4",
+                    className: "d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded me-3",
+                    style: {
+                      width: '40px',
+                      height: '40px'
+                    },
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
+                      className: "bi bi-wallet2 fs-5"
+                    })
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                    className: "lh-sm",
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                      className: "text-muted small mb-1",
-                      children: "Mise unitaire"
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                       className: "fw-bold text-dark",
-                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(selectedCarnet.mise)
-                    })]
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                    className: "col-md-4",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                      className: "text-muted small mb-1",
-                      children: "Solde disponible (Base de remboursement)"
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                      className: "fw-bold text-success fs-5",
-                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.solde_tontine)
-                    })]
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                    className: "col-md-6",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                      className: "text-muted small mb-1",
-                      children: "Progression des pointages"
+                      style: {
+                        fontSize: '0.9rem'
+                      },
+                      children: "Carnet de Tontine"
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                      className: "d-flex align-items-center",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                        className: "fw-bold me-2",
-                        children: [selectedCarnet.total_pointages || 0, " / ", selectedCarnet.required_pointages || 0]
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                        className: "progress flex-grow-1",
+                      className: "text-muted",
+                      style: {
+                        fontSize: '0.8rem'
+                      },
+                      children: ["N\xB0 ", selectedCarnet.numero]
+                    })]
+                  })]
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
+                    className: "badge bg-light text-secondary border fw-medium rounded-pill px-3 py-2",
+                    style: {
+                      fontSize: '0.75rem'
+                    },
+                    children: [carnetDetails.cycles.length, " Cycle", carnetDetails.cycles.length > 1 ? 's' : '']
+                  })
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                className: "table-responsive",
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("table", {
+                  className: "table table-borderless table-hover align-middle mb-0",
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("thead", {
+                    className: "border-bottom border-light",
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("tr", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                        className: "text-muted fw-semibold text-uppercase py-3 ps-4",
                         style: {
-                          height: '8px'
+                          fontSize: '0.65rem',
+                          letterSpacing: '0.5px'
                         },
-                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                          className: "progress-bar ".concat(pointageWarning ? 'bg-warning' : 'bg-success'),
-                          role: "progressbar",
+                        children: "P\xE9riode"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                        className: "text-muted fw-semibold text-uppercase py-3",
+                        style: {
+                          fontSize: '0.65rem',
+                          letterSpacing: '0.5px'
+                        },
+                        children: "Fin Pr\xE9vue"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                        className: "text-muted fw-semibold text-uppercase py-3",
+                        style: {
+                          fontSize: '0.65rem',
+                          letterSpacing: '0.5px'
+                        },
+                        children: "Fin R\xE9elle"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                        className: "text-muted fw-semibold text-uppercase py-3 text-center",
+                        style: {
+                          fontSize: '0.65rem',
+                          letterSpacing: '0.5px'
+                        },
+                        children: "Mise"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                        className: "text-muted fw-semibold text-uppercase py-3 text-center",
+                        style: {
+                          fontSize: '0.65rem',
+                          letterSpacing: '0.5px'
+                        },
+                        children: "Pointages"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                        className: "text-muted fw-semibold text-uppercase py-3 text-center",
+                        style: {
+                          fontSize: '0.65rem',
+                          letterSpacing: '0.5px'
+                        },
+                        children: "Statut"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
+                        className: "text-muted fw-semibold text-uppercase py-3 text-center pe-4",
+                        style: {
+                          fontSize: '0.65rem',
+                          letterSpacing: '0.5px'
+                        },
+                        children: "\xC9tat"
+                      })]
+                    })
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("tbody", {
+                    children: carnetDetails.cycles.map(function (cycle, idx) {
+                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("tr", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
+                          className: "ps-4 fw-medium text-dark",
                           style: {
-                            width: "".concat(Math.min(100, (selectedCarnet.total_pointages || 0) / (selectedCarnet.required_pointages || 1) * 100), "%")
-                          }
-                        })
+                            fontSize: '0.85rem'
+                          },
+                          children: cycle.date_debut
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
+                          className: "text-muted",
+                          style: {
+                            fontSize: '0.8rem'
+                          },
+                          children: cycle.date_fin_prevue || '-'
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
+                          className: "text-muted",
+                          style: {
+                            fontSize: '0.8rem'
+                          },
+                          children: cycle.date_cloture_reelle || '-'
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
+                          className: "text-center fw-semibold text-dark",
+                          style: {
+                            fontSize: '0.85rem'
+                          },
+                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(cycle.mise)
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
+                          className: "text-center text-muted",
+                          style: {
+                            fontSize: '0.85rem'
+                          },
+                          children: cycle.total_pointages
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
+                          className: "text-center",
+                          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                            className: "badge rounded-pill fw-medium ".concat(cycle.statut === 'termine' ? 'bg-success bg-opacity-10 text-success' : cycle.statut === 'en_cours' ? 'bg-primary bg-opacity-10 text-primary' : 'bg-secondary bg-opacity-10 text-secondary'),
+                            style: {
+                              fontSize: '0.75rem'
+                            },
+                            children: cycle.statut === 'en_cours' ? 'En cours' : cycle.statut === 'termine' ? 'Terminé' : cycle.statut
+                          })
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
+                          className: "text-center pe-4",
+                          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                            className: "badge rounded-pill fw-medium ".concat(cycle.en_retard ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success'),
+                            style: {
+                              fontSize: '0.75rem'
+                            },
+                            children: cycle.en_retard ? 'En retard' : 'À jour'
+                          })
+                        })]
+                      }, idx);
+                    })
+                  })]
+                })
+              })]
+            }), carnetDetails && carnetDetails.type === 'compte' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                className: "card border-0 shadow-sm mb-4 rounded-4",
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                  className: "card-body p-3 p-md-4",
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                    className: "d-flex align-items-center mb-3",
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                      className: "d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded me-3",
+                      style: {
+                        width: '40px',
+                        height: '40px'
+                      },
+                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
+                        className: "bi bi-piggy-bank fs-5"
+                      })
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                      className: "lh-sm",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                        className: "fw-bold text-dark",
+                        style: {
+                          fontSize: '0.9rem'
+                        },
+                        children: "Compte \xC9pargne"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                        className: "text-muted",
+                        style: {
+                          fontSize: '0.8rem'
+                        },
+                        children: ["N\xB0 ", selectedCarnet.numero]
                       })]
                     })]
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                    className: "col-md-6",
+                    className: "mt-2",
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                      className: "text-muted small mb-1",
-                      children: "Date fin th\xE9orique du cycle"
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                      className: "fw-bold",
-                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatDateToFR)(selectedCarnet.date_fin_cycle) || 'Non définie'
-                    })]
-                  })]
-                }), isCompteCarnetSelected && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                    className: "col-md-4",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                      className: "text-muted small mb-1",
+                      className: "text-muted text-uppercase fw-semibold mb-1",
+                      style: {
+                        fontSize: '0.65rem',
+                        letterSpacing: '0.5px'
+                      },
                       children: "Solde disponible"
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                      className: "fw-bold text-success fs-5",
-                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.solde)
-                    })]
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                    className: "col-md-4",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                      className: "text-muted small mb-1",
-                      children: "Solde bloqu\xE9 (Garanties)"
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                      className: "fw-bold text-danger",
-                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)((selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.solde_bloque) || 0)
+                      className: "fw-bolder text-dark",
+                      style: {
+                        fontSize: '1.75rem',
+                        lineHeight: '1'
+                      },
+                      children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(carnetDetails.solde)
                     })]
                   })]
+                })
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                className: "card border-0 shadow-sm",
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                  className: "card-header bg-light border-bottom pt-3 pb-2",
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h6", {
+                    className: "mb-0 text-secondary fw-bold",
+                    children: "10 Derniers mouvements"
+                  })
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                  className: "card-body p-0",
+                  children: carnetDetails.historique && carnetDetails.historique.length > 0 ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                    className: "list-group list-group-flush",
+                    children: carnetDetails.historique.map(function (transaction, idx) {
+                      return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                        className: "list-group-item d-flex justify-content-between align-items-center px-3 py-2 border-light",
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                          className: "d-flex align-items-center gap-2 flex-grow-1",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                            className: "d-flex align-items-center justify-content-center rounded ".concat(transaction.type_transaction === 'Dépôt' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'),
+                            style: {
+                              width: '32px',
+                              height: '32px'
+                            },
+                            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
+                              className: "bi ".concat(transaction.type_transaction === 'Dépôt' ? 'bi-arrow-down-short' : 'bi-arrow-up-short', " fs-5")
+                            })
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                            className: "lh-sm",
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                              className: "fw-medium text-dark",
+                              style: {
+                                fontSize: '0.85rem'
+                              },
+                              children: transaction.type_transaction
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("small", {
+                              className: "text-muted",
+                              style: {
+                                fontSize: '0.70rem'
+                              },
+                              children: transaction.date
+                            })]
+                          })]
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+                          className: "text-end",
+                          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                            className: "fw-semibold ".concat(transaction.type_transaction === 'Dépôt' ? 'text-success' : 'text-danger'),
+                            style: {
+                              fontSize: '0.85rem'
+                            },
+                            children: [transaction.type_transaction === 'Dépôt' ? '+' : '-', " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(transaction.montant)]
+                          })
+                        })]
+                      }, idx);
+                    })
+                  }) :
+                  /*#__PURE__*/
+                  /* État vide (Empty state) plus discret */
+                  (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+                    className: "p-3 text-center text-muted",
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
+                      className: "bi bi-journal-text fs-4 opacity-50 d-block mb-1"
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                      style: {
+                        fontSize: '0.8rem'
+                      },
+                      children: "Aucune transaction r\xE9cente"
+                    })]
+                  })
                 })]
               })]
-            }), pointageWarning && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-              className: "alert alert-warning shadow-sm d-flex align-items-center",
+            }), !loadingDetails && !carnetDetails && selectedCarnet && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+              className: "alert alert-warning",
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
-                className: "bi bi-exclamation-triangle-fill fs-3 me-3 text-warning"
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("strong", {
-                  children: "Pointages insuffisants :"
-                }), " Ce carnet n'a pas atteint le minimum requis pour pr\xE9tendre \xE0 un octroi standard. Une validation manag\xE9riale pourrait \xEAtre n\xE9cessaire."]
-              })]
+                className: "bi bi-exclamation-triangle-fill me-2"
+              }), "Impossible de charger les d\xE9tails du carnet."]
             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               className: "d-flex justify-content-between pt-3 border-top mt-4",
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {

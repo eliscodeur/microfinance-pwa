@@ -39,7 +39,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
 /* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../Layouts/AdminLayout.jsx */ "./resources/js/Layouts/AdminLayout.jsx");
-/* harmony import */ var _Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../Utils/creditHelpers */ "./resources/js/Utils/creditHelpers.js");
+/* harmony import */ var _Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../Utils/creditHelpers.js */ "./resources/js/Utils/creditHelpers.js");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -138,7 +138,7 @@ function Create(_ref) {
 
   // Génération interactive de l'échéancier
   var schedule = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
-    return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.buildScheduleFromForm)(form.data);
+    return (0,_Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__.buildScheduleFromForm)(form.data);
   }, [form.data]);
   var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(1),
     _useState4 = _slicedToArray(_useState3, 2),
@@ -308,7 +308,7 @@ function Create(_ref) {
               })
             }), selectedCarnet && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               className: "form-text text-muted mt-1",
-              children: ["Assiette de l'\xE9pargne : ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)((_selectedCarnet$avail = selectedCarnet.available_savings) !== null && _selectedCarnet$avail !== void 0 ? _selectedCarnet$avail : 0), " \u2022 Garantie maximale possible : ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)((_selectedCarnet$guara = selectedCarnet.guarantee_base) !== null && _selectedCarnet$guara !== void 0 ? _selectedCarnet$guara : 0)]
+              children: ["Assiette de l'\xE9pargne : ", (0,_Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)((_selectedCarnet$avail = selectedCarnet.available_savings) !== null && _selectedCarnet$avail !== void 0 ? _selectedCarnet$avail : 0), " \u2022 Garantie maximale possible : ", (0,_Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)((_selectedCarnet$guara = selectedCarnet.guarantee_base) !== null && _selectedCarnet$guara !== void 0 ? _selectedCarnet$guara : 0)]
             }), pointageWarning && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
               className: "form-text text-warning",
               children: "Seuil recommand\xE9 non atteint, mais l\u2019admin peut enregistrer le cr\xE9dit malgr\xE9 tout."
@@ -499,7 +499,7 @@ function Create(_ref) {
                     children: "Montant total"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                     className: "fs-4 fw-bold text-dark",
-                    children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(totalDue)
+                    children: (0,_Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(totalDue)
                   })]
                 })
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
@@ -511,7 +511,7 @@ function Create(_ref) {
                     children: "Int\xE9r\xEAt total"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                     className: "fs-4 fw-bold text-dark",
-                    children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(totalInterest)
+                    children: (0,_Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(totalInterest)
                   })]
                 })
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
@@ -523,7 +523,7 @@ function Create(_ref) {
                     children: "\xC9ch\xE9ance moyenne"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                     className: "fs-4 fw-bold text-dark",
-                    children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(meanInstallment)
+                    children: (0,_Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(meanInstallment)
                   })]
                 })
               })]
@@ -561,13 +561,13 @@ function Create(_ref) {
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
                           children: item.numero
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
-                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatDateToFR)(item.date)
+                          children: (0,_Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__.formatDateToFR)(item.date)
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
-                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(item.principal)
+                          children: (0,_Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(item.principal)
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
-                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(item.interest)
+                          children: (0,_Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(item.interest)
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
-                          children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(item.total)
+                          children: (0,_Utils_creditHelpers_js__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(item.total)
                         })]
                       }, item.numero);
                     }), schedule.length === 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("tr", {

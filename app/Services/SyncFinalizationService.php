@@ -82,6 +82,9 @@ class SyncFinalizationService
                     'date_fin_prevue'       => $bCycle->payload['date_fin_prevue'] ?? null
                         ? Carbon::parse($bCycle->payload['date_fin_prevue'])->toDateString()
                         : null,
+                    'date_cloture_reelle'   => $bCycle->payload['date_cloture_reelle'] ?? null
+                        ? Carbon::parse($bCycle->payload['date_cloture_reelle'])->toDateString()
+                        : null,
                 ]
             );
 

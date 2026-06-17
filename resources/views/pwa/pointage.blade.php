@@ -405,7 +405,7 @@
 
         const s = await getStats(cycle.cycle_uid ?? cycle.id);
         if (s.fait >= 31) {
-            await activeDB.cycles.update(cycle.id, { statut: 'termine', completed_at: new Date().toISOString(), synced: 0 });
+            await activeDB.cycles.update(cycle.id, { statut: 'termine', date_cloture_reelle: new Date().toISOString(), synced: 0 });
             window.showBilan(cycle.id);
         } else {
             Swal.fire({

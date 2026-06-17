@@ -21,6 +21,7 @@ class Cycle extends Model
         'commission_genere',
         'date_debut',
         'date_fin_prevue',
+        'date_cloture_reelle',
         'completed_at',
         'retire_at'
     ];
@@ -28,6 +29,7 @@ class Cycle extends Model
     protected $casts = [
         'date_debut' => 'date:Y-m-d',
         'date_fin_prevue' => 'date:Y-m-d',
+        'date_cloture_reelle' => 'date:Y-m-d',
         'completed_at' => 'datetime',
         'retire_at' => 'datetime',
     ];

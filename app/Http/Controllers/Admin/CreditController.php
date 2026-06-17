@@ -8,6 +8,9 @@ use App\Models\CreditPayment;
 use App\Models\Carnet;
 use App\Models\Client;
 use App\Models\Retrait;
+use App\Models\Cycle;
+use App\Models\Collecte;
+use App\Models\Depot;
 use App\Services\CreditCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -239,6 +242,108 @@ class CreditController extends Controller
             DB::rollBack();
             Log::error('Credit store error: ' . $e->getMessage());
             return back()->with('error', 'Impossible de créer la demande de crédit.');
+        }
+    }
+
+    /**
+     * Récupère les détails complets d'un carnet
+     * Retourne différentes informations selon le type de carnet
+     */
+    public function getCarnetDetails(Carnet $carnet)
+    {
+        try {
+            $carnet->load(['cycles.collectes', 'depots', 'retraits']);
+
+            if ($carnet->type === 'tontine') {
+                // === CARNET TONTINE ===
+                $cycles = $carnet->cycles->map(function (Cycle $cycle) {
+                    $totalCollectes = (float) $cycle->collectes->sum('montant');
+                    $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
+                    $commission = (float) ($cycle->montant_journalier ?? 0);
+                    
+                    $nombrePointages = (int) $cycle->collectes->sum('pointage');
+                    
+                    // Calcul du retard :
+                    // En retard si : statut !== 'termine' ET (pointages < jours écoulés OU date actuelle dépasse date_fin_prevue)
+                    $today = Carbon::today();
+                    $daysElapsed = $cycle->date_debut ? $cycle->date_debut->diffInDays($today) : 0;
+                    $isPastDueDate = $cycle->date_fin_prevue && $today->gt($cycle->date_fin_prevue);
+                    
+                    $enRetard = ($cycle->statut !== 'termine') && 
+                               ($nombrePointages < $daysElapsed || $isPastDueDate);
+                    
+                    return [
+                        'id'                  => $cycle->id,
+                        'date_debut'          => $cycle->date_debut?->format('d/m/Y'),
+                        'date_fin_prevue'     => $cycle->date_fin_prevue?->format('d/m/Y'),
+                        'date_cloture_reelle' => $cycle->date_cloture_reelle?->format('d/m/Y'),
+                        'mise'                => (int) $commission,
+                        'statut'              => $cycle->statut,
+                        'total_pointages'    => $nombrePointages,
+                        'en_retard'           => $enRetard,
+                        'total_collectes'     => (int) $totalCollectes,
+                        'total_deja_retire'   => (int) $totalDejaRetire,
+                    ];
+                })->toArray();
+
+                return response()->json([
+                    'success' => true,
+                    'type'    => 'tontine',
+                    'cycles'  => $cycles,
+                ]);
+
+            } else {
+                // === CARNET COMPTE ÉPARGNE ===
+                $solde = (float) $carnet->solde_disponible;
+                
+                // Fusion et tri des dépôts et retraits (10 derniers mouvements)
+                $movements = collect();
+                
+                // Ajouter les dépôts
+                foreach ($carnet->depots as $depot) {
+                    $movements->push([
+                        'type_transaction' => 'Dépôt',
+                        'montant'          => (int) $depot->montant,
+                        'date'             => $depot->date_depot?->format('d/m/Y H:i'),
+                        'date_ts'          => $depot->date_depot?->timestamp ?? 0,
+                    ]);
+                }
+                
+                // Ajouter les retraits
+                foreach ($carnet->retraits as $retrait) {
+                    $movements->push([
+                        'type_transaction' => 'Retrait',
+                        'montant'          => (int) $retrait->montant_net,
+                        'date'             => $retrait->date_retrait?->format('d/m/Y H:i'),
+                        'date_ts'          => $retrait->date_retrait?->timestamp ?? 0,
+                    ]);
+                }
+                
+                // Tri par date décroissante et limite aux 10 derniers
+                $movements = $movements
+                    ->sortByDesc('date_ts')
+                    ->slice(0, 10)
+                    ->values()
+                    ->map(function ($item) {
+                        unset($item['date_ts']);
+                        return $item;
+                    })
+                    ->toArray();
+                
+                return response()->json([
+                    'success'   => true,
+                    'type'      => 'compte',
+                    'solde'     => (int) $solde,
+                    'historique' => $movements,
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('getCarnetDetails Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error'   => 'Impossible de récupérer les détails du carnet.',
+            ], 500);
         }
     }
 
