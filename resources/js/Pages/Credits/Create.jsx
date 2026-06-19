@@ -4,19 +4,39 @@ import Swal from 'sweetalert2';
 import AdminLayout from '../../Layouts/AdminLayout.jsx';
 import { buildScheduleFromForm, formatCurrency, formatDateToFR } from '../../Utils/creditHelpers';
 
-export default function Create({ clients }) {
+export default function Create({ clients, creditProducts = [] }) {
     const form = useForm({
+        // 1. Données de contexte / sélection du client
         client_id: '',
         carnet_id: '',
-        type_support: 'compte',
-        type: 'compte',
-        montant_demande: 0,
-        mode: 'degressif',
-        periodicite: 'mensuelle',
-        nombre_echeances: 3,
-        taux: 1.5,
-        taux_manuelle: '',
-        date_debut: new Date().toISOString().slice(0, 10),
+        type_support: 'compte', // 'compte' ou 'tontine'
+        
+        // 2. Configuration et détails du crédit
+        credit_type_id: '',      
+        credit_product_id: '',   
+        credit_object_id: '',    
+        montant_demande: 0,      
+        
+        // 3. Échéancier et tarification
+        periodicite: 'mensuelle', 
+        nombre_echeances: 5,     
+        date_debut: new Date().toISOString().slice(0, 10), 
+        differe: 0,              
+        frais_dossier: '',       
+        garantie: '',            
+        mode: 'degressif',       
+        taux: 1.5,               
+        taux_manuelle: '',       
+
+        // 4.1 Caution Solidaire / Avaliste
+        garant_nom_prenom: '',   // Nom & Prénoms du garant
+        garant_telephone: '',    // Numéro de Téléphone
+        garant_profession: '',   // Profession / Secteur d'activité
+        garant_adresse: '',      // Quartier de résidence
+
+        // 4.2 Documents & KYC d'Audit (Initialisés à null pour la gestion des fichiers)
+        piece_identite: null,       // Fichier : CNIB, Passeport ou Carte d'Électeur
+        justificatif_revenu: null,  // Fichier : Facture CEET/TdE, Plan ou Carte CFE
     });
 
     const ErrorMsg = ({ field }) => form.errors[field] ? (
@@ -52,6 +72,21 @@ export default function Create({ clients }) {
         return client ? client.carnets.filter(c => c.type === form.data.type_support) : [];
     }, [form.data.client_id, form.data.type_support, clients]);
 
+    // 1. Filtrer les produits selon le type de carnet requis (tontine/compte)
+    const filteredProducts = useMemo(() => {
+        if (!form.data.type_support) return [];
+        return creditProducts.filter(p => p.type_carnet_requis === form.data.type_support);
+    }, [form.data.type_support, creditProducts]);
+
+    // 2. Récupérer l'objet complet du produit sélectionné
+    const selectedProduct = useMemo(() => {
+        return filteredProducts.find(p => String(p.id) === String(form.data.credit_product_id)) || null;
+    }, [form.data.credit_product_id, filteredProducts]);
+
+    // 3. Extraire les objets de crédit autorisés pour ce produit (via la table pivot)
+    const availableObjects = useMemo(() => {
+        return selectedProduct ? (selectedProduct.credit_objects || []) : [];
+    }, [selectedProduct]);
     const handleTypeChange = (val) => {
         setClientSearch('');
         form.setData({ 
@@ -62,6 +97,24 @@ export default function Create({ clients }) {
             type: val === 'compte' ? 'compte' : 'quinzaine'
         });
     };
+
+    useEffect(() => {
+        if (!form.data.credit_product_id || creditProducts.length === 0) return;
+
+        if (selectedProduct) {
+            form.setData({
+                ...form.data,
+                // Mappage sur les colonnes réelles de ton seeder (image_800cc5.png)
+                taux: selectedProduct.taux_interet_defaut, 
+                frais_dossier: selectedProduct.frais_dossier_defaut,
+                nombre_echeances: form.data.nombre_echeances || selectedProduct.duree_max_mois,
+                
+                // Gestion du type de crédit selon le support
+                type: form.data.type_support === 'compte' ? 'compte' : (form.data.type || 'quinzaine'),
+                periodicite: form.data.type_support === 'tontine' ? 'quinzaine' : 'mensuelle'
+            });
+        }
+    }, [form.data.credit_product_id, selectedProduct]);
 
     useEffect(() => {
         if (isCompteCarnetSelected && form.data.type !== 'compte') {
@@ -152,7 +205,7 @@ export default function Create({ clients }) {
 
     const handleTabChange = (targetTab) => {
         // Validation renforcée pour bloquer l'accès aux onglets suivants sans carnet
-        if (['details', 'simulation', 'resumes'].includes(targetTab)) {
+        if (['details', 'simulation', 'resumes', 'garanties'].includes(targetTab)) {
             if (!form.data.client_id || !form.data.carnet_id) {
                 Swal.fire({
                     icon: 'warning',
@@ -164,18 +217,17 @@ export default function Create({ clients }) {
             }
         }
 
-        if (targetTab === 'resumes') {
-            if (!form.data.montant_demande || form.data.montant_demande <= 0 || !form.data.periodicite || !form.data.nombre_echeances || !form.data.date_debut) {
+        if (['garanties', 'resumes'].includes(targetTab)) {
+            if (!form.data.credit_product_id || !form.data.montant_demande || form.data.montant_demande <= 0 || !form.data.periodicite || !form.data.nombre_echeances || !form.data.date_debut || !form.data.objet_credit || !form.data.credit_product_id || form.data.periodicite === '' || form.data.nombre_echeances <= 0) {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Paramètres incomplets',
+                    title: 'Simulation incomplète',
                     text: 'Veuillez remplir correctement les paramètres financiers.',
                     confirmButtonColor: '#3085d6',
                 });
                 return;
             }
         }
-
         setActiveTab(targetTab);
     };
 
@@ -253,31 +305,94 @@ export default function Create({ clients }) {
                     )}
 
                     {/* NOUVELLE NAVIGATION AVEC 4 ONGLETS */}
-                    <ul className="nav nav-tabs px-3 pt-3 bg-light border-bottom">
+                    <ul className="nav nav-tabs px-3 pt-3 bg-white border-bottom flex-nowrap overflow-auto shadow-sm">
+                        {/* Étape 1 : Identification */}
                         <li className="nav-item">
-                            <button type="button" className={`nav-link fw-bold ${activeTab === 'identification' ? 'active text-primary' : 'text-muted'}`} onClick={() => handleTabChange('identification')}>
-                                1. Identification
+                            <button 
+                                type="button" 
+                                className={`nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ${activeTab === 'identification' ? 'active text-primary border-bottom border-primary border-2 bg-transparent' : 'text-muted'}`} 
+                                onClick={() => handleTabChange('identification')}
+                            >
+                                <small 
+                                    className={`badge rounded-circle d-flex align-items-center justify-content-center p-0 ${activeTab === 'identification' ? 'bg-primary text-white' : 'bg-light text-secondary border'}`} 
+                                    style={{ width: '22px', height: '22px', fontSize: '11px' }}
+                                >
+                                    1
+                                </small>
+                                <span>Identification Client</span>
                             </button>
                         </li>
+
+                        {/* Étape 2 : Support & Produit */}
                         <li className="nav-item">
-                            <button type="button" className={`nav-link fw-bold ${activeTab === 'details' ? 'active text-primary' : 'text-muted'}`} onClick={() => handleTabChange('details')}>
-                                2. Détails du support
+                            <button 
+                                type="button" 
+                                className={`nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ${activeTab === 'details' ? 'active text-primary border-bottom border-primary border-2 bg-transparent' : 'text-muted'}`} 
+                                onClick={() => handleTabChange('details')}
+                            >
+                                <small 
+                                    className={`badge rounded-circle d-flex align-items-center justify-content-center p-0 ${activeTab === 'details' ? 'bg-primary text-white' : 'bg-light text-secondary border'}`} 
+                                    style={{ width: '22px', height: '22px', fontSize: '11px' }}
+                                >
+                                    2
+                                </small>
+                                <span>Support &amp; Produit</span>
                             </button>
                         </li>
+
+                        {/* Étape 3 : Simulation du Prêt */}
                         <li className="nav-item">
-                            <button type="button" className={`nav-link fw-bold ${activeTab === 'simulation' ? 'active text-primary' : 'text-muted'}`} onClick={() => handleTabChange('simulation')}>
-                                3. Simulation
+                            <button 
+                                type="button" 
+                                className={`nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ${activeTab === 'simulation' ? 'active text-primary border-bottom border-primary border-2 bg-transparent' : 'text-muted'}`} 
+                                onClick={() => handleTabChange('simulation')}
+                            >
+                                <small 
+                                    className={`badge rounded-circle d-flex align-items-center justify-content-center p-0 ${activeTab === 'simulation' ? 'bg-primary text-white' : 'bg-light text-secondary border'}`} 
+                                    style={{ width: '22px', height: '22px', fontSize: '11px' }}
+                                >
+                                    3
+                                </small>
+                                <span>Simulation du Prêt</span>
                             </button>
                         </li>
+
+                        {/* Étape 4 : Plan d'Amortissement */}
                         <li className="nav-item">
-                            <button type="button" className={`nav-link fw-bold ${activeTab === 'resumes' ? 'active text-primary' : 'text-muted'}`} onClick={() => handleTabChange('resumes')}>
-                                4. Résumés & Échéancier
+                            <button 
+                                type="button" 
+                                className={`nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ${activeTab === 'resumes' ? 'active text-primary border-bottom border-primary border-2 bg-transparent' : 'text-muted'}`} 
+                                onClick={() => handleTabChange('resumes')}
+                            >
+                                <small 
+                                    className={`badge rounded-circle d-flex align-items-center justify-content-center p-0 ${activeTab === 'resumes' ? 'bg-primary text-white' : 'bg-light text-secondary border'}`} 
+                                    style={{ width: '22px', height: '22px', fontSize: '11px' }}
+                                >
+                                    4
+                                </small>
+                                <span>Plan d'Amortissement</span>
+                            </button>
+                        </li>
+
+                        {/* Étape 5 : Garanties & KYC */}
+                        <li className="nav-item">
+                            <button 
+                                type="button" 
+                                className={`nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ${activeTab === 'garanties' ? 'active text-primary border-bottom border-primary border-2 bg-transparent' : 'text-muted'}`} 
+                                onClick={() => handleTabChange('garanties')}
+                            >
+                                <small 
+                                    className={`badge rounded-circle d-flex align-items-center justify-content-center p-0 ${activeTab === 'garanties' ? 'bg-primary text-white' : 'bg-light text-secondary border'}`} 
+                                    style={{ width: '22px', height: '22px', fontSize: '11px' }}
+                                >
+                                    5
+                                </small>
+                                <span>Garanties &amp; KYC</span>
                             </button>
                         </li>
                     </ul>
 
                     <div className="card-body p-4">
-                        
                         {/* =========================================
                             ONGLET 1 : IDENTIFICATION
                         ========================================= */}
@@ -348,7 +463,6 @@ export default function Create({ clients }) {
                                 </div>
                             </fieldset>
                         )}
-
                         {/* =========================================
                             ONGLET 2 : DÉTAILS DU SUPPORT (NOUVEAU)
                         ========================================= */}
@@ -569,73 +683,197 @@ export default function Create({ clients }) {
                                 </div>
                             </div>
                         )}
-
                         {/* =========================================
                             ONGLET 3 : SIMULATION
                         ========================================= */}
                         {activeTab === 'simulation' && (
                             <div className="animate__animated animate__fadeIn">
                                 <fieldset className="mb-4">
-                                    <legend className="text-uppercase h6 text-secondary border-bottom pb-2 mb-3">3. Paramètres financiers</legend>
+                                    <legend className="text-uppercase h6 text-primary border-bottom pb-2 mb-3">
+                                        <i className="bi bi-sliders me-2"></i>3. Paramètres financiers &amp; Conditions
+                                    </legend>
+                                    
                                     <div className="row g-3">
+                                        {/* 1. SÉLECTION DU PRODUIT DE CRÉDIT (DYNAMIQUE BDD) */}
                                         <div className="col-md-6">
-                                            <label className="form-label">Montant (FCFA)</label>
-                                            <input type="number" className={`form-control ${form.errors.montant_demande ? 'is-invalid' : ''}`} value={form.data.montant_demande} onChange={e => form.setData('montant_demande', e.target.value)} />
-                                            <ErrorMsg field="montant_demande" />
+                                            <label htmlFor="credit_product_id" className="form-label fw-semibold">Produit de crédit <span className="text-danger">*</span></label>
+                                            <select 
+                                                id="credit_product_id"
+                                                className={`form-select ${form.errors.credit_product_id ? 'is-invalid' : ''}`}
+                                                value={form.data.credit_product_id || ''} 
+                                                onChange={e => {
+                                                    form.setData({
+                                                        ...form.data,
+                                                        credit_product_id: e.target.value,
+                                                        objet_credit: '' // Nettoie le motif pour éviter les incohérences
+                                                    });
+                                                }}
+                                                disabled={!form.data.type_support}
+                                                required
+                                            >
+                                                <option value="" disabled>Choisir un produit de crédit...</option>
+                                                {filteredProducts.map((product) => (
+                                                    <option key={product.id} value={product.id}>
+                                                        {product.nom} ({product.code})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ErrorMsg field="credit_product_id" />
                                         </div>
+
+                                        {/* 2. OBJET DU CRÉDIT */}
                                         <div className="col-md-6">
-                                            <label className="form-label">Type de crédit</label>
-                                            <select className="form-select" value={form.data.type} onChange={e => form.setData('type', e.target.value)} required disabled={isTypeFixedByCarnet}>
-                                                {selectedCarnet?.type === 'compte' ? <option value="compte">Crédit sur compte</option> : selectedCarnet?.type === 'tontine' ? <option value="quinzaine">Crédit quinzaine</option> : (
-                                                    <><option value="">Choisir</option><option value="compte">Crédit sur compte</option><option value="quinzaine">Crédit quinzaine</option><option value="mensuel">Crédit mensuel</option></>
+                                            <label htmlFor="objet_credit" className="form-label fw-semibold">Objet du crédit <span className="text-danger">*</span></label>
+                                            <select 
+                                                id="objet_credit"
+                                                className={`form-select ${form.errors.objet_credit ? 'is-invalid' : ''}`}
+                                                value={form.data.objet_credit || ''} 
+                                                onChange={e => form.setData('objet_credit', e.target.value)}
+                                                disabled={!form.data.credit_product_id}
+                                                required
+                                            >
+                                                {!form.data.credit_product_id ? (
+                                                    <option value="">Veuillez d'abord choisir un produit...</option>
+                                                ) : (
+                                                    <>
+                                                        <option value="" disabled>Choisir le motif du crédit...</option>
+                                                        {availableObjects.map((obj) => (
+                                                            <option key={obj.id} value={obj.id}>
+                                                                {obj.nom}
+                                                            </option>
+                                                        ))}
+                                                    </>
                                                 )}
                                             </select>
+                                            <ErrorMsg field="objet_credit" />
                                         </div>
+                                        {/* 3. MONTANT DEMANDÉ */}
                                         <div className="col-md-6">
-                                            <label className="form-label">Périodicité</label>
-                                            <select className="form-select" value={form.data.periodicite} onChange={e => form.setData('periodicite', e.target.value)} required>
-                                                <option value="">Choisir</option>
+                                            <label htmlFor="montant_demande" className="form-label fw-semibold">Montant demandé (FCFA) <span className="text-danger">*</span></label>
+                                            <div className="input-group">
+                                                <input 
+                                                    id="montant_demande"
+                                                    type="number" 
+                                                    min="0"
+                                                    className={`form-control ${form.errors.montant_demande ? 'is-invalid' : ''}`} 
+                                                    value={form.data.montant_demande || ''} 
+                                                    onChange={e => form.setData('montant_demande', e.target.value)} 
+                                                    required
+                                                />
+                                                <span className="input-group-text bg-light fw-bold">FCFA</span>
+                                            </div>
+                                            <ErrorMsg field="montant_demande" />
+                                        </div>
+
+                                        {/* 4. TYPE DE CRÉDIT (Géré dynamiquement par carnet sélectionné) */}
+                                        <div className="col-md-6">
+                                            <label htmlFor="type_credit" className="form-label fw-semibold">Type de crédit</label>
+                                            <select 
+                                                id="type_credit"
+                                                className={`form-select ${form.errors.type ? 'is-invalid' : ''}`} 
+                                                value={form.data.type || ''} 
+                                                onChange={e => form.setData('type', e.target.value)} 
+                                                disabled={!form.data.credit_product_id}
+                                                required 
+                                            >
+                                                {form.data.type_support === 'compte' && (
+                                                    <option value="compte">Crédit sur compte</option>
+                                                )}
+                                                {form.data.type_support === 'tontine' && (
+                                                    <>
+                                                        <option value="" disabled>Choisir la durée...</option>
+                                                        <option value="quinzaine">Crédit quinzaine</option>
+                                                        <option value="mensuel">Crédit mensuel</option>
+                                                    </>
+                                                )}
+                                            </select>
+                                            <ErrorMsg field="type" />
+                                        </div>
+                                        {/* 5. PÉRIODICITÉ & ÉCHÉANCES */}
+                                        <div className="col-md-3">
+                                            <label htmlFor="periodicite" className="form-label fw-semibold">Périodicité</label>
+                                            <select id="periodicite" className="form-select" value={form.data.periodicite || ''} onChange={e => form.setData('periodicite', e.target.value)} required>
+                                                <option value="" disabled>Choisir</option>
                                                 <option value="quinzaine">Quinzaine</option>
                                                 <option value="mensuelle">Mensuelle</option>
                                             </select>
                                         </div>
-                                        <div className="col-md-6">
-                                            <label className="form-label">Nombre d'échéances</label>
-                                            <input type="number" className="form-control" value={form.data.nombre_echeances} onChange={e => form.setData('nombre_echeances', e.target.value)} />
+
+                                        <div className="col-md-3">
+                                            <label htmlFor="nombre_echeances" className="form-label fw-semibold">Nb échéances</label>
+                                            <input id="nombre_echeances" type="number" min="1" className="form-control" value={form.data.nombre_echeances || ''} onChange={e => form.setData('nombre_echeances', e.target.value)} required />
                                         </div>
-                                        <div className="col-md-6">
-                                            <label className="form-label">Date de début</label>
-                                            <input type="date" className="form-control" value={form.data.date_debut} onChange={e => form.setData('date_debut', e.target.value)} />
+
+                                        <div className="col-md-3">
+                                            <label htmlFor="date_debut" className="form-label fw-semibold">Date de début</label>
+                                            <input id="date_debut" type="date" className="form-control" value={form.data.date_debut || ''} onChange={e => form.setData('date_debut', e.target.value)} required />
                                         </div>
+
+                                        {/* DIFFÉRÉ */}
+                                        <div className="col-md-3">
+                                            <label htmlFor="differe" className="form-label fw-semibold">Différé (Échéances)</label>
+                                            <input id="differe" type="number" min="0" className="form-control" placeholder="0" value={form.data.differe || 0} onChange={e => form.setData('differe', e.target.value)} />
+                                        </div>
+
+                                        {/* 6. FRAIS DE DOSSIER & GARANTIE */}
                                         <div className="col-md-6">
-                                            <label className="form-label">Mode de calcul</label>
-                                            <select className="form-select" value={form.data.mode} onChange={e => form.setData('mode', e.target.value)}>
-                                                <option value="fixe">Fixe</option>
-                                                <option value="degressif">Dégressif</option>
+                                            <label htmlFor="frais_dossier" className="form-label fw-semibold text-success">Frais de dossier (FCFA)</label>
+                                            <input 
+                                                id="frais_dossier" 
+                                                type="number" 
+                                                min="0" 
+                                                className="form-control border-success bg-success bg-opacity-10" 
+                                                placeholder="Frais d'instruction"
+                                                value={form.data.frais_dossier || ''} 
+                                                onChange={e => form.setData('frais_dossier', e.target.value)} 
+                                            />
+                                        </div>
+
+                                        <div className="col-md-6">
+                                            <label htmlFor="nantissement" className="form-label fw-semibold text-info">Garantie / Nantissement requis (FCFA)</label>
+                                            <input 
+                                                id="nantissement" 
+                                                type="number" 
+                                                min="0" 
+                                                className="form-control border-info bg-info bg-opacity-10" 
+                                                placeholder="Épargne bloquée obligatoirement"
+                                                value={form.data.nantissement || ''} 
+                                                onChange={e => form.setData('nantissement', e.target.value)} 
+                                            />
+                                        </div>
+
+                                        {/* 7. TARIFICATION */}
+                                        <div className="col-md-4">
+                                            <label htmlFor="mode_calcul" className="form-label fw-semibold">Mode de calcul</label>
+                                            <select id="mode_calcul" className="form-select" value={form.data.mode || 'fixe'} onChange={e => form.setData('mode', e.target.value)}>
+                                                <option value="fixe">Fixe (Flat)</option>
+                                                <option value="degressif">Dégressif (Amortissement réel)</option>
                                             </select>
                                         </div>
-                                        <div className="col-md-6">
-                                            <label className="form-label">Taux standard (%)</label>
-                                            <input type="number" className="form-control" value={form.data.taux} onChange={e => form.setData('taux', e.target.value)} />
+
+                                        <div className="col-md-4">
+                                            <label htmlFor="taux" className="form-label fw-semibold">Taux standard (%)</label>
+                                            <input id="taux" type="number" step="0.01" className="form-control text-muted bg-light" value={form.data.taux || ''} readOnly />
                                         </div>
-                                        <div className="col-md-6">
-                                            <label className="form-label text-warning">Taux manuel (%)</label>
-                                            <input type="number" className="form-control border-warning" value={form.data.taux_manuelle} onChange={e => form.setData('taux_manuelle', e.target.value)} />
+
+                                        <div className="col-md-4">
+                                            <label htmlFor="taux_manuelle" className="form-label text-warning fw-semibold">Taux manuel (%)</label>
+                                            <input id="taux_manuelle" type="number" step="0.01" className="form-control border-warning fw-bold text-warning" value={form.data.taux_manuelle || ''} onChange={e => form.setData('taux_manuelle', e.target.value)} placeholder="Dérogation gérant" />
                                         </div>
                                     </div>
                                 </fieldset>
 
+                                {/* NAVIGATION */}
                                 <div className="d-flex justify-content-between pt-3 border-top mt-4">
-                                    <button type="button" className="btn btn-link text-secondary text-decoration-none p-0" onClick={() => handleTabChange('details')}>
-                                        <i className="bi bi-arrow-left me-1"></i> Retour aux détails
+                                    <button type="button" className="btn btn-outline-secondary px-4" onClick={() => handleTabChange('details')}>
+                                        <i className="bi bi-arrow-left me-2"></i> Retour aux détails
                                     </button>
-                                    <button type="button" className="btn btn-primary px-4" onClick={() => handleTabChange('resumes')}>
-                                        Étape 4 : Échéancier <i className="bi bi-arrow-right ms-1"></i>
+                                    <button type="button" className="btn btn-primary px-4 shadow-sm" onClick={() => handleTabChange('resumes')}>
+                                        Étape 4 : Échéancier <i className="bi bi-arrow-right ms-2"></i>
                                     </button>
                                 </div>
                             </div>
                         )}
-
                         {/* =========================================
                             ONGLET 4 : RÉSUMÉS FINANCIERS & ÉCHÉANCIER
                         ========================================= */}
@@ -691,12 +929,198 @@ export default function Create({ clients }) {
                                 </fieldset>
 
                                 <div className="d-flex justify-content-between pt-3 border-top mt-4">
-                                    <button type="button" className="btn btn-link text-secondary text-decoration-none p-0" onClick={() => handleTabChange('simulation')}>
+                                    <button type="button" className="btn btn-outline-secondary px-4" onClick={() => handleTabChange('simulation')}>
                                         <i className="bi bi-arrow-left me-1"></i> Retour à la simulation
                                     </button>
-                                    <button type="submit" className="btn btn-success px-5 shadow-sm" disabled={form.processing}>
-                                        {form.processing ? 'Chargement...' : 'Enregistrer la demande'}
+                                    <button type="button" className="btn btn-primary px-4" onClick={() => handleTabChange('garanties')}>
+                                        Étape 5 : Garanties & Pièces Justificatives <i className="bi bi-arrow-right ms-1"></i>
                                     </button>
+                                </div>
+                            </div>
+                        )}
+                        {/* =========================================
+                            ONGLET 5 : GARANTIES & PIÈCES JUSTIFICATIVES
+                        ========================================= */}
+                        {activeTab === 'garanties' && (
+                            <div className="animate__animated animate__fadeIn">
+                                <div className="row">
+                                    {/* COMPOSANT GAUCHE : FORMULAIRE DU GARANT / AVALISTE */}
+                                    <div className="col-lg-7">
+                                        <div className="card border-0 shadow-sm mb-4">
+                                            <div className="card-body p-4">
+                                                <fieldset>
+                                                    <legend className="text-uppercase h6 text-warning border-bottom pb-2 mb-3 fw-bold">
+                                                        <i className="bi bi-shield-check me-2"></i>4.1 Caution Solidaire / Avaliste
+                                                    </legend>
+                                                    <p className="text-muted small mb-4">
+                                                        Renseignez les informations de la personne physique qui se porte garante du remboursement en cas de défaillance du bénéficiaire.
+                                                    </p>
+
+                                                    <div className="row g-3">
+                                                        <div className="col-md-12">
+                                                            <label htmlFor="garant_nom_prenom" className="form-label fw-semibold">Nom &amp; Prénoms du garant <span className="text-danger">*</span></label>
+                                                            <div className="input-group">
+                                                                <span className="input-group-text bg-light"><i className="bi bi-person"></i></span>
+                                                                <input 
+                                                                    id="garant_nom_prenom" 
+                                                                    type="text" 
+                                                                    className={`form-control ${form.errors.garant_nom_prenom ? 'is-invalid' : ''}`} 
+                                                                    placeholder="Ex: Jean KOFFI"
+                                                                    value={form.data.garant_nom_prenom} 
+                                                                    onChange={e => form.setData('garant_nom_prenom', e.target.value)} 
+                                                                    required
+                                                                />
+                                                            </div>
+                                                            <ErrorMsg field="garant_nom_prenom" />
+                                                        </div>
+
+                                                        <div className="col-md-12">
+                                                            <label htmlFor="garant_telephone" className="form-label fw-semibold">Numéro de Téléphone <span className="text-danger">*</span></label>
+                                                            <div className="input-group">
+                                                                <span className="input-group-text bg-light"><i className="bi bi-telephone"></i></span>
+                                                                <input 
+                                                                    id="garant_telephone" 
+                                                                    type="tel" 
+                                                                    className={`form-control ${form.errors.garant_telephone ? 'is-invalid' : ''}`} 
+                                                                    placeholder="Ex: +228 90 00 00 00"
+                                                                    value={form.data.garant_telephone} 
+                                                                    onChange={e => form.setData('garant_telephone', e.target.value)} 
+                                                                    required
+                                                                />
+                                                            </div>
+                                                            <ErrorMsg field="garant_telephone" />
+                                                        </div>
+
+                                                        <div className="col-md-6">
+                                                            <label htmlFor="garant_profession" className="form-label fw-semibold">Profession / Secteur d'activité</label>
+                                                            <input 
+                                                                id="garant_profession" 
+                                                                type="text" 
+                                                                className="form-control" 
+                                                                placeholder="Ex: Revendeuse, Fonctionnaire..."
+                                                                value={form.data.garant_profession} 
+                                                                onChange={e => form.setData('garant_profession', e.target.value)} 
+                                                            />
+                                                            <ErrorMsg field="garant_profession" />
+                                                        </div>
+
+                                                        <div className="col-md-6">
+                                                            <label htmlFor="garant_adresse" className="form-label fw-semibold">Quartier de résidence</label>
+                                                            <input 
+                                                                id="garant_adresse" 
+                                                                type="text" 
+                                                                className="form-control" 
+                                                                placeholder="Ex: Adidogomé, Hedzranawoé"
+                                                                value={form.data.garant_adresse} 
+                                                                onChange={e => form.setData('garant_adresse', e.target.value)} 
+                                                            />
+                                                            <ErrorMsg field="garant_adresse" />
+                                                        </div>
+                                                    </div>
+                                                </fieldset>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* COMPOSANT DROIT : PIÈCES JUSTIFICATIVES NUMÉRIQUES (KYC) */}
+                                    <div className="col-lg-5">
+                                        <div className="card border-0 shadow-sm mb-4">
+                                            <div className="card-body p-4">
+                                                <fieldset>
+                                                    <legend className="text-uppercase h6 text-info border-bottom pb-2 mb-3 fw-bold">
+                                                        <i className="bi bi-file-earmark-arrow-up me-2"></i>4.2 Documents &amp; KYC d'Audit
+                                                    </legend>
+                                                    <p className="text-muted small mb-3">
+                                                        Joignez les scans ou photos lisibles pour la conformité réglementaire de la microfinance.
+                                                    </p>
+
+                                                    <div className="mb-4">
+                                                        <label htmlFor="piece_identite" className="form-label fw-semibold">
+                                                            Pièce d'identité (Client) <span className="text-danger">*</span>
+                                                        </label>
+                                                        <div className="p-3 border border-dashed rounded bg-light text-center position-relative">
+                                                            <i className="bi bi-card-image text-muted h3 d-block mb-2"></i>
+                                                            <input 
+                                                                id="piece_identite" 
+                                                                type="file" 
+                                                                className={`form-control form-control-sm ${form.errors.piece_identite ? 'is-invalid' : ''}`} 
+                                                                accept="image/*,application/pdf"
+                                                                onChange={e => form.setData('piece_identite', e.target.files[0])} 
+                                                                required
+                                                            />
+                                                            <div className="form-text small text-muted mt-1">CNIB, Passeport ou Carte d'Électeur (Max 5Mo).</div>
+                                                            {form.data.piece_identite && (
+                                                                <div className="badge bg-success mt-2">
+                                                                    <i className="bi bi-check-circle-fill me-1"></i> Fichier sélectionné
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <ErrorMsg field="piece_identite" />
+                                                    </div>
+
+                                                    <div className="mb-2">
+                                                        <label htmlFor="justificatif_revenu" className="form-label fw-semibold">
+                                                            Preuve d'activité ou Localisation
+                                                        </label>
+                                                        <div className="p-3 border border-dashed rounded bg-light text-center position-relative">
+                                                            <i className="bi bi-file-earmark-pdf text-muted h3 d-block mb-2"></i>
+                                                            <input 
+                                                                id="justificatif_revenu" 
+                                                                type="file" 
+                                                                className={`form-control form-control-sm ${form.errors.justificatif_revenu ? 'is-invalid' : ''}`} 
+                                                                accept="image/*,application/pdf"
+                                                                onChange={e => form.setData('justificatif_revenu', e.target.files[0])} 
+                                                            />
+                                                            <div className="form-text small text-muted mt-1">Facture CEET/TdE, Plan ou Carte CFE / Registre.</div>
+                                                            {form.data.justificatif_revenu && (
+                                                                <div className="badge bg-success mt-2">
+                                                                    <i className="bi bi-check-circle-fill me-1"></i> Fichier sélectionné
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <ErrorMsg field="justificatif_revenu" />
+                                                    </div>
+                                                </fieldset>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-muted small d-none d-lg-block flex-grow-1 text-center px-2">
+                                    <i className="bi bi-info-circle text-primary me-1"></i> Tous les champs marqués d'une astérisque (<span className="text-danger">*</span>) sont requis pour le comité.
+                                </div>                             
+                                {/* BOUTONS DE NAVIGATION BASSE */}
+                                <div className="card border-0 shadow-sm mt-4">
+                                    <div className="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                        
+                                        {/* BOUTON RETOUR : Plus court pour éviter le retour à la ligne automatique */}
+                                        <button 
+                                            type="button" 
+                                            className="btn btn-outline-secondary px-4 text-nowrap" 
+                                            onClick={() => handleTabChange('resumes')}
+                                        >
+                                            <i className="bi bi-arrow-left me-2"></i>Retour aux résumés
+                                        </button>
+                                        
+                                        {/* TEXTE CENTRAL : Un petit conteneur avec flex-shrink pour lui laisser de la place sans pousser les boutons */}
+
+                                        
+                                        {/* BOUTON SOUMISSION : Reste à droite, bien proportionné */}
+                                        <button 
+                                            type="submit" 
+                                            className="btn btn-success px-5 shadow-sm text-nowrap fw-semibold" 
+                                            disabled={form.processing}
+                                        >
+                                            {form.processing ? (
+                                                <>
+                                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                    Chargement...
+                                                </>
+                                            ) : (
+                                                'Enregistrer la demande'
+                                            )}
+                                        </button>
+
+                                    </div>
                                 </div>
                             </div>
                         )}

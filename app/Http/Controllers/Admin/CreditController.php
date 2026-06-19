@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Credit;
 use App\Models\CreditPayment;
+use App\Models\CreditProduct;
 use App\Models\Carnet;
 use App\Models\Client;
 use App\Models\Retrait;
@@ -80,39 +81,60 @@ class CreditController extends Controller
 
         return Inertia::render('Credits/Create', [
             'clients' => $clients,
+            'creditProducts' => CreditProduct::with('creditObjects')->get()
         ]);
     }
 
     public function store(Request $request)
     {
         $today = now()->toDateString();
+        
+        // 1. Validation stricte alignée sur ta nouvelle structure et le formulaire
         $request->validate([
             'client_id' => 'required|exists:clients,id',
+            'credit_product_id' => 'required|exists:credit_products,id',
+            'credit_object_id' => 'nullable|exists:credit_objects,id',
+            'cycle_id' => 'nullable', // Clé optionnelle pour la trace du cycle tontine terrain
+            'type_support' => 'required|string|in:compte,tontine',
+            
             'carnet_id' => [
-                Rule::requiredIf(in_array($request->input('type'), ['compte', 'quinzaine'])),
+                Rule::requiredIf(in_array($request->input('type_support'), ['compte', 'tontine'])),
                 'nullable',
                 'exists:carnets,id',
             ],
+            
             'montant_demande' => 'required|numeric|min:1000',
-            'type' => 'required|string|in:compte,quinzaine,mensuel',
             'mode' => 'required|string|in:fixe,degressif',
-            'periodicite' => 'required|string|in:quinzaine,mensuelle',
+            'periodicite' => 'required|string|in:journaliere,hebdomadaire,quinzaine,mensuelle',
             'nombre_echeances' => 'required|integer|min:1|max:60',
+            'differe' => 'required|integer|min:0|max:12',
+            'frais_dossier' => 'required|numeric|min:0',
             'taux' => 'required|numeric|min:0|max:100',
-            'taux_manuelle' => 'nullable|numeric|min:0|max:100',
+            'taux_manuel' => 'nullable|numeric|min:0|max:100', // Correction orthographique
             'date_debut' => "required|date|after_or_equal:{$today}",
+
+            // Validation du bloc garant / caution solidaire (Table séparée)
+            'guarantor_nom_prenom' => 'required|string|max:255',
+            'guarantor_telephone' => 'required|string|max:50',
+            'guarantor_profession' => 'nullable|string|max:255',
+            'guarantor_adresse' => 'nullable|string|max:255',
+            'guarantor_piece_identite' => 'required|file|mimes:jpeg,png,jpg,pdf|max:4096', // 4Mo max
+            'guarantor_justificatif_revenu' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:4096',
         ], [
-            'carnet_id.required' => 'Un carnet est obligatoire pour un crédit sur compte ou un crédit quinzaine.',
+            'carnet_id.required' => 'Un carnet est obligatoire pour ce type de support.',
             'date_debut.after_or_equal' => 'La date de début doit être aujourd’hui ou ultérieure.',
             'taux.max' => 'Le taux ne peut pas dépasser 100%.',
-            'taux_manuelle.max' => 'Le taux manuel ne peut pas dépasser 100%.',
+            'taux_manuel.max' => 'Le taux manuel ne peut pas dépasser 100%.',
             'nombre_echeances.max' => 'Le nombre d’échéances ne peut pas dépasser 60.',
+            'guarantor_nom_prenom.required' => 'Le nom et prénom du garant sont obligatoires.',
+            'guarantor_telephone.required' => 'Le numéro de téléphone du garant est obligatoire.',
+            'guarantor_piece_identite.required' => 'La pièce d’identité du garant est obligatoire.',
         ]);
 
         $guaranteeBase = 0;
 
+        // 2. Vérification et règles métiers sur le carnet
         if ($request->filled('carnet_id')) {
-            // Ajout du pré-chargement global ici aussi
             $carnet = Carnet::with([
                 'categoryTontine',
                 'cycles.collectes',
@@ -131,7 +153,6 @@ class CreditController extends Controller
                 return back()->withInput()->with('error', 'Le carnet sélectionné est invalide ou n’appartient pas au client.');
             }
             
-   
             $carnetHasActiveCredit = Credit::where('carnet_id', $request->carnet_id)
                 ->whereIn('statut', ['pending', 'approved', 'active', 'in_arrears'])
                 ->exists();
@@ -140,29 +161,25 @@ class CreditController extends Controller
                 return back()->withInput()->with('error', 'Ce carnet a déjà un crédit en cours. Veuillez sélectionner un autre carnet.');
             }
 
-            if ($request->type === 'compte' && $carnet->type !== 'compte') {
+            // Vérification de la cohérence du support choisi
+            if ($request->type_support === 'compte' && $carnet->type !== 'compte') {
                 return back()->withInput()->with('error', 'Le carnet sélectionné doit être un compte actif.');
             }
 
-            if ($request->type === 'quinzaine' && $carnet->type !== 'tontine') {
-                return back()->withInput()->with('error', 'Le carnet sélectionné doit être une tontine active pour un crédit quinzaine.');
+            if ($request->type_support === 'tontine' && $carnet->type !== 'tontine') {
+                return back()->withInput()->with('error', 'Le carnet sélectionné doit être une tontine active.');
             }
 
-            if ($carnet->type === 'tontine' && $request->type !== 'quinzaine') {
-                return back()->withInput()->with('error', 'Ce carnet de tontine ne peut être utilisé que pour un crédit quinzaine.');
-            }
-
-            if ($request->type === 'quinzaine') {
+            // Seuil recommandé de pointages pour les carnets de tontine
+            if ($carnet->type === 'tontine') {
                 $category = $carnet->categoryTontine;
-                if (!$category) {
-                    return back()->withInput()->with('error', 'La catégorie de tontine du carnet est manquante.');
-                }
+                if ($category) {
+                    $requiredPointages = $category->minimumPointagesRequired();
+                    $currentPointages = $carnet->totalPointages();
 
-                $requiredPointages = $category->minimumPointagesRequired();
-                $currentPointages = $carnet->totalPointages();
-
-                if ($currentPointages < $requiredPointages) {
-                    session()->flash('warning', "Le carnet ne respecte pas encore le seuil recommandé ({$currentPointages}/{$requiredPointages} pointages). L'admin peut tout de même enregistrer le crédit.");
+                    if ($currentPointages < $requiredPointages) {
+                        session()->flash('warning', "Le carnet ne respecte pas encore le seuil recommandé ({$currentPointages}/{$requiredPointages} pointages). L'admin peut tout de même enregistrer le crédit.");
+                    }
                 }
             }
 
@@ -174,21 +191,25 @@ class CreditController extends Controller
             }
         }
 
+        // 3. Vérification globale au niveau du client
         $clientHasActive = Credit::where('client_id', $request->client_id)
             ->whereIn('statut', ['pending', 'approved', 'active', 'in_arrears'])
             ->exists();
 
         if ($clientHasActive) {
-            return back()->with('error', 'Ce client a déjà un crédit actif ou en attente.');
+            return back()->withInput()->with('error', 'Ce client a déjà un crédit actif ou en attente.');
         }
 
+        // 4. Lancement de la transaction pour préserver l'intégrité des données
         DB::beginTransaction();
         try {
+            // Préparation des données pour le calculateur d'échéances (inclut le différé)
             $data = $request->only([
-                'client_id', 'carnet_id', 'montant_demande', 'type', 'mode', 
-                'periodicite', 'nombre_echeances', 'taux', 'taux_manuelle', 'date_debut'
+                'client_id', 'carnet_id', 'montant_demande', 'mode', 
+                'periodicite', 'nombre_echeances', 'taux', 'taux_manuel', 'date_debut', 'differe'
             ]);
 
+            // Génération du tableau d'amortissement
             $schedule = CreditCalculator::buildSchedule($data);
             $interestTotal = CreditCalculator::totalInterest($schedule);
             $montantAccorde = $request->montant_demande;
@@ -196,21 +217,29 @@ class CreditController extends Controller
             $monthlyAmount = collect($schedule)->avg('total');
             $blockedAmount = (float) $guaranteeBase;
 
+            // Étape A : Création de l'enregistrement de Crédit principal
             $credit = Credit::create([
-                'credit_uid' => Str::uuid(),
+                'credit_uid' => (string) Str::uuid(),
                 'client_id' => $data['client_id'],
                 'carnet_id' => $data['carnet_id'] ?? null,
+                'cycle_id' => $request->cycle_id ?? null, // Suivi tontine
                 'admin_id' => auth()->id(),
+                'credit_product_id' => $request->credit_product_id,
+                'credit_object_id' => $request->credit_object_id,
+                'type_support' => $request->type_support,
+                
                 'montant_demande' => $data['montant_demande'],
                 'montant_accorde' => $montantAccorde,
-                'taux' => CreditCalculator::calculateRate($data['taux'], $data['taux_manuelle']),
-                'taux_manuelle' => $data['taux_manuelle'],
-                'type' => $data['type'],
+                'taux' => CreditCalculator::calculateRate($data['taux'], $data['taux_manuel']),
+                'taux_manuel' => $data['taux_manuel'],
                 'mode' => $data['mode'],
                 'periodicite' => $data['periodicite'],
                 'nombre_echeances' => $data['nombre_echeances'],
-                'montant_echeance' => round($monthlyAmount, 0), // Arrondi XAF strict
-                'interet_total' => round($interestTotal, 0),    // Arrondi XAF strict
+                'differe' => $request->differe,
+                'frais_dossier' => $request->frais_dossier,
+                
+                'montant_echeance' => round($monthlyAmount, 0),
+                'interet_total' => round($interestTotal, 0),
                 'montant_rembourse' => 0,
                 'blocked_amount' => $blockedAmount,
                 'statut' => 'pending',
@@ -223,6 +252,22 @@ class CreditController extends Controller
                 ],
             ]);
 
+            // Étape B : Upload des pièces justificatives et enregistrement du Garant
+            $pathPiece = $request->file('guarantor_piece_identite')->store('guarantors/pieces', 'public');
+            $pathRevenu = $request->hasFile('guarantor_justificatif_revenu') 
+                ? $request->file('guarantor_justificatif_revenu')->store('guarantors/revenus', 'public') 
+                : null;
+
+            $credit->guarantor()->create([
+                'nom_prenom' => $request->guarantor_nom_prenom,
+                'telephone' => $request->guarantor_telephone,
+                'profession' => $request->guarantor_profession,
+                'adresse' => $request->guarantor_adresse,
+                'piece_identite' => $pathPiece,
+                'justificatif_revenu' => $pathRevenu,
+            ]);
+
+            // Étape C : Génération des lignes de l'échéancier (CreditPayment)
             foreach ($schedule as $item) {
                 CreditPayment::create([
                     'credit_id' => $credit->id,
@@ -238,10 +283,11 @@ class CreditController extends Controller
 
             DB::commit();
             return redirect()->route('admin.credits.index')->with('success', 'Demande de crédit enregistrée avec succès.');
+            
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Credit store error: ' . $e->getMessage());
-            return back()->with('error', 'Impossible de créer la demande de crédit.');
+            return back()->withInput()->with('error', 'Impossible de créer la demande de crédit : ' . $e->getMessage());
         }
     }
 

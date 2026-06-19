@@ -12,17 +12,12 @@ return new class extends Migration
             $table->string('cycle_uid')->nullable()->unique()->after('id');
         });
 
-        Schema::table('collectes', function (Blueprint $table) {
-            $table->string('collecte_uid')->nullable()->unique()->after('id');
-        });
+        // Le bloc 'collectes' a été retiré d'ici car 'collecte_uid' est déjà créé à la source.
     }
 
     public function down(): void
     {
-        Schema::table('collectes', function (Blueprint $table) {
-            $table->dropUnique(['collecte_uid']);
-            $table->dropColumn('collecte_uid');
-        });
+        // Le bloc de suppression 'collectes' a été retiré d'ici aussi.
 
         Schema::table('cycles', function (Blueprint $table) {
             $table->dropUnique(['cycle_uid']);

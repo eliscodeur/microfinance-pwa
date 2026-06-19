@@ -13,12 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('categories_tontine', function (Blueprint $table) {
+        Schema::create('credit_objects', function (Blueprint $table) {
             $table->id();
-            $table->string('libelle')->unique();
-            $table->decimal('prix', 15, 2)->default(0); // On l'intègre directement ici
-            $table->integer('nombre_cycles')->default(31); // On l'intègre directement ici
-            $table->text('description')->nullable();    // On l'intègre directement ici
+            $table->string('nom'); // Ex: Achat de stock, Prêt scolaire
+            $table->string('secteur_activite')->nullable(); // Ex: Commerce, Éducation
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('categories_tontine');
+        Schema::dropIfExists('credit_objects');
     }
 };
