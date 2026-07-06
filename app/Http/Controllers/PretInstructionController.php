@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Credit;
+use App\Models\CreditProduct;
 use App\Services\CreditCalculator;
 use Carbon\Carbon;
 
@@ -47,7 +48,7 @@ class PretInstructionController extends Controller
         $carnets = $client->carnets ?? collect();
         $nombreCarnets = $carnets->count();
 
-        // Calculs tolérants : certains projets nomment le solde différemment
+        // Calculs globaux du client
         $totalEpargne = $carnets->sum(function ($c) {
             return $c->solde ?? ($c->balance ?? 0);
         });
@@ -65,18 +66,43 @@ class PretInstructionController extends Controller
             $regularite = round(($cyclesCompletes / $totalCycles) * 100, 0);
         }
 
+        // --- NOUVEAU : Extraction du carnet lié au crédit ---
+        $selectedCarnet = $carnets->firstWhere('id', $credit->carnet_id);
+        
+        $typeCarnet = null;
+        $numeroCarnet = null;
+        $nombreCyclesDuCarnet = 0;
+
+        if ($selectedCarnet) {
+            $typeCarnet = $selectedCarnet->type;
+            $numeroCarnet = $selectedCarnet->numero; // Ajustez si la colonne a un autre nom (ex: 'num_carnet')
+            
+            // Si c'est une tontine, on compte les cycles de ce carnet spécifique
+            if ($typeCarnet === 'tontine') {
+                $nombreCyclesDuCarnet = $selectedCarnet->cycles->count();
+            }
+        }
+
+        // Constitution du tableau diagnostic avec les infos injectées
         $diagnostic = [
             'nombreCarnets' => $nombreCarnets,
             'totalEpargne' => $totalEpargne,
             'cyclesCompletes' => $cyclesCompletes,
             'totalCollectes' => $totalCollectes,
             'regularitePourcent' => $regularite,
+            
+            // --- Données spécifiques pour le frontend (SweetAlert) ---
+            'carnet_id' => $credit->carnet_id,
+            'type_carnet' => $typeCarnet,
+            'carnet_numero' => $numeroCarnet,
+            'nombre_cycles' => $nombreCyclesDuCarnet,
         ];
 
         return Inertia::render('Prets/Show', [
             'credit' => $credit,
             'client' => $client,
             'diagnostic' => $diagnostic,
+            'creditProducts' => CreditProduct::with('creditObjects')->get()
         ]);
     }
 

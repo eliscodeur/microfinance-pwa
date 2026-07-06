@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
-
+use Illuminate\Validation\ValidationException;
 use App\Http\Controllers\Controller;
 use App\Models\Credit;
 use App\Models\CreditPayment;
@@ -12,6 +12,7 @@ use App\Models\Retrait;
 use App\Models\Cycle;
 use App\Models\Collecte;
 use App\Models\Depot;
+use App\Models\CreditGuarantor;
 use App\Services\CreditCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -48,6 +49,19 @@ class CreditController extends Controller
                     ->whereDoesntHave('credits', function($q) {
                         $q->where('statut', 'active');
                     })
+                    // --- AJOUT DU FILTRAGE TONTINE ---
+                    ->when('tontine', function($q) { // Si c'est une tontine
+                        $q->where(function($sub) {
+                            $sub->where('type', '!=', 'tontine') // Garde les comptes normaux
+                                ->orWhereHas('cycles', function($c) {
+                                    $c->where('statut', 'en_cours')
+                                    ->orWhere(function($cc) {
+                                        $cc->where('statut', 'termine')->whereNull('retire_at');
+                                    });
+                                });
+                        });
+                    })
+                    // --------------------------------
                     ->with([
                         'categoryTontine',
                         'cycles' => function($q) { $q->whereNull('retire_at')->with('collectes'); },
@@ -89,12 +103,20 @@ class CreditController extends Controller
     {
         $today = now()->toDateString();
         
+        // 0. Anticipation : On cherche s'il existe déjà un brouillon "pending" pour ce carnet
+        $existingPendingCredit = null;
+        if ($request->filled('carnet_id')) {
+            $existingPendingCredit = Credit::where('carnet_id', $request->carnet_id)
+                ->where('statut', 'pending')
+                ->first();
+        }
+
         // 1. Validation stricte alignée sur ta nouvelle structure et le formulaire
         $request->validate([
             'client_id' => 'required|exists:clients,id',
             'credit_product_id' => 'required|exists:credit_products,id',
             'credit_object_id' => 'nullable|exists:credit_objects,id',
-            'cycle_id' => 'nullable', // Clé optionnelle pour la trace du cycle tontine terrain
+            'cycle_id' => 'nullable', 
             'type_support' => 'required|string|in:compte,tontine',
             
             'carnet_id' => [
@@ -110,25 +132,24 @@ class CreditController extends Controller
             'differe' => 'required|integer|min:0|max:12',
             'frais_dossier' => 'required|numeric|min:0',
             'taux' => 'required|numeric|min:0|max:100',
-            'taux_manuel' => 'nullable|numeric|min:0|max:100', // Correction orthographique
+            'taux_manuel' => 'nullable|numeric|min:0|max:100',
             'date_debut' => "required|date|after_or_equal:{$today}",
 
-            // Validation du bloc garant / caution solidaire (Table séparée)
-            'guarantor_nom_prenom' => 'required|string|max:255',
-            'guarantor_telephone' => 'required|string|max:50',
-            'guarantor_profession' => 'nullable|string|max:255',
-            'guarantor_adresse' => 'nullable|string|max:255',
-            'guarantor_piece_identite' => 'required|file|mimes:jpeg,png,jpg,pdf|max:4096', // 4Mo max
-            'guarantor_justificatif_revenu' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:4096',
+            // Validation du bloc garant
+            'nom_prenom' => 'required|string|max:255',
+            'telephone' => 'required|string|max:50',
+            'profession' => 'nullable|string|max:255',
+            'adresse' => 'nullable|string|max:255',
+            // La pièce est requise UNIQUEMENT si c'est une création (pas de brouillon)
+            'piece_identite' => [
+                $existingPendingCredit ? 'nullable' : 'required', 
+                'file', 'mimes:jpeg,png,jpg,pdf', 'max:4096'
+            ],
+            'justificatif_revenu' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:4096',
         ], [
             'carnet_id.required' => 'Un carnet est obligatoire pour ce type de support.',
             'date_debut.after_or_equal' => 'La date de début doit être aujourd’hui ou ultérieure.',
-            'taux.max' => 'Le taux ne peut pas dépasser 100%.',
-            'taux_manuel.max' => 'Le taux manuel ne peut pas dépasser 100%.',
-            'nombre_echeances.max' => 'Le nombre d’échéances ne peut pas dépasser 60.',
-            'guarantor_nom_prenom.required' => 'Le nom et prénom du garant sont obligatoires.',
-            'guarantor_telephone.required' => 'Le numéro de téléphone du garant est obligatoire.',
-            'guarantor_piece_identite.required' => 'La pièce d’identité du garant est obligatoire.',
+            'piece_identite.required' => 'La pièce d’identité du garant est obligatoire.',
         ]);
 
         $guaranteeBase = 0;
@@ -150,95 +171,115 @@ class CreditController extends Controller
             ->first();
 
             if (!$carnet) {
-                return back()->withInput()->with('error', 'Le carnet sélectionné est invalide ou n’appartient pas au client.');
+                throw ValidationException::withMessages(['carnet_id' => 'Le carnet sélectionné est invalide.']);
             }
             
+            // On vérifie s'il y a un crédit ACTIF ou APPROUVÉ (On exclut 'pending' de cette vérification)
             $carnetHasActiveCredit = Credit::where('carnet_id', $request->carnet_id)
-                ->whereIn('statut', ['pending', 'approved', 'active', 'in_arrears'])
+                ->whereIn('statut', ['approved', 'active', 'in_arrears'])
                 ->exists();
 
+            // 2.1 Vérification spécifique pour la Tontine (Cycle actif)
+            if ($request->type_support === 'tontine') {
+                $hasValidCycle = Cycle::where('carnet_id', $request->carnet_id)
+                    ->where(function ($query) {
+                        $query->where('statut', 'en_cours') // Cycle actif
+                            ->orWhere(function ($q) {
+                                $q->where('statut', 'termine')->whereNull('retire_at');
+                            });
+                    })
+                    ->exists();
+
+                if (!$hasValidCycle) {
+                    throw ValidationException::withMessages(['type_support' => 'Pour un crédit tontine, un cycle en cours ou non retiré est requis.']);
+                }
+            }
+
             if ($carnetHasActiveCredit) {
-                return back()->withInput()->with('error', 'Ce carnet a déjà un crédit en cours. Veuillez sélectionner un autre carnet.');
+                throw ValidationException::withMessages(['carnet_id' => 'Ce carnet a déjà un crédit en cours. Veuillez sélectionner un autre carnet.']);
             }
 
-            // Vérification de la cohérence du support choisi
+            // Vérification de la cohérence du support
             if ($request->type_support === 'compte' && $carnet->type !== 'compte') {
-                return back()->withInput()->with('error', 'Le carnet sélectionné doit être un compte actif.');
+                throw ValidationException::withMessages(['carnet_id' => 'Le carnet sélectionné doit être un compte actif.']);
             }
-
             if ($request->type_support === 'tontine' && $carnet->type !== 'tontine') {
-                return back()->withInput()->with('error', 'Le carnet sélectionné doit être une tontine active.');
+                throw ValidationException::withMessages(['carnet_id' => 'Le carnet sélectionné doit être une tontine active.']);
             }
 
-            // Seuil recommandé de pointages pour les carnets de tontine
-            if ($carnet->type === 'tontine') {
-                $category = $carnet->categoryTontine;
-                if ($category) {
-                    $requiredPointages = $category->minimumPointagesRequired();
-                    $currentPointages = $carnet->totalPointages();
+            // Seuil recommandé
+            if ($carnet->type === 'tontine' && $category = $carnet->categoryTontine) {
+                $requiredPointages = $category->minimumPointagesRequired();
+                $currentPointages = $carnet->totalPointages();
 
-                    if ($currentPointages < $requiredPointages) {
-                        session()->flash('warning', "Le carnet ne respecte pas encore le seuil recommandé ({$currentPointages}/{$requiredPointages} pointages). L'admin peut tout de même enregistrer le crédit.");
-                    }
+                if ($currentPointages < $requiredPointages) {
+                    session()->flash('warning', "Le carnet ne respecte pas encore le seuil recommandé ({$currentPointages}/{$requiredPointages} pointages). L'admin peut tout de même enregistrer le crédit.");
                 }
             }
 
             $guaranteeBase = $carnet->guaranteeBase();
             if ($guaranteeBase <= 0) {
-                session()->flash('warning', "Aucune épargne disponible n'a été détectée sur le carnet et ses comptes liés. Le prêt s'appuie uniquement sur la capacité d'emprunt.");
+                session()->flash('warning', "Aucune épargne disponible n'a été détectée. Le prêt s'appuie uniquement sur la capacité d'emprunt.");
             } elseif ($request->montant_demande > $guaranteeBase) {
-                session()->flash('warning', 'Le montant demandé dépasse l\'assiette de garantie disponible (' . number_format($guaranteeBase, 0, ',', ' ') . ' FCFA). Le crédit peut toujours être enregistré, mais la garantie d\'épargne est limitée.');
+                session()->flash('warning', "Le montant demandé dépasse l'assiette de garantie disponible (" . number_format($guaranteeBase, 0, ',', ' ') . " FCFA).");
             }
         }
 
-        // 3. Vérification globale au niveau du client
+        // 3. Vérification globale au niveau du client (hors pending sur le carnet actuel)
         $clientHasActive = Credit::where('client_id', $request->client_id)
-            ->whereIn('statut', ['pending', 'approved', 'active', 'in_arrears'])
+            ->whereIn('statut', ['approved', 'active', 'in_arrears'])
             ->exists();
 
-        if ($clientHasActive) {
-            return back()->withInput()->with('error', 'Ce client a déjà un crédit actif ou en attente.');
+        $clientHasOtherPending = Credit::where('client_id', $request->client_id)
+            ->where('statut', 'pending')
+            ->where('carnet_id', '!=', $request->carnet_id) // S'il a un pending sur un AUTRE carnet
+            ->exists();
+
+        if ($clientHasActive || $clientHasOtherPending) {
+            throw ValidationException::withMessages(['client_id' => 'Ce client a déjà un crédit actif ou une demande en attente sur un autre support.']);
         }
 
-        // 4. Lancement de la transaction pour préserver l'intégrité des données
+        // 4. Lancement de la transaction DB
         DB::beginTransaction();
         try {
-            // Préparation des données pour le calculateur d'échéances (inclut le différé)
             $data = $request->only([
                 'client_id', 'carnet_id', 'montant_demande', 'mode', 
                 'periodicite', 'nombre_echeances', 'taux', 'taux_manuel', 'date_debut', 'differe'
             ]);
 
-            // Génération du tableau d'amortissement
-            $schedule = CreditCalculator::buildSchedule($data);
-            $interestTotal = CreditCalculator::totalInterest($schedule);
+            $scheduleArray = CreditCalculator::buildSchedule($data);
+            $schedule = collect($scheduleArray);
+
+            $interestTotal = CreditCalculator::totalInterest($scheduleArray);
             $montantAccorde = $request->montant_demande;
-            $dateFin = collect($schedule)->last()['date'] ?? $request->date_debut;
-            $monthlyAmount = collect($schedule)->avg('total');
+            $dateFin = $schedule->last()['date'] ?? $request->date_debut;
             $blockedAmount = (float) $guaranteeBase;
 
-            // Étape A : Création de l'enregistrement de Crédit principal
-            $credit = Credit::create([
-                'credit_uid' => (string) Str::uuid(),
+            $echeanceDiffere = $schedule->firstWhere('is_differe', true);
+            $montantDiffere = $echeanceDiffere ? $echeanceDiffere['total'] : 0;
+            $echeanceNormale = $schedule->firstWhere('is_differe', false) ?? $schedule->first();
+            $montantNormal = $echeanceNormale ? $echeanceNormale['total'] : 0;
+
+            // Préparation du Payload Crédit
+            $creditPayload = [
                 'client_id' => $data['client_id'],
                 'carnet_id' => $data['carnet_id'] ?? null,
-                'cycle_id' => $request->cycle_id ?? null, // Suivi tontine
-                'admin_id' => auth()->id(),
+                'cycle_id' => $request->cycle_id ?? null,
+                'admin_id' => auth()->id() ?? null,
                 'credit_product_id' => $request->credit_product_id,
                 'credit_object_id' => $request->credit_object_id,
                 'type_support' => $request->type_support,
-                
                 'montant_demande' => $data['montant_demande'],
                 'montant_accorde' => $montantAccorde,
-                'taux' => CreditCalculator::calculateRate($data['taux'], $data['taux_manuel']),
+                'taux' => $data['taux'], 
                 'taux_manuel' => $data['taux_manuel'],
                 'mode' => $data['mode'],
                 'periodicite' => $data['periodicite'],
                 'nombre_echeances' => $data['nombre_echeances'],
                 'differe' => $request->differe,
                 'frais_dossier' => $request->frais_dossier,
-                
-                'montant_echeance' => round($monthlyAmount, 0),
+                'montant_echeance_differe' => $montantDiffere,
+                'montant_echeance' => $montantNormal,
                 'interet_total' => round($interestTotal, 0),
                 'montant_rembourse' => 0,
                 'blocked_amount' => $blockedAmount,
@@ -250,25 +291,50 @@ class CreditController extends Controller
                     'preview' => true,
                     'guarantee_base' => $blockedAmount,
                 ],
-            ]);
+            ];
 
-            // Étape B : Upload des pièces justificatives et enregistrement du Garant
-            $pathPiece = $request->file('guarantor_piece_identite')->store('guarantors/pieces', 'public');
-            $pathRevenu = $request->hasFile('guarantor_justificatif_revenu') 
-                ? $request->file('guarantor_justificatif_revenu')->store('guarantors/revenus', 'public') 
-                : null;
+            // Étape A : Création OU Mise à jour du Crédit
+            if ($existingPendingCredit) {
+                $existingPendingCredit->update($creditPayload);
+                $credit = $existingPendingCredit;
+            } else {
+                $creditPayload['credit_uid'] = (string) Str::uuid();
+                $credit = Credit::create($creditPayload);
+            }
 
-            $credit->guarantor()->create([
-                'nom_prenom' => $request->guarantor_nom_prenom,
-                'telephone' => $request->guarantor_telephone,
-                'profession' => $request->guarantor_profession,
-                'adresse' => $request->guarantor_adresse,
+            // Étape B : Gestion des fichiers et Enregistrement du Garant
+            $pathPiece = $existingPendingCredit ? $existingPendingCredit->creditGuarantor?->piece_identite : null;
+            if ($request->hasFile('piece_identite')) {
+                $pathPiece = $request->file('piece_identite')->store('guarantors/pieces', 'public');
+            }
+
+            $pathRevenu = $existingPendingCredit ? $existingPendingCredit->creditGuarantor?->justificatif_revenu : null;
+            if ($request->hasFile('justificatif_revenu')) {
+                $pathRevenu = $request->file('justificatif_revenu')->store('guarantors/revenus', 'public');
+            }
+
+            $guarantorPayload = [
+                'credit_id' => $credit->id,
+                'nom_prenom' => $request->nom_prenom,
+                'telephone' => $request->telephone,
+                'profession' => $request->profession,
+                'adresse' => $request->adresse,
                 'piece_identite' => $pathPiece,
                 'justificatif_revenu' => $pathRevenu,
-            ]);
+            ];
 
-            // Étape C : Génération des lignes de l'échéancier (CreditPayment)
-            foreach ($schedule as $item) {
+            if ($existingPendingCredit && $existingPendingCredit->creditGuarantor) {
+                $existingPendingCredit->creditGuarantor->update($guarantorPayload);
+            } else {
+                CreditGuarantor::create($guarantorPayload);
+            }
+
+            // Étape C : Recréation de l'Échéancier
+            if ($existingPendingCredit) {
+                CreditPayment::where('credit_id', $credit->id)->delete();
+            }
+
+            foreach ($scheduleArray as $item) {
                 CreditPayment::create([
                     'credit_id' => $credit->id,
                     'echeance' => $item['numero'],
@@ -277,17 +343,23 @@ class CreditController extends Controller
                     'montant_interets' => round($item['interest'], 0),
                     'montant_total' => round($item['total'], 0),
                     'status' => 'pending',
-                    'admin_id' => auth()->id(),
+                    'admin_id' => auth()->id() ?? null,
                 ]);
             }
 
             DB::commit();
-            return redirect()->route('admin.credits.index')->with('success', 'Demande de crédit enregistrée avec succès.');
+            
+            // Message dynamique selon l'action effectuée
+            $successMessage = $existingPendingCredit 
+                ? 'Brouillon de crédit mis à jour avec succès.' 
+                : 'Demande de crédit enregistrée avec succès.';
+
+            return redirect()->route('admin.credits.index')->with('success', $successMessage);
             
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Credit store error: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Impossible de créer la demande de crédit : ' . $e->getMessage());
+            Log::error('Erreur crédit: ' . $e->getMessage());
+            throw ValidationException::withMessages(['global' => "Une erreur interne est survenue lors de l'enregistrement."]);
         }
     }
 
@@ -391,6 +463,32 @@ class CreditController extends Controller
                 'error'   => 'Impossible de récupérer les détails du carnet.',
             ], 500);
         }
+    }
+
+    public function checkPending($carnetId)
+    {
+        // 1. On cherche le crédit en attente pour ce carnet
+        $credit = Credit::where('carnet_id', $carnetId)
+            ->where('statut', 'pending')
+            ->with('creditGuarantor')
+            ->first();
+
+        // 2. Si un brouillon existe, on vérifie QUI l'a créé
+        if ($credit) {
+            $currentUser = auth()->user();
+
+            // Sécurité : On compare l'ID de l'admin connecté avec celui stocké sur le crédit
+            // (Adapte 'admin_id' ou 'agent_id' selon la colonne qui stocke le créateur dans ta base)
+            if ($credit->admin_id !== $currentUser->id) {
+                return response()->json([
+                    'brouillon_bloque' => true,
+                    'message' => "Ce brouillon a été initié par un autre agent. Vous ne pouvez pas le modifier."
+                ]);
+            }
+        }
+
+        // 3. Si c'est le bon admin (ou s'il n'y a pas de brouillon), on retourne les données normalement
+        return response()->json($credit); 
     }
 
     public function show(Credit $credit)

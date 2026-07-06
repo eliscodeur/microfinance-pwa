@@ -809,36 +809,38 @@ function calculateRate(taux, tauxManuel) {
 }
 function buildScheduleFromForm(form) {
   var montant = Number(form.montant_demande || 0);
-  var taux = calculateRate(form.taux, form.taux_manuelle) / 100;
+
+  // 1. On prend le taux directement (pas de division par 12 ou 24)
+  var tauxAnnuel = calculateRate(form.taux, form.taux_manuel);
+  var tauxFixeGlobal = tauxAnnuel / 100;
+
+  // 2. Calcul des intérêts totaux dès le départ
+  var interetTotal = Math.round(montant * tauxFixeGlobal * 100) / 100;
   var nombre = Math.max(1, Number(form.nombre_echeances || 1));
-  var mode = form.mode || 'fixe';
+  var differe = Math.max(0, Number(form.differe || 0));
   var periodicite = form.periodicite || 'mensuelle';
   var start = form.date_debut || new Date().toISOString().slice(0, 10);
+  var startDate = typeof parseDateString === 'function' ? parseDateString(start) : new Date(start + 'T00:00:00');
 
-  // Utilise votre fonction de parsing ou crée une date locale sécurisée
-  var startDate = typeof parseDateString === 'function' ? parseDateString(start) : new Date(start + 'T00:00:00'); // Évite les décalages de fuseau horaire au parsing
-
-  var principalBase = Math.round(montant / nombre * 100) / 100;
-  var remaining = montant;
+  // 3. Répartition du principal et des intérêts
+  var echeancesAmortissables = Math.max(1, nombre - differe);
+  var principalParEcheance = Math.round(montant / echeancesAmortissables * 100) / 100;
+  var interetParEcheance = Math.round(interetTotal / nombre * 100) / 100;
   var schedule = [];
   for (var i = 1; i <= nombre; i += 1) {
-    // 1. Calcul des intérêts (Fixe ou Dégressif)
-    var interest = mode === 'degressif' ? Math.round(remaining * taux * 100) / 100 : Math.round(montant * taux * 100) / 100;
+    // Le principal est 0 pendant le différé
+    var principal = i <= differe ? 0 : principalParEcheance;
 
-    // 2. Ajustement de la dernière échéance pour vider le capital restant dû
-    var principal = i === nombre ? Math.round(remaining * 100) / 100 : principalBase;
-    var total = Math.round((principal + interest) * 100) / 100;
+    // Si c'est la dernière échéance, on ajuste le principal pour retomber juste sur le montant
+    if (i === nombre) {
+      var totalDejaAmorti = principalParEcheance * (echeancesAmortissables - 1);
+      principal = Math.round((montant - totalDejaAmorti) * 100) / 100;
+    }
+    var total = Math.round((principal + interetParEcheance) * 100) / 100;
 
-    // 3. Gestion dynamique et précise de la date d'échéance
+    // Gestion des dates
     var dueDate = new Date(startDate);
-    if (periodicite === 'mensuelle') {
-      // Ajoute exactement (i - 1) mois (Ex: 1er Janvier -> 1er Février -> 1er Mars)
-      dueDate.setMonth(dueDate.getMonth() + (i - 1));
-    } else if (periodicite === 'quinzaine') {
-      // Ajoute 14 jours par échéance
-      dueDate.setDate(dueDate.getDate() + (i - 1) * 14);
-    } else {
-      // Fallback si vous utilisez periodDays pour d'autres cas spécifiques
+    if (periodicite === 'mensuelle') dueDate.setMonth(dueDate.getMonth() + (i - 1));else if (periodicite === 'quinzaine') dueDate.setDate(dueDate.getDate() + (i - 1) * 14);else {
       var periodDaysCount = typeof periodDays === 'function' ? periodDays(periodicite) : 30;
       dueDate.setDate(dueDate.getDate() + (i - 1) * periodDaysCount);
     }
@@ -846,12 +848,10 @@ function buildScheduleFromForm(form) {
       numero: i,
       date: dueDate.toISOString().slice(0, 10),
       principal: principal,
-      interest: interest,
-      total: total
+      interest: interetParEcheance,
+      total: total,
+      is_differe: i <= differe
     });
-
-    // 4. Mise à jour du capital restant pour le prochain tour
-    remaining = Math.round((remaining - principal) * 100) / 100;
   }
   return schedule;
 }

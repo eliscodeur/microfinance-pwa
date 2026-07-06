@@ -39,9 +39,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @inertiajs/inertia */ "./node_modules/@inertiajs/inertia/dist/index.js");
 /* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
 /* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../Layouts/AdminLayout.jsx */ "./resources/js/Layouts/AdminLayout.jsx");
-/* harmony import */ var _Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../Utils/creditHelpers */ "./resources/js/Utils/creditHelpers.js");
-/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+/* harmony import */ var sweetalert2_react_content__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! sweetalert2-react-content */ "./node_modules/sweetalert2-react-content/dist/sweetalert2-react-content.umd.js");
+/* harmony import */ var sweetalert2_react_content__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(sweetalert2_react_content__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../Layouts/AdminLayout.jsx */ "./resources/js/Layouts/AdminLayout.jsx");
+/* harmony import */ var _Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../Utils/creditHelpers */ "./resources/js/Utils/creditHelpers.js");
+/* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 
 
 
@@ -49,72 +55,450 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+var MySwal = sweetalert2_react_content__WEBPACK_IMPORTED_MODULE_4___default()((sweetalert2__WEBPACK_IMPORTED_MODULE_3___default()));
 function Show() {
-  var _ref, _ref2, _credit$montant_accor, _ref3, _credit$montant_deman, _ref4, _credit$taux_propose, _credit$nombre_echean, _credit$mode, _credit$periodicite, _diagnostic$totalEpar, _diagnostic$nombreCar, _diagnostic$regularit;
+  var _ref2, _ref3, _credit$montant_accor, _ref4, _credit$montant_deman, _credit$taux, _credit$taux_manuel, _credit$nombre_echean, _credit$mode, _credit$periodicite, _credit$credit_produc, _credit$credit_object, _diagnostic$nombreCar, _diagnostic$regularit, _creditProducts$find, _approveForm$data$dif;
   var _usePage = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.usePage)(),
     props = _usePage.props;
   var credit = props.credit,
     client = props.client,
-    diagnostic = props.diagnostic;
+    diagnostic = props.diagnostic,
+    creditProducts = props.creditProducts;
+  var showCarnetDetails = /*#__PURE__*/function () {
+    var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
+      var response, data, carnetNumero, _data$cycles, _data$cycles2, _error$response, errorMsg, _t;
+      return _regenerator().w(function (_context) {
+        while (1) switch (_context.p = _context.n) {
+          case 0:
+            if (diagnostic !== null && diagnostic !== void 0 && diagnostic.carnet_id) {
+              _context.n = 1;
+              break;
+            }
+            MySwal.fire('Erreur', 'Aucun identifiant de carnet disponible.', 'error');
+            return _context.a(2);
+          case 1:
+            MySwal.fire({
+              title: 'Chargement en cours...',
+              text: 'Récupération des détails du carnet',
+              allowOutsideClick: false,
+              didOpen: function didOpen() {
+                MySwal.showLoading();
+              }
+            });
+            _context.p = 2;
+            _context.n = 3;
+            return axios.get("/admin/carnets/details/".concat(diagnostic.carnet_id));
+          case 3:
+            response = _context.v;
+            data = response.data;
+            carnetNumero = (diagnostic === null || diagnostic === void 0 ? void 0 : diagnostic.carnet_numero) || '—'; // Récupération du numéro
+            if (data.success) {
+              MySwal.fire({
+                // On utilise un fond légèrement grisé pour faire ressortir les cards blanches "shadow-sm"
+                html: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                  className: "text-start p-3",
+                  style: {
+                    backgroundColor: '#f8f9fc',
+                    borderRadius: '1rem'
+                  },
+                  children: data.type === 'tontine' ?
+                  /*#__PURE__*/
+                  // ==========================================
+                  // VUE TONTINE
+                  // ==========================================
+                  (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                    className: "card border-0 shadow-sm mb-2 rounded-4 overflow-hidden",
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                      className: "d-flex justify-content-between align-items-center p-3 p-md-4 border-bottom border-light",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                        className: "d-flex align-items-center",
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                          className: "d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded me-3",
+                          style: {
+                            width: '40px',
+                            height: '40px'
+                          },
+                          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("i", {
+                            className: "bi bi-wallet2 fs-5"
+                          })
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                          className: "lh-sm",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                            className: "fw-bold text-dark",
+                            style: {
+                              fontSize: '0.9rem'
+                            },
+                            children: "Carnet de Tontine"
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                            className: "text-muted",
+                            style: {
+                              fontSize: '0.8rem'
+                            },
+                            children: ["N\xB0 ", carnetNumero]
+                          })]
+                        })]
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("span", {
+                          className: "badge bg-light text-secondary border fw-medium rounded-pill px-3 py-2",
+                          style: {
+                            fontSize: '0.75rem'
+                          },
+                          children: [((_data$cycles = data.cycles) === null || _data$cycles === void 0 ? void 0 : _data$cycles.length) || 0, " Cycle", (((_data$cycles2 = data.cycles) === null || _data$cycles2 === void 0 ? void 0 : _data$cycles2.length) || 0) > 1 ? 's' : '']
+                        })
+                      })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                      className: "table-responsive",
+                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("table", {
+                        className: "table table-borderless table-hover align-middle mb-0",
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("thead", {
+                          className: "border-bottom border-light",
+                          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                              className: "text-muted fw-semibold text-uppercase py-3 ps-4",
+                              style: {
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.5px'
+                              },
+                              children: "P\xE9riode"
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                              className: "text-muted fw-semibold text-uppercase py-3",
+                              style: {
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.5px'
+                              },
+                              children: "Fin Pr\xE9vue"
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                              className: "text-muted fw-semibold text-uppercase py-3",
+                              style: {
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.5px'
+                              },
+                              children: "Fin R\xE9elle"
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                              className: "text-muted fw-semibold text-uppercase py-3 text-center",
+                              style: {
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.5px'
+                              },
+                              children: "Mise"
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                              className: "text-muted fw-semibold text-uppercase py-3 text-center",
+                              style: {
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.5px'
+                              },
+                              children: "Pointages"
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                              className: "text-muted fw-semibold text-uppercase py-3 text-center",
+                              style: {
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.5px'
+                              },
+                              children: "Statut"
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
+                              className: "text-muted fw-semibold text-uppercase py-3 text-center pe-4",
+                              style: {
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.5px'
+                              },
+                              children: "\xC9tat"
+                            })]
+                          })
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("tbody", {
+                          children: data.cycles && data.cycles.length > 0 ? data.cycles.map(function (cycle, idx) {
+                            return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                                className: "ps-4 fw-medium text-dark",
+                                style: {
+                                  fontSize: '0.85rem'
+                                },
+                                children: cycle.date_debut
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                                className: "text-muted",
+                                style: {
+                                  fontSize: '0.8rem'
+                                },
+                                children: cycle.date_fin_prevue || '-'
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                                className: "text-muted",
+                                style: {
+                                  fontSize: '0.8rem'
+                                },
+                                children: cycle.date_cloture_reelle || '-'
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                                className: "text-center fw-semibold text-dark",
+                                style: {
+                                  fontSize: '0.85rem'
+                                },
+                                children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(cycle.mise)
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                                className: "text-center text-muted",
+                                style: {
+                                  fontSize: '0.85rem'
+                                },
+                                children: cycle.total_pointages
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                                className: "text-center",
+                                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+                                  className: "badge rounded-pill fw-medium ".concat(cycle.statut === 'termine' ? 'bg-success bg-opacity-10 text-success' : cycle.statut === 'en_cours' ? 'bg-primary bg-opacity-10 text-primary' : 'bg-secondary bg-opacity-10 text-secondary'),
+                                  style: {
+                                    fontSize: '0.75rem'
+                                  },
+                                  children: cycle.statut === 'en_cours' ? 'En cours' : cycle.statut === 'termine' ? 'Terminé' : cycle.statut
+                                })
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                                className: "text-center pe-4",
+                                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+                                  className: "badge rounded-pill fw-medium ".concat(cycle.en_retard ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success'),
+                                  style: {
+                                    fontSize: '0.75rem'
+                                  },
+                                  children: cycle.en_retard ? 'En retard' : 'À jour'
+                                })
+                              })]
+                            }, idx);
+                          }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("tr", {
+                            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
+                              colSpan: "7",
+                              className: "text-center py-4 text-muted small",
+                              children: "Aucun cycle enregistr\xE9."
+                            })
+                          })
+                        })]
+                      })
+                    })]
+                  }) :
+                  /*#__PURE__*/
+                  // ==========================================
+                  // VUE COMPTE ÉPARGNE
+                  // ==========================================
+                  (0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                      className: "card border-0 shadow-sm mb-4 rounded-4",
+                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                        className: "card-body p-3 p-md-4",
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                          className: "d-flex align-items-center mb-3",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                            className: "d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded me-3",
+                            style: {
+                              width: '40px',
+                              height: '40px'
+                            },
+                            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("i", {
+                              className: "bi bi-piggy-bank fs-5"
+                            })
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                            className: "lh-sm",
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                              className: "fw-bold text-dark",
+                              style: {
+                                fontSize: '0.9rem'
+                              },
+                              children: "Compte \xC9pargne"
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                              className: "text-muted",
+                              style: {
+                                fontSize: '0.8rem'
+                              },
+                              children: ["N\xB0 ", carnetNumero]
+                            })]
+                          })]
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                          className: "mt-2",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                            className: "text-muted text-uppercase fw-semibold mb-1",
+                            style: {
+                              fontSize: '0.65rem',
+                              letterSpacing: '0.5px'
+                            },
+                            children: "Solde disponible"
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                            className: "fw-bolder text-dark",
+                            style: {
+                              fontSize: '1.75rem',
+                              lineHeight: '1'
+                            },
+                            children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(data.solde)
+                          })]
+                        })]
+                      })
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                      className: "card border-0 shadow-sm rounded-4 overflow-hidden",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                        className: "card-header bg-white border-bottom pt-3 pb-2",
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
+                          className: "mb-0 text-secondary fw-bold",
+                          style: {
+                            fontSize: '0.85rem'
+                          },
+                          children: "10 Derniers mouvements"
+                        })
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                        className: "card-body p-0",
+                        children: data.historique && data.historique.length > 0 ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                          className: "list-group list-group-flush",
+                          children: data.historique.map(function (transaction, idx) {
+                            return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                              className: "list-group-item d-flex justify-content-between align-items-center px-3 py-3 border-light",
+                              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                                className: "d-flex align-items-center gap-3 flex-grow-1",
+                                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                                  className: "d-flex align-items-center justify-content-center rounded-circle ".concat(transaction.type_transaction === 'Dépôt' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'),
+                                  style: {
+                                    width: '36px',
+                                    height: '36px'
+                                  },
+                                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("i", {
+                                    className: "bi ".concat(transaction.type_transaction === 'Dépôt' ? 'bi-arrow-down-short' : 'bi-arrow-up-short', " fs-4")
+                                  })
+                                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                                  className: "lh-sm",
+                                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                                    className: "fw-medium text-dark",
+                                    style: {
+                                      fontSize: '0.85rem'
+                                    },
+                                    children: transaction.type_transaction
+                                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("small", {
+                                    className: "text-muted",
+                                    style: {
+                                      fontSize: '0.70rem'
+                                    },
+                                    children: transaction.date
+                                  })]
+                                })]
+                              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                                className: "text-end",
+                                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                                  className: "fw-semibold ".concat(transaction.type_transaction === 'Dépôt' ? 'text-success' : 'text-danger'),
+                                  style: {
+                                    fontSize: '0.9rem'
+                                  },
+                                  children: [transaction.type_transaction === 'Dépôt' ? '+' : '-', " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(transaction.montant)]
+                                })
+                              })]
+                            }, idx);
+                          })
+                        }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                          className: "p-4 text-center text-muted",
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("i", {
+                            className: "bi bi-journal-text fs-3 opacity-50 d-block mb-2"
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+                            style: {
+                              fontSize: '0.85rem'
+                            },
+                            children: "Aucune transaction r\xE9cente"
+                          })]
+                        })
+                      })]
+                    })]
+                  })
+                }),
+                width: '850px',
+                showConfirmButton: true,
+                confirmButtonText: 'Fermer',
+                buttonsStyling: false,
+                // Désactive le style par défaut de Swal pour utiliser vos classes Bootstrap
+                customClass: {
+                  popup: 'rounded-4 shadow-lg p-0',
+                  // p-0 enlève le padding interne pour que le fond gris remplisse tout
+                  confirmButton: 'btn btn-dark px-4 py-2 fw-medium rounded-pill mb-3 mt-2'
+                }
+              });
+            }
+            _context.n = 5;
+            break;
+          case 4:
+            _context.p = 4;
+            _t = _context.v;
+            console.error("Erreur de récupération :", _t);
+            errorMsg = ((_error$response = _t.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.error) || 'Impossible de récupérer les détails. Vérifiez la connexion.';
+            MySwal.fire({
+              title: 'Erreur',
+              text: errorMsg,
+              icon: 'error',
+              confirmButtonColor: '#dc3545'
+            });
+          case 5:
+            return _context.a(2);
+        }
+      }, _callee, null, [[2, 4]]);
+    }));
+    return function showCarnetDetails() {
+      return _ref.apply(this, arguments);
+    };
+  }();
   var getStatusBadge = function getStatusBadge(statut) {
     switch (statut) {
       case 'pending':
       case 'soumis':
       case 'en_etude':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
           className: "badge bg-secondary-subtle text-secondary border px-3 py-2 fs-6",
           children: "En \xE9tude"
         });
       case 'approved':
       case 'approuve':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
           className: "badge bg-success-subtle text-success border px-3 py-2 fs-6",
           children: "Approuv\xE9"
         });
       case 'active':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
           className: "badge bg-primary-subtle text-primary border px-3 py-2 fs-6",
           children: "D\xE9caissement effectu\xE9"
         });
       case 'in_arrears':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
           className: "badge bg-danger-subtle text-danger border px-3 py-2 fs-6",
           children: "En retard"
         });
       case 'solder':
       case 'solde':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
           className: "badge bg-info-subtle text-info border px-3 py-2 fs-6",
           children: "Sold\xE9"
         });
       case 'rejected':
       case 'rejete':
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
           className: "badge bg-light text-muted border px-3 py-2 fs-6",
           children: "Rejet\xE9"
         });
       default:
-        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+        return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
           className: "badge bg-light text-dark border px-3 py-2 fs-6",
           children: statut !== null && statut !== void 0 ? statut : 'Inconnu'
         });
     }
   };
-  var approvedAmount = (_ref = (_ref2 = (_credit$montant_accor = credit === null || credit === void 0 ? void 0 : credit.montant_accorde) !== null && _credit$montant_accor !== void 0 ? _credit$montant_accor : credit === null || credit === void 0 ? void 0 : credit.montant_demande) !== null && _ref2 !== void 0 ? _ref2 : credit === null || credit === void 0 ? void 0 : credit.montant) !== null && _ref !== void 0 ? _ref : 0;
-  var requestedAmount = (_ref3 = (_credit$montant_deman = credit === null || credit === void 0 ? void 0 : credit.montant_demande) !== null && _credit$montant_deman !== void 0 ? _credit$montant_deman : credit === null || credit === void 0 ? void 0 : credit.montant) !== null && _ref3 !== void 0 ? _ref3 : 0;
-  var proposedRate = (_ref4 = (_credit$taux_propose = credit === null || credit === void 0 ? void 0 : credit.taux_propose) !== null && _credit$taux_propose !== void 0 ? _credit$taux_propose : credit === null || credit === void 0 ? void 0 : credit.taux) !== null && _ref4 !== void 0 ? _ref4 : 0;
+  var approvedAmount = (_ref2 = (_ref3 = (_credit$montant_accor = credit === null || credit === void 0 ? void 0 : credit.montant_accorde) !== null && _credit$montant_accor !== void 0 ? _credit$montant_accor : credit === null || credit === void 0 ? void 0 : credit.montant_demande) !== null && _ref3 !== void 0 ? _ref3 : credit === null || credit === void 0 ? void 0 : credit.montant) !== null && _ref2 !== void 0 ? _ref2 : 0;
+  var requestedAmount = (_ref4 = (_credit$montant_deman = credit === null || credit === void 0 ? void 0 : credit.montant_demande) !== null && _credit$montant_deman !== void 0 ? _credit$montant_deman : credit === null || credit === void 0 ? void 0 : credit.montant) !== null && _ref4 !== void 0 ? _ref4 : 0;
+  var proposedRate = (_credit$taux = credit === null || credit === void 0 ? void 0 : credit.taux) !== null && _credit$taux !== void 0 ? _credit$taux : 0;
+  var frais_dossier = credit === null || credit === void 0 ? void 0 : credit.frais_dossier;
+  var differe = credit === null || credit === void 0 ? void 0 : credit.differe;
+  var taux_manuel = (_credit$taux_manuel = credit === null || credit === void 0 ? void 0 : credit.taux_manuel) !== null && _credit$taux_manuel !== void 0 ? _credit$taux_manuel : '';
   var initialNumberOfInstallments = (_credit$nombre_echean = credit === null || credit === void 0 ? void 0 : credit.nombre_echeances) !== null && _credit$nombre_echean !== void 0 ? _credit$nombre_echean : 1;
   var initialMode = (_credit$mode = credit === null || credit === void 0 ? void 0 : credit.mode) !== null && _credit$mode !== void 0 ? _credit$mode : 'degressif';
   var initialPeriodicity = (_credit$periodicite = credit === null || credit === void 0 ? void 0 : credit.periodicite) !== null && _credit$periodicite !== void 0 ? _credit$periodicite : 'mensuelle';
   var initialStartDate = credit !== null && credit !== void 0 && credit.date_debut ? credit.date_debut.split('T')[0] : new Date().toISOString().slice(0, 10);
+  var initialProductId = (_credit$credit_produc = credit === null || credit === void 0 ? void 0 : credit.credit_product_id) !== null && _credit$credit_produc !== void 0 ? _credit$credit_produc : creditProducts.length > 0 ? creditProducts[0].id : null;
+  var initialObjectId = (_credit$credit_object = credit === null || credit === void 0 ? void 0 : credit.credit_object_id) !== null && _credit$credit_object !== void 0 ? _credit$credit_object : creditProducts.length > 0 && creditProducts[0].creditObjects.length > 0 ? creditProducts[0].creditObjects[0].id : null;
   var approveForm = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.useForm)({
     action: 'approuve',
     montant_accorde: approvedAmount,
     taux: proposedRate,
+    taux_manuel: taux_manuel,
+    differe: differe,
     date_debut: initialStartDate,
+    frais_dossier: frais_dossier,
     nombre_echeances: initialNumberOfInstallments,
     mode: initialMode,
     periodicite: initialPeriodicity
+    // credit_product_id: initialProductId,
+    // credit_object_id: initialObjectId,
   });
   var rejectForm = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.useForm)({
     action: 'rejete',
@@ -130,11 +514,11 @@ function Show() {
   };
   var hasApprovalDifferences = Object.values(approvalDifference).some(Boolean);
   var requestSchedule = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
-    var _credit$taux_manuelle, _credit$date_debut;
-    return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.buildScheduleFromForm)({
+    var _credit$taux_manuel2, _credit$date_debut;
+    return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.buildScheduleFromForm)({
       montant_demande: requestedAmount,
       taux: proposedRate,
-      taux_manuelle: (_credit$taux_manuelle = credit === null || credit === void 0 ? void 0 : credit.taux_manuelle) !== null && _credit$taux_manuelle !== void 0 ? _credit$taux_manuelle : '',
+      taux_manuel: (_credit$taux_manuel2 = credit === null || credit === void 0 ? void 0 : credit.taux_manuel) !== null && _credit$taux_manuel2 !== void 0 ? _credit$taux_manuel2 : '',
       nombre_echeances: initialNumberOfInstallments,
       mode: initialMode,
       periodicite: initialPeriodicity,
@@ -142,14 +526,14 @@ function Show() {
     });
   }, [requestedAmount, proposedRate, initialNumberOfInstallments, initialMode, initialPeriodicity, credit, initialStartDate]);
   var approvedSchedule = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
-    var _credit$taux_manuelle2;
+    var _credit$taux_manuel3;
     var montantOptionnel = parseFloat(approveForm.data.montant_accorde) || 0;
     var tauxOptionnel = parseFloat(approveForm.data.taux) || 0;
     var echeancesOptionnel = parseInt(approveForm.data.nombre_echeances, 10) || 1;
-    return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.buildScheduleFromForm)({
+    return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.buildScheduleFromForm)({
       montant_demande: montantOptionnel,
       taux: tauxOptionnel,
-      taux_manuelle: (_credit$taux_manuelle2 = credit === null || credit === void 0 ? void 0 : credit.taux_manuelle) !== null && _credit$taux_manuelle2 !== void 0 ? _credit$taux_manuelle2 : '',
+      taux_manuel: (_credit$taux_manuel3 = credit === null || credit === void 0 ? void 0 : credit.taux_manuel) !== null && _credit$taux_manuel3 !== void 0 ? _credit$taux_manuel3 : '',
       nombre_echeances: echeancesOptionnel,
       mode: approveForm.data.mode,
       periodicite: approveForm.data.periodicite,
@@ -220,118 +604,136 @@ function Show() {
       _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_2__.Inertia.post("/admin/prets/".concat(credit.id, "/decaisser"));
     });
   }
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_4__["default"], {
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_Layouts_AdminLayout_jsx__WEBPACK_IMPORTED_MODULE_5__["default"], {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
       className: "container-fluid px-4 py-3 bg-light-subtle",
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
         className: "d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-4 gap-2",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
             className: "d-flex align-items-center gap-3",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("h1", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("h1", {
               className: "h4 mb-0 text-dark fw-bold",
               children: ["Dossier de Cr\xE9dit #", credit.id]
             }), getStatusBadge(credit === null || credit === void 0 ? void 0 : credit.statut)]
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("p", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("p", {
             className: "text-muted small mb-0 mt-1",
             children: "Analyse et arbitrage des plans de remboursement."
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
             href: "/admin/prets",
             className: "btn btn-sm btn-outline-secondary px-3",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("i", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("i", {
               className: "bi bi-arrow-left me-2"
             }), "Retour"]
           })
         })]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
         className: "row g-3 mb-4",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
           className: "col-lg-4",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
             className: "card shadow-sm border-light mb-3",
-            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
               className: "card-body py-3",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                 className: "d-flex align-items-center mb-3",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                   className: "bg-secondary-subtle text-secondary rounded-circle px-3 py-2 fw-bold me-3",
                   children: client ? client.nom.charAt(0) : '—'
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h6", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
                     className: "mb-0 fw-bold text-dark",
                     children: client ? "".concat(client.nom, " ").concat(client.prenom) : '—'
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("small", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("small", {
                     className: "text-muted",
                     children: "Client \xC9pargnant"
                   })]
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                 className: "d-flex justify-content-between py-2 border-bottom border-light small",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
-                  className: "text-muted",
-                  children: "Total \xE9pargn\xE9"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
-                  className: "fw-semibold text-dark",
-                  children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)((_diagnostic$totalEpar = diagnostic === null || diagnostic === void 0 ? void 0 : diagnostic.totalEpargne) !== null && _diagnostic$totalEpar !== void 0 ? _diagnostic$totalEpar : 0)
-                })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-                className: "d-flex justify-content-between py-2 border-bottom border-light small",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                   className: "text-muted",
                   children: "Carnets actifs"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                   className: "fw-semibold text-dark",
                   children: (_diagnostic$nombreCar = diagnostic === null || diagnostic === void 0 ? void 0 : diagnostic.nombreCarnets) !== null && _diagnostic$nombreCar !== void 0 ? _diagnostic$nombreCar : 0
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                 className: "d-flex justify-content-between py-2 small",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                   className: "text-muted",
                   children: "R\xE9gularit\xE9"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("span", {
                   className: "fw-semibold text-dark",
                   children: [(_diagnostic$regularit = diagnostic === null || diagnostic === void 0 ? void 0 : diagnostic.regularitePourcent) !== null && _diagnostic$regularit !== void 0 ? _diagnostic$regularit : 'N/A', "%"]
                 })]
               })]
             })
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+            className: "card shadow-sm border-light mb-3",
+            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+              className: "card-body py-3 d-flex justify-content-between align-items-center",
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+                  className: "text-muted text-uppercase fw-bold tracking-wider d-block mb-1",
+                  style: {
+                    fontSize: '10px'
+                  },
+                  children: "Carnet Associ\xE9"
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                  className: "fw-bold text-dark text-capitalize fs-6",
+                  children: (diagnostic === null || diagnostic === void 0 ? void 0 : diagnostic.type_carnet) || 'Non défini'
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("small", {
+                  className: "text-muted",
+                  children: ["N\xB0 ", (diagnostic === null || diagnostic === void 0 ? void 0 : diagnostic.carnet_numero) || '—']
+                })]
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("button", {
+                className: "btn btn-outline-primary btn-sm px-3 fw-medium",
+                onClick: showCarnetDetails,
+                disabled: !(diagnostic !== null && diagnostic !== void 0 && diagnostic.carnet_id),
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("i", {
+                  className: "bi bi-eye me-1"
+                }), " Voir d\xE9tails"]
+              })]
+            })
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
             className: "card shadow-sm border-light",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
               className: "card-header bg-transparent border-0 pt-3 pb-0",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                 className: "text-muted text-uppercase fw-bold tracking-wider",
                 style: {
                   fontSize: '11px'
                 },
                 children: "Demande Initiale"
               })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
               className: "card-body",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                 className: "mb-3",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h4", {
+                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h4", {
                   className: "fw-bold text-dark mb-1",
-                  children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(requestedAmount)
+                  children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(requestedAmount)
                 })
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                 className: "row g-2 text-muted small border-top pt-2",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                   className: "col-4",
-                  children: ["Taux: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
+                  children: ["Taux: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("span", {
                     className: "fw-semibold text-dark",
-                    children: [proposedRate, "%"]
+                    children: [taux_manuel !== '' ? taux_manuel : proposedRate, "%"]
                   })]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                   className: "col-4 text-center",
-                  children: ["\xC9ch\xE9ances: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  children: ["\xC9ch\xE9ances: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                     className: "fw-semibold text-dark",
                     children: initialNumberOfInstallments
                   })]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                   className: "col-4 text-end text-capitalize",
-                  children: ["Mode: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                  children: ["Mode: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                     className: "fw-semibold text-dark",
                     children: initialMode
                   })]
@@ -339,39 +741,85 @@ function Show() {
               })]
             })]
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
           className: "col-lg-8",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
             className: "card shadow-sm border-light h-100",
-            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
               className: "card-body d-flex flex-column justify-content-between",
-              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                   className: "d-flex justify-content-between align-items-center mb-3",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h6", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
                     className: "fw-bold text-dark mb-0",
                     children: "Param\xE8tres d'Octroi R\xE9vis\xE9s"
-                  }), isPending && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                  }), isPending && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("button", {
                     className: "btn btn-sm btn-link text-muted p-0 text-decoration-none",
                     onClick: markEnEtude,
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("i", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("i", {
                       className: "bi bi-hourglass-split me-1"
                     }), " Mettre en instruction"]
                   })]
-                }), isPending ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("form", {
+                }), isPending ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("form", {
                   onSubmit: submitApprove,
                   id: "approve-form",
-                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-                    className: "row g-2",
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
-                      className: "col-md-4",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                    className: "row g-3",
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                      className: "col-md-6",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
                         className: "form-label text-muted mb-1",
                         style: {
                           fontSize: '12px'
                         },
-                        children: "Montant accord\xE9"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                        children: "Produit de cr\xE9dit"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("select", {
+                        className: "form-select form-select-sm",
+                        value: credit.credit_product_id,
+                        disabled: true,
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("option", {
+                          value: "",
+                          children: "S\xE9lectionnez un produit"
+                        }), creditProducts.map(function (prod) {
+                          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("option", {
+                            value: prod.id,
+                            children: [prod.nom, " "]
+                          }, prod.id);
+                        })]
+                      })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                      className: "col-md-6",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
+                        className: "form-label text-muted mb-1",
+                        style: {
+                          fontSize: '12px'
+                        },
+                        children: "Objet du cr\xE9dit"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("select", {
+                        className: "form-select form-select-sm",
+                        value: credit.credit_object_id,
+                        disabled: true,
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("option", {
+                          value: "",
+                          children: "S\xE9lectionnez un objet"
+                        }), (_creditProducts$find = creditProducts.find(function (p) {
+                          return p.id === credit.credit_product_id;
+                        })) === null || _creditProducts$find === void 0 ? void 0 : _creditProducts$find.credit_objects.map(function (obj) {
+                          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("option", {
+                            value: obj.id,
+                            children: [obj.nom, " "]
+                          }, obj.id);
+                        })]
+                      })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                      className: "col-md-4",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
+                        className: "form-label text-muted mb-1",
+                        style: {
+                          fontSize: '12px'
+                        },
+                        children: "Montant accord\xE9 (FCFA)"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
                         className: "form-control form-control-sm fw-semibold",
                         type: "number",
                         value: approveForm.data.montant_accorde,
@@ -379,96 +827,126 @@ function Show() {
                           return approveForm.setData('montant_accorde', e.target.value);
                         }
                       })]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                       className: "col-md-4",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
                         className: "form-label text-muted mb-1",
                         style: {
                           fontSize: '12px'
                         },
                         children: "Taux d'int\xE9r\xEAt (%)"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
                         className: "form-control form-control-sm fw-semibold",
                         type: "number",
                         step: "0.01",
                         value: approveForm.data.taux,
                         onChange: function onChange(e) {
                           return approveForm.setData('taux', e.target.value);
-                        }
+                        },
+                        readOnly: true
                       })]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                       className: "col-md-4",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
                         className: "form-label text-muted mb-1",
                         style: {
                           fontSize: '12px'
                         },
-                        children: "\xC9ch\xE9ances"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                        children: "Taux manuel (%)"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
+                        className: "form-control form-control-sm fw-semibold",
+                        type: "number",
+                        step: "0.01",
+                        value: approveForm.data.taux_manuel,
+                        onChange: function onChange(e) {
+                          return approveForm.setData('taux_manuel', e.target.value);
+                        }
+                      })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                      className: "col-md-4",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
+                        className: "form-label text-muted mb-1",
+                        style: {
+                          fontSize: '12px'
+                        },
+                        children: "Nb \xC9ch\xE9ances"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
                         className: "form-control form-control-sm",
                         type: "number",
                         value: approveForm.data.nombre_echeances,
                         onChange: function onChange(e) {
                           return approveForm.setData('nombre_echeances', e.target.value);
-                        },
-                        min: "1"
+                        }
                       })]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                       className: "col-md-4",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
                         className: "form-label text-muted mb-1",
                         style: {
                           fontSize: '12px'
                         },
                         children: "P\xE9riodicit\xE9"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("select", {
                         className: "form-select form-select-sm",
                         value: approveForm.data.periodicite,
                         onChange: function onChange(e) {
                           return approveForm.setData('periodicite', e.target.value);
                         },
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("option", {
                           value: "quinzaine",
                           children: "Quinzaine"
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("option", {
                           value: "mensuelle",
                           children: "Mensuelle"
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
-                          value: "hebdomadaire",
-                          children: "Hebdomadaire"
                         })]
                       })]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                       className: "col-md-4",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
                         className: "form-label text-muted mb-1",
                         style: {
                           fontSize: '12px'
                         },
-                        children: "M\xE9thode de calcul"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("select", {
+                        children: "Mode de calcul"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("select", {
                         className: "form-select form-select-sm",
                         value: approveForm.data.mode,
                         onChange: function onChange(e) {
                           return approveForm.setData('mode', e.target.value);
                         },
-                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
+                        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("option", {
+                          value: "fixe",
+                          children: "Fixe (Flat)"
+                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("option", {
                           value: "degressif",
                           children: "D\xE9gressif"
-                        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("option", {
-                          value: "constant",
-                          children: "Constant"
                         })]
                       })]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                       className: "col-md-4",
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("label", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
                         className: "form-label text-muted mb-1",
                         style: {
                           fontSize: '12px'
                         },
-                        children: "Premier remboursement"
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+                        children: "Diff\xE9r\xE9 (\xC9ch\xE9ances)"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
+                        className: "form-control form-control-sm",
+                        type: "number",
+                        value: (_approveForm$data$dif = approveForm.data.differe) !== null && _approveForm$data$dif !== void 0 ? _approveForm$data$dif : 0,
+                        onChange: function onChange(e) {
+                          return approveForm.setData('differe', e.target.value);
+                        }
+                      })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                      className: "col-md-4",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
+                        className: "form-label text-muted mb-1",
+                        style: {
+                          fontSize: '12px'
+                        },
+                        children: "Date de d\xE9but"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
                         className: "form-control form-control-sm",
                         type: "date",
                         value: approveForm.data.date_debut,
@@ -476,23 +954,57 @@ function Show() {
                           return approveForm.setData('date_debut', e.target.value);
                         }
                       })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                      className: "col-md-4",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
+                        className: "form-label text-muted mb-1",
+                        style: {
+                          fontSize: '12px'
+                        },
+                        children: "Frais de dossier (FCFA)"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
+                        className: "form-control form-control-sm",
+                        type: "number",
+                        value: approveForm.data.frais_dossier,
+                        onChange: function onChange(e) {
+                          return approveForm.setData('frais_dossier', e.target.value);
+                        },
+                        readOnly: true
+                      })]
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                      className: "col-md-4",
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
+                        className: "form-label text-muted mb-1",
+                        style: {
+                          fontSize: '12px'
+                        },
+                        children: "Garantie / Nantissement"
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
+                        className: "form-control form-control-sm",
+                        type: "text",
+                        value: approveForm.data.garanties,
+                        onChange: function onChange(e) {
+                          return approveForm.setData('garanties', e.target.value);
+                        },
+                        placeholder: "Ex: \xC9pargne bloqu\xE9e..."
+                      })]
                     })]
                   })
-                }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                   className: "text-muted py-4 text-center small bg-light rounded border",
                   children: "Dossier trait\xE9. Les modifications ne sont plus autoris\xE9es."
                 })]
-              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                 className: "mt-3 pt-3 border-top border-light d-flex justify-content-between align-items-center",
-                children: [isPending && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("button", {
+                children: [isPending && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("button", {
                   className: "btn btn-sm btn-dark px-4",
                   type: "submit",
                   form: "approve-form",
                   disabled: approveForm.processing,
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("i", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("i", {
                     className: "bi bi-check-circle me-2"
                   }), "Valider & Approuver"]
-                }), isApproved && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+                }), isApproved && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
                   className: "btn btn-sm btn-primary w-100 fw-bold",
                   onClick: doDecaissement,
                   children: "Confirmer le d\xE9caissement"
@@ -501,84 +1013,84 @@ function Show() {
             })
           })
         })]
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
         className: "row g-3",
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
           className: "col-12",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
             className: "row g-3",
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
               className: "col-md-6",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                 className: "card shadow-sm border-light",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                   className: "card-header bg-light border-bottom py-3",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                     className: "d-flex justify-content-between align-items-center",
-                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                       className: "fw-bold text-secondary small text-uppercase",
                       children: "\xC9ch\xE9ancier Initial (Demand\xE9)"
                     })
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                     className: "d-flex gap-3 mt-1 text-muted border-top pt-2",
                     style: {
                       fontSize: '12px'
                     },
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
-                      children: ["Int\xE9r\xEAts: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
-                        children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(requestScheduleSummary.totalInterest)
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("span", {
+                      children: ["Int\xE9r\xEAts: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
+                        children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(requestScheduleSummary.totalInterest)
                       })]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
-                      children: ["Total d\xFB: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
-                        children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(requestScheduleSummary.totalDue)
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("span", {
+                      children: ["Total d\xFB: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
+                        children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(requestScheduleSummary.totalDue)
                       })]
                     })]
                   })]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                   className: "card-body p-0",
-                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                     className: "table-responsive",
                     style: {
                       maxHeight: '350px',
                       overflowY: 'auto'
                     },
-                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("table", {
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("table", {
                       className: "table table-sm table-hover align-middle mb-0 text-center",
                       style: {
                         fontSize: '12px'
                       },
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("thead", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("thead", {
                         className: "table-light sticky-top",
-                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                             className: "text-start ps-3",
                             children: "N\xB0"
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                             className: "text-start",
                             children: "Date"
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                             className: "text-end",
                             children: "Int\xE9r\xEAts"
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                             className: "text-end pe-3",
                             children: "\xC9ch\xE9ance"
                           })]
                         })
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("tbody", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("tbody", {
                         children: requestSchedule.map(function (row, i) {
-                          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
                               className: "text-start ps-3 fw-semibold text-muted",
                               children: i + 1
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
                               className: "text-start text-muted",
-                              children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(row.date)
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("td", {
+                              children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatDateToFR)(row.date)
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("td", {
                               className: "text-end text-muted font-monospace",
-                              children: ["+", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(row.interest)]
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                              children: ["+", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(row.interest)]
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
                               className: "text-end pe-3 font-monospace fw-semibold text-dark",
-                              children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(row.total)
+                              children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(row.total)
                             })]
                           }, i);
                         })
@@ -587,79 +1099,79 @@ function Show() {
                   })
                 })]
               })
-            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
               className: "col-md-6",
-              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+              children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                 className: "card shadow-sm border-light",
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                   className: "card-header bg-light border-bottom py-3",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                     className: "d-flex justify-content-between align-items-center",
-                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("span", {
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                       className: "fw-bold text-dark small text-uppercase",
                       children: "\xC9ch\xE9ancier R\xE9vis\xE9 (Simul\xE9)"
                     })
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                     className: "d-flex gap-3 mt-1 text-muted border-top pt-2",
                     style: {
                       fontSize: '12px'
                     },
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
-                      children: ["Int\xE9r\xEAts: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
-                        children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(approvedScheduleSummary.totalInterest)
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("span", {
+                      children: ["Int\xE9r\xEAts: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
+                        children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(approvedScheduleSummary.totalInterest)
                       })]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("span", {
-                      children: ["Total d\xFB: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("span", {
+                      children: ["Total d\xFB: ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
                         className: "text-primary",
-                        children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(approvedScheduleSummary.totalDue)
+                        children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(approvedScheduleSummary.totalDue)
                       })]
                     })]
                   })]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                   className: "card-body p-0",
-                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+                  children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                     className: "table-responsive",
                     style: {
                       maxHeight: '350px',
                       overflowY: 'auto'
                     },
-                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("table", {
+                    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("table", {
                       className: "table table-sm table-hover align-middle mb-0 text-center",
                       style: {
                         fontSize: '12px'
                       },
-                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("thead", {
+                      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("thead", {
                         className: "table-light sticky-top",
-                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
-                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                             className: "text-start ps-3",
                             children: "N\xB0"
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                             className: "text-start",
                             children: "Date"
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                             className: "text-end",
                             children: "Int\xE9r\xEAts"
-                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("th", {
+                          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                             className: "text-end pe-3",
                             children: "\xC9ch\xE9ance"
                           })]
                         })
-                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("tbody", {
+                      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("tbody", {
                         children: approvedSchedule.map(function (row, i) {
-                          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("tr", {
-                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                          return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
+                            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
                               className: "text-start ps-3 fw-semibold text-muted",
                               children: i + 1
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
                               className: "text-start text-dark",
-                              children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatDateToFR)(row.date)
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("td", {
+                              children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatDateToFR)(row.date)
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("td", {
                               className: "text-end text-muted font-monospace",
-                              children: ["+", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(row.interest)]
-                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("td", {
+                              children: ["+", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(row.interest)]
+                            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
                               className: "text-end pe-3 font-monospace fw-bold text-primary",
-                              children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_5__.formatCurrency)(row.total)
+                              children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_6__.formatCurrency)(row.total)
                             })]
                           }, i);
                         })
@@ -671,20 +1183,20 @@ function Show() {
             })]
           })
         })
-      }), isPending && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("div", {
+      }), isPending && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
         className: "card shadow-sm border-light bg-light-subtle p-3 rounded-3 mt-3",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("h6", {
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
           className: "fw-bold text-muted mb-2",
           style: {
             fontSize: '12px'
           },
           children: "Rejeter la demande"
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("form", {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("form", {
           onSubmit: submitReject,
           className: "row g-2",
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
             className: "col-sm-10",
-            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("input", {
+            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
               className: "form-control form-control-sm",
               type: "text",
               placeholder: "Indiquez explicitement le motif du refus...",
@@ -693,9 +1205,9 @@ function Show() {
                 return rejectForm.setData('motif', e.target.value);
               }
             })
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
             className: "col-sm-2",
-            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("button", {
+            children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
               className: "btn btn-sm btn-outline-danger w-100",
               type: "submit",
               disabled: rejectForm.processing,
@@ -772,36 +1284,38 @@ function calculateRate(taux, tauxManuel) {
 }
 function buildScheduleFromForm(form) {
   var montant = Number(form.montant_demande || 0);
-  var taux = calculateRate(form.taux, form.taux_manuelle) / 100;
+
+  // 1. On prend le taux directement (pas de division par 12 ou 24)
+  var tauxAnnuel = calculateRate(form.taux, form.taux_manuel);
+  var tauxFixeGlobal = tauxAnnuel / 100;
+
+  // 2. Calcul des intérêts totaux dès le départ
+  var interetTotal = Math.round(montant * tauxFixeGlobal * 100) / 100;
   var nombre = Math.max(1, Number(form.nombre_echeances || 1));
-  var mode = form.mode || 'fixe';
+  var differe = Math.max(0, Number(form.differe || 0));
   var periodicite = form.periodicite || 'mensuelle';
   var start = form.date_debut || new Date().toISOString().slice(0, 10);
+  var startDate = typeof parseDateString === 'function' ? parseDateString(start) : new Date(start + 'T00:00:00');
 
-  // Utilise votre fonction de parsing ou crée une date locale sécurisée
-  var startDate = typeof parseDateString === 'function' ? parseDateString(start) : new Date(start + 'T00:00:00'); // Évite les décalages de fuseau horaire au parsing
-
-  var principalBase = Math.round(montant / nombre * 100) / 100;
-  var remaining = montant;
+  // 3. Répartition du principal et des intérêts
+  var echeancesAmortissables = Math.max(1, nombre - differe);
+  var principalParEcheance = Math.round(montant / echeancesAmortissables * 100) / 100;
+  var interetParEcheance = Math.round(interetTotal / nombre * 100) / 100;
   var schedule = [];
   for (var i = 1; i <= nombre; i += 1) {
-    // 1. Calcul des intérêts (Fixe ou Dégressif)
-    var interest = mode === 'degressif' ? Math.round(remaining * taux * 100) / 100 : Math.round(montant * taux * 100) / 100;
+    // Le principal est 0 pendant le différé
+    var principal = i <= differe ? 0 : principalParEcheance;
 
-    // 2. Ajustement de la dernière échéance pour vider le capital restant dû
-    var principal = i === nombre ? Math.round(remaining * 100) / 100 : principalBase;
-    var total = Math.round((principal + interest) * 100) / 100;
+    // Si c'est la dernière échéance, on ajuste le principal pour retomber juste sur le montant
+    if (i === nombre) {
+      var totalDejaAmorti = principalParEcheance * (echeancesAmortissables - 1);
+      principal = Math.round((montant - totalDejaAmorti) * 100) / 100;
+    }
+    var total = Math.round((principal + interetParEcheance) * 100) / 100;
 
-    // 3. Gestion dynamique et précise de la date d'échéance
+    // Gestion des dates
     var dueDate = new Date(startDate);
-    if (periodicite === 'mensuelle') {
-      // Ajoute exactement (i - 1) mois (Ex: 1er Janvier -> 1er Février -> 1er Mars)
-      dueDate.setMonth(dueDate.getMonth() + (i - 1));
-    } else if (periodicite === 'quinzaine') {
-      // Ajoute 14 jours par échéance
-      dueDate.setDate(dueDate.getDate() + (i - 1) * 14);
-    } else {
-      // Fallback si vous utilisez periodDays pour d'autres cas spécifiques
+    if (periodicite === 'mensuelle') dueDate.setMonth(dueDate.getMonth() + (i - 1));else if (periodicite === 'quinzaine') dueDate.setDate(dueDate.getDate() + (i - 1) * 14);else {
       var periodDaysCount = typeof periodDays === 'function' ? periodDays(periodicite) : 30;
       dueDate.setDate(dueDate.getDate() + (i - 1) * periodDaysCount);
     }
@@ -809,15 +1323,147 @@ function buildScheduleFromForm(form) {
       numero: i,
       date: dueDate.toISOString().slice(0, 10),
       principal: principal,
-      interest: interest,
-      total: total
+      interest: interetParEcheance,
+      total: total,
+      is_differe: i <= differe
     });
-
-    // 4. Mise à jour du capital restant pour le prochain tour
-    remaining = Math.round((remaining - principal) * 100) / 100;
   }
   return schedule;
 }
+
+/***/ }),
+
+/***/ "./node_modules/sweetalert2-react-content/dist/sweetalert2-react-content.umd.js":
+/*!**************************************************************************************!*\
+  !*** ./node_modules/sweetalert2-react-content/dist/sweetalert2-react-content.umd.js ***!
+  \**************************************************************************************/
+/***/ (function(module, __unused_webpack_exports, __webpack_require__) {
+
+// sweetalert2-react-content v5.1.2
+
+(function (global, factory) {
+   true ? module.exports = factory(__webpack_require__(/*! react */ "./node_modules/react/index.js"), __webpack_require__(/*! react-dom/client */ "./node_modules/react-dom/client.js")) :
+  0;
+})(this, (function (React, client) { 'use strict';
+
+  const mounts = [{
+    key: 'title',
+    getter: swal => swal.getTitle()
+  }, {
+    key: 'html',
+    getter: swal => swal.getHtmlContainer()
+  }, {
+    key: 'confirmButtonText',
+    getter: swal => swal.getConfirmButton()
+  }, {
+    key: 'denyButtonText',
+    getter: swal => swal.getDenyButton()
+  }, {
+    key: 'cancelButtonText',
+    getter: swal => swal.getCancelButton()
+  }, {
+    key: 'footer',
+    getter: swal => swal.getFooter()
+  }, {
+    key: 'closeButtonHtml',
+    getter: swal => swal.getCloseButton()
+  }, {
+    key: 'iconHtml',
+    getter: swal => swal.getIconContent()
+  }, {
+    key: 'loaderHtml',
+    getter: swal => swal.getLoader()
+  }];
+
+  const noop = () => {};
+  function withReactContent(ParentSwal) {
+    /* Returns `params` separated into a tuple of `reactParams` (the React params that need to be rendered)
+    and`otherParams` (all the other parameters, with any React params replaced with a space ' ') */
+    function extractReactParams(params) {
+      const reactParams = {};
+      const otherParams = {};
+      const mountKeys = mounts.map(mount => mount.key);
+      Object.entries(params).forEach(_ref => {
+        let [key, value] = _ref;
+        if (mountKeys.includes(key) && /*#__PURE__*/React.isValidElement(value)) {
+          reactParams[key] = value;
+          otherParams[key] = ' ';
+        } else {
+          otherParams[key] = value;
+        }
+      });
+      return [reactParams, otherParams];
+    }
+    function render(swal, reactParams) {
+      Object.entries(reactParams).forEach(_ref2 => {
+        let [key, value] = _ref2;
+        const mount = mounts.find(mount => mount.key === key);
+        const domElement = mount.getter(ParentSwal);
+        const root = client.createRoot(domElement);
+        root.render(value);
+        swal.__roots.push(root);
+      });
+    }
+    function unrender(swal) {
+      swal.__roots.forEach(root => {
+        root.unmount();
+      });
+      swal.__roots = [];
+    }
+    return class extends ParentSwal {
+      static argsToParams(args) {
+        if (/*#__PURE__*/React.isValidElement(args[0]) || /*#__PURE__*/React.isValidElement(args[1])) {
+          const params = {};
+          ['title', 'html', 'icon'].forEach((name, index) => {
+            if (args[index] !== undefined) {
+              params[name] = args[index];
+            }
+          });
+          return params;
+        } else {
+          return ParentSwal.argsToParams(args);
+        }
+      }
+      _main(params, mixinParams) {
+        this.__roots = [];
+        this.__params = Object.assign({}, mixinParams, params);
+        const [reactParams, otherParams] = extractReactParams(this.__params);
+        const superWillOpen = otherParams.willOpen || noop;
+        const superDidOpen = otherParams.didOpen || noop;
+        const superDidDestroy = otherParams.didDestroy || noop;
+        return super._main(Object.assign({}, otherParams, {
+          willOpen: popup => {
+            render(this, reactParams);
+            superWillOpen(popup);
+          },
+          didOpen: popup => {
+            // read more about why this setTimeout is needed here:
+            // https://github.com/reactwg/react-18/discussions/5 (What about the render callback?)
+            setTimeout(() => {
+              superDidOpen(popup);
+            });
+          },
+          didDestroy: popup => {
+            superDidDestroy(popup);
+            unrender(this);
+          }
+        }));
+      }
+      update(params) {
+        Object.assign(this.__params, params);
+        unrender(this);
+        const [reactParams, otherParams] = extractReactParams(this.__params);
+        super.update(otherParams);
+        render(this, reactParams);
+      }
+    };
+  }
+
+  return withReactContent;
+
+}));
+//# sourceMappingURL=sweetalert2-react-content.umd.js.map
+
 
 /***/ }),
 

@@ -26,13 +26,13 @@ export default function Create({ clients, creditProducts = [] }) {
         garantie: '',            
         mode: 'degressif',       
         taux: 1.5,               
-        taux_manuelle: '',       
+        taux_manuel: '',       
 
         // 4.1 Caution Solidaire / Avaliste
-        garant_nom_prenom: '',   // Nom & Prénoms du garant
-        garant_telephone: '',    // Numéro de Téléphone
-        garant_profession: '',   // Profession / Secteur d'activité
-        garant_adresse: '',      // Quartier de résidence
+        nom_prenom: '',   // Nom & Prénoms du garant
+        telephone: '',    // Numéro de Téléphone
+        profession: '',   // Profession / Secteur d'activité
+        adresse: '',      // Quartier de résidence
 
         // 4.2 Documents & KYC d'Audit (Initialisés à null pour la gestion des fichiers)
         piece_identite: null,       // Fichier : CNIB, Passeport ou Carte d'Électeur
@@ -46,6 +46,7 @@ export default function Create({ clients, creditProducts = [] }) {
     ) : null;
 
     const [carnets, setCarnets] = useState([]);
+    const [isDraftModification, setIsDraftModification] = useState(false);
     const [activeTab, setActiveTab] = useState('identification');
     const [clientSearch, setClientSearch] = useState('');
     const [carnetDetails, setCarnetDetails] = useState(null);
@@ -87,6 +88,97 @@ export default function Create({ clients, creditProducts = [] }) {
     const availableObjects = useMemo(() => {
         return selectedProduct ? (selectedProduct.credit_objects || []) : [];
     }, [selectedProduct]);
+
+ const handleCarnetChange = async (carnetId) => {
+    // Attention avec Inertia : évitez d'appeler setData plusieurs fois de suite, 
+    // regroupez les changements d'état à la fin si possible.
+    
+    if (carnetId) {
+        const selectedCarnet = availableCarnets.find(c => String(c.id) === String(carnetId));
+        const activeCycleId = selectedCarnet?.cycles?.find(cycle => cycle.statut === 'en_cours')?.id || '';
+
+        try {
+            const response = await axios.get(`/admin/credits/check-pending/${carnetId}`);
+            
+            // On vérifie qu'on a bien un objet valide avec des données (ex: un ID ou un montant)
+            // Adaptez "response.data.id" selon ce que votre API renvoie exactement.
+            const draftExists = response.data && Object.keys(response.data).length > 0 && response.data.id !== undefined;
+
+            // CAS : Le brouillon existe mais appartient à un AUTRE administrateur
+            if (draftExists && response.data.brouillon_bloque) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Accès refusé',
+                    text: response.data.message,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Compris'
+                });
+                
+                form.setData({ ...form.data, carnet_id: '', cycle_id: '' });
+                setIsDraftModification(false);
+                return;
+            }
+
+            // CAS 1 : Brouillon existant ET appartient à l'admin connecté
+            if (draftExists && !response.data.brouillon_bloque) {
+                
+                setIsDraftModification(true); // 👈 Passe en mode MODIFICATION
+
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Brouillon récupéré',
+                    text: 'Le formulaire a été pré-rempli avec vos données en attente.',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                });
+
+                form.setData({
+                    ...form.data,
+                    carnet_id: carnetId,
+                    cycle_id: response.data.cycle_id ?? activeCycleId,
+                    credit_type_id: response.data.credit_type_id ?? '',      
+                    credit_product_id: response.data.credit_product_id ?? '',   
+                    credit_object_id: response.data.credit_object_id ?? '',    
+                    montant_demande: response.data.montant_demande ?? 0,      
+                    date_debut: response.data.date_debut ? response.data.date_debut.slice(0, 10) : new Date().toISOString().slice(0, 10),
+                    periodicite: response.data.periodicite ?? 'mensuelle', 
+                    nombre_echeances: response.data.nombre_echeances ?? 5,     
+                    differe: response.data.differe ?? 0,              
+                    frais_dossier: response.data.frais_dossier ?? '',       
+                    garantie: response.data.garantie ?? '',            
+                    mode: response.data.mode ?? 'degressif',       
+                    taux: response.data.taux ?? 1.5,               
+                    taux_manuel: response.data.taux_manuel ?? '',       
+                    nom_prenom: response.data.credit_guarantor?.nom_prenom || '',   
+                    telephone: response.data.credit_guarantor?.telephone || '',    
+                    profession: response.data.credit_guarantor?.profession || '',   
+                    adresse: response.data.credit_guarantor?.adresse || '',      
+                    piece_identite: null,       
+                    justificatif_revenu: null,  
+                });
+            } else {
+                // CAS 2 : Pas de brouillon (Nouvel Insert)
+                setIsDraftModification(false); // 👈 Passe en mode CRÉATION
+                form.setData({
+                    ...form.data, // Réinitialisez les autres champs ici si nécessaire pour nettoyer l'ancien brouillon
+                    carnet_id: carnetId,
+                    cycle_id: activeCycleId,
+                });
+            }
+        } catch (error) {
+            console.error("Erreur lors de la récupération du brouillon :", error);
+            setIsDraftModification(false);
+            form.setData({ ...form.data, carnet_id: carnetId, cycle_id: activeCycleId });
+        }
+    } else {
+        setIsDraftModification(false);
+        form.setData({ ...form.data, carnet_id: '', cycle_id: '' });
+    }
+};
+
     const handleTypeChange = (val) => {
         setClientSearch('');
         form.setData({ 
@@ -104,7 +196,6 @@ export default function Create({ clients, creditProducts = [] }) {
         if (selectedProduct) {
             form.setData({
                 ...form.data,
-                // Mappage sur les colonnes réelles de ton seeder (image_800cc5.png)
                 taux: selectedProduct.taux_interet_defaut, 
                 frais_dossier: selectedProduct.frais_dossier_defaut,
                 nombre_echeances: form.data.nombre_echeances || selectedProduct.duree_max_mois,
@@ -218,7 +309,7 @@ export default function Create({ clients, creditProducts = [] }) {
         }
 
         if (['garanties', 'resumes'].includes(targetTab)) {
-            if (!form.data.credit_product_id || !form.data.montant_demande || form.data.montant_demande <= 0 || !form.data.periodicite || !form.data.nombre_echeances || !form.data.date_debut || !form.data.objet_credit || !form.data.credit_product_id || form.data.periodicite === '' || form.data.nombre_echeances <= 0) {
+            if (!form.data.credit_product_id || !form.data.montant_demande || form.data.montant_demande <= 0 || !form.data.periodicite || !form.data.nombre_echeances || !form.data.date_debut || !form.data.credit_object_id || !form.data.credit_product_id || form.data.periodicite === '' || form.data.nombre_echeances <= 0) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Simulation incomplète',
@@ -277,10 +368,13 @@ export default function Create({ clients, creditProducts = [] }) {
                         showConfirmButton: false,
                     });
                     
-                    form.reset(['montant_demande', 'type', 'mode', 'periodicite', 'nombre_echeances', 'taux', 'taux_manuelle', 'date_debut']);
+                    form.reset(['montant_demande', 'type', 'mode', 'periodicite', 'nombre_echeances', 'taux', 'taux_manuel', 'date_debut']);
                     setClientSearch(''); 
                     setActiveTab('identification');
                 },
+                onError: (errors) => {
+                    console.log("Erreurs reçues:", errors); // <--- AJOUTE ÇA
+                }
             });
         });
     };
@@ -290,7 +384,7 @@ export default function Create({ clients, creditProducts = [] }) {
             <div className="container-fluid py-4">
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h1 className="h3 text-primary mb-1">Nouvelle Demande de Crédit</h1>
+                        <h1 className="h3 text-primary mb-1">Demande de Crédit</h1>
                         <p className="text-muted mb-0">Saisie et simulation financière</p>
                     </div>
                     <Link href="/admin/credits" className="btn btn-outline-secondary">Retour</Link>
@@ -448,7 +542,10 @@ export default function Create({ clients, creditProducts = [] }) {
 
                                     <div className="col-md-6">
                                         <label className="form-label">Support (Numéro)</label>
-                                        <select className={`form-select ${form.errors.carnet_id ? 'is-invalid' : ''}`} value={form.data.carnet_id} onChange={e => form.setData('carnet_id', e.target.value)}>
+                                        <select 
+                                            className={`form-select ${form.errors.carnet_id ? 'is-invalid' : ''}`} value={form.data.carnet_id} onChange={e => form.setData('carnet_id', e.target.value)}
+                                            onChange={e => handleCarnetChange(e.target.value)}
+                                        >
                                             <option value="">Sélectionner un support</option>
                                             {availableCarnets.map(c => <option key={c.id} value={c.id}>N° {c.numero}</option>)}
                                         </select>
@@ -726,9 +823,9 @@ export default function Create({ clients, creditProducts = [] }) {
                                             <label htmlFor="objet_credit" className="form-label fw-semibold">Objet du crédit <span className="text-danger">*</span></label>
                                             <select 
                                                 id="objet_credit"
-                                                className={`form-select ${form.errors.objet_credit ? 'is-invalid' : ''}`}
-                                                value={form.data.objet_credit || ''} 
-                                                onChange={e => form.setData('objet_credit', e.target.value)}
+                                                className={`form-select ${form.errors.credit_object_id ? 'is-invalid' : ''}`}
+                                                value={form.data.credit_object_id || ''} 
+                                                onChange={e => form.setData('credit_object_id', e.target.value)}
                                                 disabled={!form.data.credit_product_id}
                                                 required
                                             >
@@ -812,7 +909,7 @@ export default function Create({ clients, creditProducts = [] }) {
                                         {/* DIFFÉRÉ */}
                                         <div className="col-md-3">
                                             <label htmlFor="differe" className="form-label fw-semibold">Différé (Échéances)</label>
-                                            <input id="differe" type="number" min="0" className="form-control" placeholder="0" value={form.data.differe || 0} onChange={e => form.setData('differe', e.target.value)} />
+                                            <input id="differe" type="number" min="0" className="form-control" placeholder="0"  value={form.data.differe || 0} onChange={e => form.setData('differe', e.target.value)} />
                                         </div>
 
                                         {/* 6. FRAIS DE DOSSIER & GARANTIE */}
@@ -857,8 +954,8 @@ export default function Create({ clients, creditProducts = [] }) {
                                         </div>
 
                                         <div className="col-md-4">
-                                            <label htmlFor="taux_manuelle" className="form-label text-warning fw-semibold">Taux manuel (%)</label>
-                                            <input id="taux_manuelle" type="number" step="0.01" className="form-control border-warning fw-bold text-warning" value={form.data.taux_manuelle || ''} onChange={e => form.setData('taux_manuelle', e.target.value)} placeholder="Dérogation gérant" />
+                                            <label htmlFor="taux_manuel" className="form-label text-warning fw-semibold">Taux manuel (%)</label>
+                                            <input id="taux_manuel" type="number" step="0.01" className="form-control border-warning fw-bold text-warning" value={form.data.taux_manuel || ''} onChange={e => form.setData('taux_manuel', e.target.value)} placeholder="Dérogation gérant" />
                                         </div>
                                     </div>
                                 </fieldset>
@@ -958,63 +1055,63 @@ export default function Create({ clients, creditProducts = [] }) {
 
                                                     <div className="row g-3">
                                                         <div className="col-md-12">
-                                                            <label htmlFor="garant_nom_prenom" className="form-label fw-semibold">Nom &amp; Prénoms du garant <span className="text-danger">*</span></label>
+                                                            <label htmlFor="nom_prenom" className="form-label fw-semibold">Nom &amp; Prénoms du garant <span className="text-danger">*</span></label>
                                                             <div className="input-group">
                                                                 <span className="input-group-text bg-light"><i className="bi bi-person"></i></span>
                                                                 <input 
-                                                                    id="garant_nom_prenom" 
+                                                                    id="nom_prenom" 
                                                                     type="text" 
-                                                                    className={`form-control ${form.errors.garant_nom_prenom ? 'is-invalid' : ''}`} 
+                                                                    className={`form-control ${form.errors.nom_prenom ? 'is-invalid' : ''}`} 
                                                                     placeholder="Ex: Jean KOFFI"
-                                                                    value={form.data.garant_nom_prenom} 
-                                                                    onChange={e => form.setData('garant_nom_prenom', e.target.value)} 
+                                                                    value={form.data.nom_prenom} 
+                                                                    onChange={e => form.setData('nom_prenom', e.target.value)} 
                                                                     required
                                                                 />
                                                             </div>
-                                                            <ErrorMsg field="garant_nom_prenom" />
+                                                            <ErrorMsg field="nom_prenom" />
                                                         </div>
 
                                                         <div className="col-md-12">
-                                                            <label htmlFor="garant_telephone" className="form-label fw-semibold">Numéro de Téléphone <span className="text-danger">*</span></label>
+                                                            <label htmlFor="telephone" className="form-label fw-semibold">Numéro de Téléphone <span className="text-danger">*</span></label>
                                                             <div className="input-group">
                                                                 <span className="input-group-text bg-light"><i className="bi bi-telephone"></i></span>
                                                                 <input 
-                                                                    id="garant_telephone" 
+                                                                    id="telephone" 
                                                                     type="tel" 
-                                                                    className={`form-control ${form.errors.garant_telephone ? 'is-invalid' : ''}`} 
+                                                                    className={`form-control ${form.errors.telephone ? 'is-invalid' : ''}`} 
                                                                     placeholder="Ex: +228 90 00 00 00"
-                                                                    value={form.data.garant_telephone} 
-                                                                    onChange={e => form.setData('garant_telephone', e.target.value)} 
+                                                                    value={form.data.telephone} 
+                                                                    onChange={e => form.setData('telephone', e.target.value)} 
                                                                     required
                                                                 />
                                                             </div>
-                                                            <ErrorMsg field="garant_telephone" />
+                                                            <ErrorMsg field="telephone" />
                                                         </div>
 
                                                         <div className="col-md-6">
-                                                            <label htmlFor="garant_profession" className="form-label fw-semibold">Profession / Secteur d'activité</label>
+                                                            <label htmlFor="profession" className="form-label fw-semibold">Profession / Secteur d'activité</label>
                                                             <input 
-                                                                id="garant_profession" 
+                                                                id="profession" 
                                                                 type="text" 
                                                                 className="form-control" 
                                                                 placeholder="Ex: Revendeuse, Fonctionnaire..."
-                                                                value={form.data.garant_profession} 
-                                                                onChange={e => form.setData('garant_profession', e.target.value)} 
+                                                                value={form.data.profession} 
+                                                                onChange={e => form.setData('profession', e.target.value)} 
                                                             />
-                                                            <ErrorMsg field="garant_profession" />
+                                                            <ErrorMsg field="profession" />
                                                         </div>
 
                                                         <div className="col-md-6">
-                                                            <label htmlFor="garant_adresse" className="form-label fw-semibold">Quartier de résidence</label>
+                                                            <label htmlFor="adresse" className="form-label fw-semibold">Quartier de résidence</label>
                                                             <input 
-                                                                id="garant_adresse" 
+                                                                id="adresse" 
                                                                 type="text" 
                                                                 className="form-control" 
                                                                 placeholder="Ex: Adidogomé, Hedzranawoé"
-                                                                value={form.data.garant_adresse} 
-                                                                onChange={e => form.setData('garant_adresse', e.target.value)} 
+                                                                value={form.data.adresse} 
+                                                                onChange={e => form.setData('adresse', e.target.value)} 
                                                             />
-                                                            <ErrorMsg field="garant_adresse" />
+                                                            <ErrorMsg field="adresse" />
                                                         </div>
                                                     </div>
                                                 </fieldset>
@@ -1107,16 +1204,17 @@ export default function Create({ clients, creditProducts = [] }) {
                                         {/* BOUTON SOUMISSION : Reste à droite, bien proportionné */}
                                         <button 
                                             type="submit" 
-                                            className="btn btn-success px-5 shadow-sm text-nowrap fw-semibold" 
-                                            disabled={form.processing}
+                                            disabled={form.processing} 
+                                            className={`btn ${isDraftModification ? 'btn-warning text-dark' : 'btn-primary'}`}
                                         >
                                             {form.processing ? (
                                                 <>
-                                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                    Chargement...
+                                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                    Traitement en cours...
                                                 </>
                                             ) : (
-                                                'Enregistrer la demande'
+                                                // Le texte s'adapte dynamiquement ici 👇
+                                                isDraftModification ? 'Mettre à jour le brouillon' : 'Enregistrer la demande'
                                             )}
                                         </button>
 

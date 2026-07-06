@@ -72,7 +72,7 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::post('credits/{credit}/approve', [CreditController::class, 'approve'])->name('credits.approve');
     Route::post('credits/{credit}/settle-with-tontine', [CreditController::class, 'settleCreditWithTontine'])->name('credits.settle-with-tontine');
     Route::patch('credits/{credit}/payments/{payment}', [CreditController::class, 'updatePayment'])->name('credits.payments.update');
-
+    Route::get('/credits/check-pending/{carnetId}', [CreditController::class, 'checkPending'])->name('credits.check-pending');
     Route::get('/carnets/get-tontines/{clientId}', [CarnetController::class, 'getTontinesByClient'])->name('carnets.get-tontines');
     Route::get('/carnets/get-by-client/{clientId}', [CarnetController::class, 'getCarnetsByClient'])->name('carnets.get-by-client');
     Route::get('/carnets/get-by-client-credit/{clientId}', [CreditController::class, 'getCarnetsByClient'])->name('carnets.get-by-client-credit');

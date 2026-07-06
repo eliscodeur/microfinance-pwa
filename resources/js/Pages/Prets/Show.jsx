@@ -1,14 +1,236 @@
 import React, { useMemo } from 'react';
 import { Link, usePage, useForm } from '@inertiajs/inertia-react';
 import { Inertia } from '@inertiajs/inertia';
-import Swal from 'sweetalert2';
+import Swal from 'sweetalert2';import withReactContent from 'sweetalert2-react-content';
+
 import AdminLayout from '../../Layouts/AdminLayout.jsx';
 import { buildScheduleFromForm, formatDateToFR, formatCurrency } from '../../Utils/creditHelpers';
 
+const MySwal = withReactContent(Swal);
 export default function Show() {
   const { props } = usePage();
-  const { credit, client, diagnostic } = props;
+  const { credit, client, diagnostic, creditProducts } = props;
+const showCarnetDetails = async () => {
+    if (!diagnostic?.carnet_id) {
+        MySwal.fire('Erreur', 'Aucun identifiant de carnet disponible.', 'error');
+        return;
+    }
 
+    MySwal.fire({
+        title: 'Chargement en cours...',
+        text: 'Récupération des détails du carnet',
+        allowOutsideClick: false,
+        didOpen: () => {
+            MySwal.showLoading();
+        }
+    });
+
+    try {
+        const response = await axios.get(`/admin/carnets/details/${diagnostic.carnet_id}`);
+        const data = response.data;
+        const carnetNumero = diagnostic?.carnet_numero || '—'; // Récupération du numéro
+
+        if (data.success) {
+            MySwal.fire({
+                // On utilise un fond légèrement grisé pour faire ressortir les cards blanches "shadow-sm"
+                html: (
+                    <div className="text-start p-3" style={{ backgroundColor: '#f8f9fc', borderRadius: '1rem' }}>
+                        {data.type === 'tontine' ? (
+                            // ==========================================
+                            // VUE TONTINE
+                            // ==========================================
+                            <div className="card border-0 shadow-sm mb-2 rounded-4 overflow-hidden">
+                                {/* En-tête Tontine unifié */}
+                                <div className="d-flex justify-content-between align-items-center p-3 p-md-4 border-bottom border-light">
+                                    <div className="d-flex align-items-center">
+                                        <div 
+                                            className="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded me-3" 
+                                            style={{ width: '40px', height: '40px' }}
+                                        >
+                                            <i className="bi bi-wallet2 fs-5"></i>
+                                        </div>
+                                        <div className="lh-sm">
+                                            <div className="fw-bold text-dark" style={{ fontSize: '0.9rem' }}>
+                                                Carnet de Tontine
+                                            </div>
+                                            <div className="text-muted" style={{ fontSize: '0.8rem' }}>
+                                                N° {carnetNumero}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span 
+                                            className="badge bg-light text-secondary border fw-medium rounded-pill px-3 py-2" 
+                                            style={{ fontSize: '0.75rem' }}
+                                        >
+                                            {data.cycles?.length || 0} Cycle{(data.cycles?.length || 0) > 1 ? 's' : ''}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Tableau des Cycles épuré */}
+                                <div className="table-responsive">
+                                    <table className="table table-borderless table-hover align-middle mb-0">
+                                        <thead className="border-bottom border-light">
+                                            <tr>
+                                                <th className="text-muted fw-semibold text-uppercase py-3 ps-4" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Période</th>
+                                                <th className="text-muted fw-semibold text-uppercase py-3" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Fin Prévue</th>
+                                                <th className="text-muted fw-semibold text-uppercase py-3" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Fin Réelle</th>
+                                                <th className="text-muted fw-semibold text-uppercase py-3 text-center" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Mise</th>
+                                                <th className="text-muted fw-semibold text-uppercase py-3 text-center" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Pointages</th>
+                                                <th className="text-muted fw-semibold text-uppercase py-3 text-center" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Statut</th>
+                                                <th className="text-muted fw-semibold text-uppercase py-3 text-center pe-4" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>État</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {data.cycles && data.cycles.length > 0 ? data.cycles.map((cycle, idx) => (
+                                                <tr key={idx}>
+                                                    <td className="ps-4 fw-medium text-dark" style={{ fontSize: '0.85rem' }}>
+                                                        {cycle.date_debut}
+                                                    </td>
+                                                    <td className="text-muted" style={{ fontSize: '0.8rem' }}>
+                                                        {cycle.date_fin_prevue || '-'}
+                                                    </td>
+                                                    <td className="text-muted" style={{ fontSize: '0.8rem' }}>
+                                                        {cycle.date_cloture_reelle || '-'}
+                                                    </td>
+                                                    <td className="text-center fw-semibold text-dark" style={{ fontSize: '0.85rem' }}>
+                                                        {formatCurrency(cycle.mise)}
+                                                    </td>
+                                                    <td className="text-center text-muted" style={{ fontSize: '0.85rem' }}>
+                                                        {cycle.total_pointages}
+                                                    </td>
+                                                    <td className="text-center">
+                                                        <span 
+                                                            className={`badge rounded-pill fw-medium ${cycle.statut === 'termine' ? 'bg-success bg-opacity-10 text-success' : cycle.statut === 'en_cours' ? 'bg-primary bg-opacity-10 text-primary' : 'bg-secondary bg-opacity-10 text-secondary'}`} 
+                                                            style={{ fontSize: '0.75rem' }}
+                                                        >
+                                                            {cycle.statut === 'en_cours' ? 'En cours' : cycle.statut === 'termine' ? 'Terminé' : cycle.statut}
+                                                        </span>
+                                                    </td>
+                                                    <td className="text-center pe-4">
+                                                        <span 
+                                                            className={`badge rounded-pill fw-medium ${cycle.en_retard ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success'}`} 
+                                                            style={{ fontSize: '0.75rem' }}
+                                                        >
+                                                            {cycle.en_retard ? 'En retard' : 'À jour'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan="7" className="text-center py-4 text-muted small">Aucun cycle enregistré.</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ) : (
+                            // ==========================================
+                            // VUE COMPTE ÉPARGNE
+                            // ==========================================
+                            <div>
+                                {/* En-tête Compte */}
+                                <div className="card border-0 shadow-sm mb-4 rounded-4">
+                                    <div className="card-body p-3 p-md-4">
+                                        <div className="d-flex align-items-center mb-3">
+                                            <div 
+                                                className="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded me-3" 
+                                                style={{ width: '40px', height: '40px' }}
+                                            >
+                                                <i className="bi bi-piggy-bank fs-5"></i>
+                                            </div>
+                                            <div className="lh-sm">
+                                                <div className="fw-bold text-dark" style={{ fontSize: '0.9rem' }}>
+                                                    Compte Épargne
+                                                </div>
+                                                <div className="text-muted" style={{ fontSize: '0.8rem' }}>
+                                                    N° {carnetNumero}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2">
+                                            <div 
+                                                className="text-muted text-uppercase fw-semibold mb-1" 
+                                                style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}
+                                            >
+                                                Solde disponible
+                                            </div>
+                                            <div className="fw-bolder text-dark" style={{ fontSize: '1.75rem', lineHeight: '1' }}>
+                                                {formatCurrency(data.solde)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Historique des Transactions */}
+                                <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+                                    <div className="card-header bg-white border-bottom pt-3 pb-2">
+                                        <h6 className="mb-0 text-secondary fw-bold" style={{ fontSize: '0.85rem' }}>10 Derniers mouvements</h6>
+                                    </div>
+                                    <div className="card-body p-0">
+                                        {data.historique && data.historique.length > 0 ? (
+                                            <div className="list-group list-group-flush">
+                                                {data.historique.map((transaction, idx) => (
+                                                    <div key={idx} className="list-group-item d-flex justify-content-between align-items-center px-3 py-3 border-light">
+                                                        <div className="d-flex align-items-center gap-3 flex-grow-1">
+                                                            <div 
+                                                                className={`d-flex align-items-center justify-content-center rounded-circle ${transaction.type_transaction === 'Dépôt' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'}`} 
+                                                                style={{ width: '36px', height: '36px' }}
+                                                            >
+                                                                <i className={`bi ${transaction.type_transaction === 'Dépôt' ? 'bi-arrow-down-short' : 'bi-arrow-up-short'} fs-4`}></i>
+                                                            </div>
+                                                            <div className="lh-sm">
+                                                                <div className="fw-medium text-dark" style={{ fontSize: '0.85rem' }}>
+                                                                    {transaction.type_transaction}
+                                                                </div>
+                                                                <small className="text-muted" style={{ fontSize: '0.70rem' }}>
+                                                                    {transaction.date}
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-end">
+                                                            <div className={`fw-semibold ${transaction.type_transaction === 'Dépôt' ? 'text-success' : 'text-danger'}`} style={{ fontSize: '0.9rem' }}>
+                                                                {transaction.type_transaction === 'Dépôt' ? '+' : '-'} {formatCurrency(transaction.montant)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 text-center text-muted">
+                                                <i className="bi bi-journal-text fs-3 opacity-50 d-block mb-2"></i>
+                                                <span style={{ fontSize: '0.85rem' }}>Aucune transaction récente</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ),
+                width: '850px',
+                showConfirmButton: true,
+                confirmButtonText: 'Fermer',
+                buttonsStyling: false, // Désactive le style par défaut de Swal pour utiliser vos classes Bootstrap
+                customClass: {
+                    popup: 'rounded-4 shadow-lg p-0', // p-0 enlève le padding interne pour que le fond gris remplisse tout
+                    confirmButton: 'btn btn-dark px-4 py-2 fw-medium rounded-pill mb-3 mt-2'
+                }
+            });
+        }
+    } catch (error) {
+        console.error("Erreur de récupération :", error);
+        const errorMsg = error.response?.data?.error || 'Impossible de récupérer les détails. Vérifiez la connexion.';
+        MySwal.fire({
+            title: 'Erreur',
+            text: errorMsg,
+            icon: 'error',
+            confirmButtonColor: '#dc3545'
+        });
+    }
+};
   const getStatusBadge = statut => {
     switch (statut) {
       case 'pending':
@@ -35,20 +257,30 @@ export default function Show() {
 
   const approvedAmount = credit?.montant_accorde ?? credit?.montant_demande ?? credit?.montant ?? 0;
   const requestedAmount = credit?.montant_demande ?? credit?.montant ?? 0;
-  const proposedRate = credit?.taux_propose ?? credit?.taux ?? 0;
+  const proposedRate = credit?.taux ?? 0;
+  const frais_dossier = credit?.frais_dossier;
+  const differe = credit?.differe;
+  const taux_manuel= credit?.taux_manuel ?? '';
   const initialNumberOfInstallments = credit?.nombre_echeances ?? 1;
   const initialMode = credit?.mode ?? 'degressif';
   const initialPeriodicity = credit?.periodicite ?? 'mensuelle';
   const initialStartDate = credit?.date_debut ? credit.date_debut.split('T')[0] : new Date().toISOString().slice(0, 10);
-
+  const initialProductId = credit?.credit_product_id ?? (creditProducts.length > 0 ? creditProducts[0].id : null);
+  const initialObjectId = credit?.credit_object_id ?? (creditProducts.length > 0 && creditProducts[0].creditObjects.length > 0 ? creditProducts[0].creditObjects[0].id : null);
+ 
   const approveForm = useForm({
     action: 'approuve',
     montant_accorde: approvedAmount,
     taux: proposedRate,
+    taux_manuel: taux_manuel,
+    differe: differe,
     date_debut: initialStartDate,
+    frais_dossier: frais_dossier,
     nombre_echeances: initialNumberOfInstallments,
     mode: initialMode,
     periodicite: initialPeriodicity,
+    // credit_product_id: initialProductId,
+    // credit_object_id: initialObjectId,
   });
 
   const rejectForm = useForm({ action: 'rejete', motif: '' });
@@ -66,7 +298,7 @@ export default function Show() {
   const requestSchedule = useMemo(() => buildScheduleFromForm({
     montant_demande: requestedAmount,
     taux: proposedRate,
-    taux_manuelle: credit?.taux_manuelle ?? '',
+    taux_manuel: credit?.taux_manuel ?? '',
     nombre_echeances: initialNumberOfInstallments,
     mode: initialMode,
     periodicite: initialPeriodicity,
@@ -81,7 +313,7 @@ export default function Show() {
     return buildScheduleFromForm({
       montant_demande: montantOptionnel,
       taux: tauxOptionnel,
-      taux_manuelle: credit?.taux_manuelle ?? '',
+      taux_manuel: credit?.taux_manuel ?? '',
       nombre_echeances: echeancesOptionnel,
       mode: approveForm.data.mode,
       periodicite: approveForm.data.periodicite,
@@ -167,50 +399,76 @@ export default function Show() {
         {/* SECTION HAUTE : Diagnostics & Formulaire */}
         <div className="row g-3 mb-4">
           {/* Diagnostic Gauche */}
-          <div className="col-lg-4">
-            <div className="card shadow-sm border-light mb-3">
-              <div className="card-body py-3">
-                <div className="d-flex align-items-center mb-3">
-                  <div className="bg-secondary-subtle text-secondary rounded-circle px-3 py-2 fw-bold me-3">
-                    {client ? client.nom.charAt(0) : '—'}
-                  </div>
-                  <div>
-                    <h6 className="mb-0 fw-bold text-dark">{client ? `${client.nom} ${client.prenom}` : '—'}</h6>
-                    <small className="text-muted">Client Épargnant</small>
-                  </div>
-                </div>
-                <div className="d-flex justify-content-between py-2 border-bottom border-light small">
-                  <span className="text-muted">Total épargné</span>
-                  <span className="fw-semibold text-dark">{formatCurrency(diagnostic?.totalEpargne ?? 0)}</span>
-                </div>
-                <div className="d-flex justify-content-between py-2 border-bottom border-light small">
-                  <span className="text-muted">Carnets actifs</span>
-                  <span className="fw-semibold text-dark">{diagnostic?.nombreCarnets ?? 0}</span>
-                </div>
-                <div className="d-flex justify-content-between py-2 small">
-                  <span className="text-muted">Régularité</span>
-                  <span className="fw-semibold text-dark">{diagnostic?.regularitePourcent ?? 'N/A'}%</span>
-                </div>
-              </div>
-            </div>
+        <div className="col-lg-4">
+  
+  {/* 1. INFORMATIONS DU CLIENT */}
+  <div className="card shadow-sm border-light mb-3">
+    <div className="card-body py-3">
+      <div className="d-flex align-items-center mb-3">
+        <div className="bg-secondary-subtle text-secondary rounded-circle px-3 py-2 fw-bold me-3">
+          {client ? client.nom.charAt(0) : '—'}
+        </div>
+        <div>
+          <h6 className="mb-0 fw-bold text-dark">{client ? `${client.nom} ${client.prenom}` : '—'}</h6>
+          <small className="text-muted">Client Épargnant</small>
+        </div>
+      </div>
+      {/* <div className="d-flex justify-content-between py-2 border-bottom border-light small">
+        <span className="text-muted">Total épargné</span>
+        <span className="fw-semibold text-dark">{formatCurrency(diagnostic?.totalEpargne ?? 0)}</span>
+      </div> */}
+      <div className="d-flex justify-content-between py-2 border-bottom border-light small">
+        <span className="text-muted">Carnets actifs</span>
+        <span className="fw-semibold text-dark">{diagnostic?.nombreCarnets ?? 0}</span>
+      </div>
+      <div className="d-flex justify-content-between py-2 small">
+        <span className="text-muted">Régularité</span>
+        <span className="fw-semibold text-dark">{diagnostic?.regularitePourcent ?? 'N/A'}%</span>
+      </div>
+    </div>
+  </div>
 
-            {/* Demande Initiale remontée en haut */}
-            <div className="card shadow-sm border-light">
-              <div className="card-header bg-transparent border-0 pt-3 pb-0">
-                <span className="text-muted text-uppercase fw-bold tracking-wider" style={{ fontSize: '11px' }}>Demande Initiale</span>
-              </div>
-              <div className="card-body">
-                <div className="mb-3">
-                  <h4 className="fw-bold text-dark mb-1">{formatCurrency(requestedAmount)}</h4>
-                </div>
-                <div className="row g-2 text-muted small border-top pt-2">
-                  <div className="col-4">Taux: <span className="fw-semibold text-dark">{proposedRate}%</span></div>
-                  <div className="col-4 text-center">Échéances: <span className="fw-semibold text-dark">{initialNumberOfInstallments}</span></div>
-                  <div className="col-4 text-end text-capitalize">Mode: <span className="fw-semibold text-dark">{initialMode}</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
+  <div className="card shadow-sm border-light mb-3">
+    <div className="card-body py-3 d-flex justify-content-between align-items-center">
+      <div>
+        <span className="text-muted text-uppercase fw-bold tracking-wider d-block mb-1" style={{ fontSize: '10px' }}>
+          Carnet Associé
+        </span>
+        <div className="fw-bold text-dark text-capitalize fs-6">
+          {diagnostic?.type_carnet || 'Non défini'}
+        </div>
+        <small className="text-muted">N° {diagnostic?.carnet_numero || '—'}</small>
+      </div>
+      
+      {/* Appel de la fonction asynchrone ici */}
+      <button 
+        className="btn btn-outline-primary btn-sm px-3 fw-medium" 
+        onClick={showCarnetDetails}
+        disabled={!diagnostic?.carnet_id} 
+      >
+        <i className="bi bi-eye me-1"></i> Voir détails
+      </button>
+    </div>
+  </div>
+
+  {/* 3. DEMANDE INITIALE */}
+  <div className="card shadow-sm border-light">
+    <div className="card-header bg-transparent border-0 pt-3 pb-0">
+      <span className="text-muted text-uppercase fw-bold tracking-wider" style={{ fontSize: '11px' }}>Demande Initiale</span>
+    </div>
+    <div className="card-body">
+      <div className="mb-3">
+        <h4 className="fw-bold text-dark mb-1">{formatCurrency(requestedAmount)}</h4>
+      </div>
+      <div className="row g-2 text-muted small border-top pt-2">
+        <div className="col-4">Taux: <span className="fw-semibold text-dark">{taux_manuel !== '' ? taux_manuel : proposedRate}%</span></div>
+        <div className="col-4 text-center">Échéances: <span className="fw-semibold text-dark">{initialNumberOfInstallments}</span></div>
+        <div className="col-4 text-end text-capitalize">Mode: <span className="fw-semibold text-dark">{initialMode}</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
 
           {/* Formulaire d'Ajustement */}
           <div className="col-lg-8">
@@ -228,37 +486,87 @@ export default function Show() {
 
                   {isPending ? (
                     <form onSubmit={submitApprove} id="approve-form">
-                      <div className="row g-2">
+                      <div className="row g-3">
+                        {/* --- BLOC 1 : IDENTIFICATION PRODUIT --- */}
+                        <div className="col-md-6">
+                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Produit de crédit</label>
+                          <select className="form-select form-select-sm" value={credit.credit_product_id} disabled>
+                            <option value="">Sélectionnez un produit</option>
+                            {creditProducts.map((prod) => (
+                              <option key={prod.id} value={prod.id}>
+                                {prod.nom} {/* Remplacez 'nom' par la colonne réelle (ex: libelle) */}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* 2. Sélection de l'Objet du crédit */}
+                        <div className="col-md-6">
+                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Objet du crédit</label>
+                          <select className="form-select form-select-sm" value={credit.credit_object_id} disabled>
+                            <option value="">Sélectionnez un objet</option>
+                            {/* On trouve le produit sélectionné pour afficher ses objets associés */}
+                            {creditProducts
+                              .find((p) => p.id === credit.credit_product_id)
+                              ?.credit_objects.map((obj) => (
+                                <option key={obj.id} value={obj.id}>
+                                  {obj.nom} {/* Remplacez 'nom' par la colonne réelle (ex: libelle) */}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        {/* --- BLOC 2 : PARAMÈTRES FINANCIERS --- */}
                         <div className="col-md-4">
-                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Montant accordé</label>
+                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Montant accordé (FCFA)</label>
                           <input className="form-control form-control-sm fw-semibold" type="number" value={approveForm.data.montant_accorde} onChange={e => approveForm.setData('montant_accorde', e.target.value)} />
                         </div>
                         <div className="col-md-4">
                           <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Taux d'intérêt (%)</label>
-                          <input className="form-control form-control-sm fw-semibold" type="number" step="0.01" value={approveForm.data.taux} onChange={e => approveForm.setData('taux', e.target.value)} />
+                          <input className="form-control form-control-sm fw-semibold" type="number" step="0.01" value={approveForm.data.taux} onChange={e => approveForm.setData('taux', e.target.value)} readOnly/>
                         </div>
                         <div className="col-md-4">
-                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Échéances</label>
-                          <input className="form-control form-control-sm" type="number" value={approveForm.data.nombre_echeances} onChange={e => approveForm.setData('nombre_echeances', e.target.value)} min="1" />
+                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Taux manuel (%)</label>
+                          <input className="form-control form-control-sm fw-semibold" type="number" step="0.01" value={approveForm.data.taux_manuel} onChange={e => approveForm.setData('taux_manuel', e.target.value)} />
                         </div>
+                        <div className="col-md-4">
+                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Nb Échéances</label>
+                          <input className="form-control form-control-sm" type="number" value={approveForm.data.nombre_echeances} onChange={e => approveForm.setData('nombre_echeances', e.target.value)} />
+                        </div>
+
+                        {/* --- BLOC 3 : LOGISTIQUE & CONDITIONS --- */}
                         <div className="col-md-4">
                           <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Périodicité</label>
                           <select className="form-select form-select-sm" value={approveForm.data.periodicite} onChange={e => approveForm.setData('periodicite', e.target.value)}>
                             <option value="quinzaine">Quinzaine</option>
                             <option value="mensuelle">Mensuelle</option>
-                            <option value="hebdomadaire">Hebdomadaire</option>
+                            {/* <option value="hebdomadaire">Hebdomadaire</option> */}
                           </select>
                         </div>
                         <div className="col-md-4">
-                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Méthode de calcul</label>
+                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Mode de calcul</label>
                           <select className="form-select form-select-sm" value={approveForm.data.mode} onChange={e => approveForm.setData('mode', e.target.value)}>
+                            <option value="fixe">Fixe (Flat)</option>
                             <option value="degressif">Dégressif</option>
-                            <option value="constant">Constant</option>
                           </select>
                         </div>
                         <div className="col-md-4">
-                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Premier remboursement</label>
+                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Différé (Échéances)</label>
+                          <input className="form-control form-control-sm" type="number" value={approveForm.data.differe ?? 0} onChange={e => approveForm.setData('differe', e.target.value)} />
+                        </div>
+                        <div className="col-md-4">
+                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Date de début</label>
                           <input className="form-control form-control-sm" type="date" value={approveForm.data.date_debut} onChange={e => approveForm.setData('date_debut', e.target.value)} />
+                        </div>
+
+                        {/* --- BLOC 4 : FRAIS & GARANTIES --- */}
+                        <div className="col-md-4">
+                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Frais de dossier (FCFA)</label>
+                          <input className="form-control form-control-sm" type="number" value={approveForm.data.frais_dossier} onChange={e => approveForm.setData('frais_dossier', e.target.value)} readOnly />
+                        </div>
+                        <div className="col-md-4">
+                          <label className="form-label text-muted mb-1" style={{ fontSize: '12px' }}>Garantie / Nantissement</label>
+                          <input className="form-control form-control-sm" type="text" value={approveForm.data.garanties} onChange={e => approveForm.setData('garanties', e.target.value)} placeholder="Ex: Épargne bloquée..." />
                         </div>
                       </div>
                     </form>

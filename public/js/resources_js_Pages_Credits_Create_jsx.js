@@ -42,11 +42,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../Utils/creditHelpers */ "./resources/js/Utils/creditHelpers.js");
 /* harmony import */ var react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react/jsx-runtime */ "./node_modules/react/jsx-runtime.js");
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -84,15 +88,15 @@ function Create(_ref) {
     garantie: '',
     mode: 'degressif',
     taux: 1.5,
-    taux_manuelle: '',
+    taux_manuel: '',
     // 4.1 Caution Solidaire / Avaliste
-    garant_nom_prenom: '',
+    nom_prenom: '',
     // Nom & Prénoms du garant
-    garant_telephone: '',
+    telephone: '',
     // Numéro de Téléphone
-    garant_profession: '',
+    profession: '',
     // Profession / Secteur d'activité
-    garant_adresse: '',
+    adresse: '',
     // Quartier de résidence
 
     // 4.2 Documents & KYC d'Audit (Initialisés à null pour la gestion des fichiers)
@@ -113,22 +117,26 @@ function Create(_ref) {
     _useState2 = _slicedToArray(_useState, 2),
     carnets = _useState2[0],
     setCarnets = _useState2[1];
-  var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)('identification'),
+  var _useState3 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false),
     _useState4 = _slicedToArray(_useState3, 2),
-    activeTab = _useState4[0],
-    setActiveTab = _useState4[1];
-  var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(''),
+    isDraftModification = _useState4[0],
+    setIsDraftModification = _useState4[1];
+  var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)('identification'),
     _useState6 = _slicedToArray(_useState5, 2),
-    clientSearch = _useState6[0],
-    setClientSearch = _useState6[1];
-  var _useState7 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null),
+    activeTab = _useState6[0],
+    setActiveTab = _useState6[1];
+  var _useState7 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(''),
     _useState8 = _slicedToArray(_useState7, 2),
-    carnetDetails = _useState8[0],
-    setCarnetDetails = _useState8[1];
-  var _useState9 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false),
+    clientSearch = _useState8[0],
+    setClientSearch = _useState8[1];
+  var _useState9 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null),
     _useState0 = _slicedToArray(_useState9, 2),
-    loadingDetails = _useState0[0],
-    setLoadingDetails = _useState0[1];
+    carnetDetails = _useState0[0],
+    setCarnetDetails = _useState0[1];
+  var _useState1 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false),
+    _useState10 = _slicedToArray(_useState1, 2),
+    loadingDetails = _useState10[0],
+    setLoadingDetails = _useState10[1];
   var selectedCarnet = carnets.find(function (carnet) {
     return String(carnet.id) === String(form.data.carnet_id);
   });
@@ -175,6 +183,123 @@ function Create(_ref) {
   var availableObjects = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
     return selectedProduct ? selectedProduct.credit_objects || [] : [];
   }, [selectedProduct]);
+  var handleCarnetChange = /*#__PURE__*/function () {
+    var _ref3 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(carnetId) {
+      var _selectedCarnet$cycle, _selectedCarnet, activeCycleId, response, draftExists, _response$data$cycle_, _response$data$credit, _response$data$credit2, _response$data$credit3, _response$data$montan, _response$data$period, _response$data$nombre, _response$data$differ, _response$data$frais_, _response$data$garant, _response$data$mode, _response$data$taux, _response$data$taux_m, _response$data$credit4, _response$data$credit5, _response$data$credit6, _response$data$credit7, _t;
+      return _regenerator().w(function (_context) {
+        while (1) switch (_context.p = _context.n) {
+          case 0:
+            if (!carnetId) {
+              _context.n = 6;
+              break;
+            }
+            _selectedCarnet = availableCarnets.find(function (c) {
+              return String(c.id) === String(carnetId);
+            });
+            activeCycleId = (_selectedCarnet === null || _selectedCarnet === void 0 || (_selectedCarnet$cycle = _selectedCarnet.cycles) === null || _selectedCarnet$cycle === void 0 || (_selectedCarnet$cycle = _selectedCarnet$cycle.find(function (cycle) {
+              return cycle.statut === 'en_cours';
+            })) === null || _selectedCarnet$cycle === void 0 ? void 0 : _selectedCarnet$cycle.id) || '';
+            _context.p = 1;
+            _context.n = 2;
+            return axios.get("/admin/credits/check-pending/".concat(carnetId));
+          case 2:
+            response = _context.v;
+            // On vérifie qu'on a bien un objet valide avec des données (ex: un ID ou un montant)
+            // Adaptez "response.data.id" selon ce que votre API renvoie exactement.
+            draftExists = response.data && Object.keys(response.data).length > 0 && response.data.id !== undefined; // CAS : Le brouillon existe mais appartient à un AUTRE administrateur
+            if (!(draftExists && response.data.brouillon_bloque)) {
+              _context.n = 3;
+              break;
+            }
+            sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
+              icon: 'error',
+              title: 'Accès refusé',
+              text: response.data.message,
+              confirmButtonColor: '#3085d6',
+              confirmButtonText: 'Compris'
+            });
+            form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
+              carnet_id: '',
+              cycle_id: ''
+            }));
+            setIsDraftModification(false);
+            return _context.a(2);
+          case 3:
+            // CAS 1 : Brouillon existant ET appartient à l'admin connecté
+            if (draftExists && !response.data.brouillon_bloque) {
+              setIsDraftModification(true); // 👈 Passe en mode MODIFICATION
+
+              sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
+                icon: 'info',
+                title: 'Brouillon récupéré',
+                text: 'Le formulaire a été pré-rempli avec vos données en attente.',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true
+              });
+              form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
+                carnet_id: carnetId,
+                cycle_id: (_response$data$cycle_ = response.data.cycle_id) !== null && _response$data$cycle_ !== void 0 ? _response$data$cycle_ : activeCycleId,
+                credit_type_id: (_response$data$credit = response.data.credit_type_id) !== null && _response$data$credit !== void 0 ? _response$data$credit : '',
+                credit_product_id: (_response$data$credit2 = response.data.credit_product_id) !== null && _response$data$credit2 !== void 0 ? _response$data$credit2 : '',
+                credit_object_id: (_response$data$credit3 = response.data.credit_object_id) !== null && _response$data$credit3 !== void 0 ? _response$data$credit3 : '',
+                montant_demande: (_response$data$montan = response.data.montant_demande) !== null && _response$data$montan !== void 0 ? _response$data$montan : 0,
+                date_debut: response.data.date_debut ? response.data.date_debut.slice(0, 10) : new Date().toISOString().slice(0, 10),
+                periodicite: (_response$data$period = response.data.periodicite) !== null && _response$data$period !== void 0 ? _response$data$period : 'mensuelle',
+                nombre_echeances: (_response$data$nombre = response.data.nombre_echeances) !== null && _response$data$nombre !== void 0 ? _response$data$nombre : 5,
+                differe: (_response$data$differ = response.data.differe) !== null && _response$data$differ !== void 0 ? _response$data$differ : 0,
+                frais_dossier: (_response$data$frais_ = response.data.frais_dossier) !== null && _response$data$frais_ !== void 0 ? _response$data$frais_ : '',
+                garantie: (_response$data$garant = response.data.garantie) !== null && _response$data$garant !== void 0 ? _response$data$garant : '',
+                mode: (_response$data$mode = response.data.mode) !== null && _response$data$mode !== void 0 ? _response$data$mode : 'degressif',
+                taux: (_response$data$taux = response.data.taux) !== null && _response$data$taux !== void 0 ? _response$data$taux : 1.5,
+                taux_manuel: (_response$data$taux_m = response.data.taux_manuel) !== null && _response$data$taux_m !== void 0 ? _response$data$taux_m : '',
+                nom_prenom: ((_response$data$credit4 = response.data.credit_guarantor) === null || _response$data$credit4 === void 0 ? void 0 : _response$data$credit4.nom_prenom) || '',
+                telephone: ((_response$data$credit5 = response.data.credit_guarantor) === null || _response$data$credit5 === void 0 ? void 0 : _response$data$credit5.telephone) || '',
+                profession: ((_response$data$credit6 = response.data.credit_guarantor) === null || _response$data$credit6 === void 0 ? void 0 : _response$data$credit6.profession) || '',
+                adresse: ((_response$data$credit7 = response.data.credit_guarantor) === null || _response$data$credit7 === void 0 ? void 0 : _response$data$credit7.adresse) || '',
+                piece_identite: null,
+                justificatif_revenu: null
+              }));
+            } else {
+              // CAS 2 : Pas de brouillon (Nouvel Insert)
+              setIsDraftModification(false); // 👈 Passe en mode CRÉATION
+              form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
+                // Réinitialisez les autres champs ici si nécessaire pour nettoyer l'ancien brouillon
+                carnet_id: carnetId,
+                cycle_id: activeCycleId
+              }));
+            }
+            _context.n = 5;
+            break;
+          case 4:
+            _context.p = 4;
+            _t = _context.v;
+            console.error("Erreur lors de la récupération du brouillon :", _t);
+            setIsDraftModification(false);
+            form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
+              carnet_id: carnetId,
+              cycle_id: activeCycleId
+            }));
+          case 5:
+            _context.n = 7;
+            break;
+          case 6:
+            setIsDraftModification(false);
+            form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
+              carnet_id: '',
+              cycle_id: ''
+            }));
+          case 7:
+            return _context.a(2);
+        }
+      }, _callee, null, [[1, 4]]);
+    }));
+    return function handleCarnetChange(_x) {
+      return _ref3.apply(this, arguments);
+    };
+  }();
   var handleTypeChange = function handleTypeChange(val) {
     setClientSearch('');
     form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
@@ -188,7 +313,6 @@ function Create(_ref) {
     if (!form.data.credit_product_id || creditProducts.length === 0) return;
     if (selectedProduct) {
       form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
-        // Mappage sur les colonnes réelles de ton seeder (image_800cc5.png)
         taux: selectedProduct.taux_interet_defaut,
         frais_dossier: selectedProduct.frais_dossier_defaut,
         nombre_echeances: form.data.nombre_echeances || selectedProduct.duree_max_mois,
@@ -290,7 +414,7 @@ function Create(_ref) {
       }
     }
     if (['garanties', 'resumes'].includes(targetTab)) {
-      if (!form.data.credit_product_id || !form.data.montant_demande || form.data.montant_demande <= 0 || !form.data.periodicite || !form.data.nombre_echeances || !form.data.date_debut || !form.data.objet_credit || !form.data.credit_product_id || form.data.periodicite === '' || form.data.nombre_echeances <= 0) {
+      if (!form.data.credit_product_id || !form.data.montant_demande || form.data.montant_demande <= 0 || !form.data.periodicite || !form.data.nombre_echeances || !form.data.date_debut || !form.data.credit_object_id || !form.data.credit_product_id || form.data.periodicite === '' || form.data.nombre_echeances <= 0) {
         sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
           icon: 'warning',
           title: 'Simulation incomplète',
@@ -305,10 +429,10 @@ function Create(_ref) {
   var schedule = (0,react__WEBPACK_IMPORTED_MODULE_1__.useMemo)(function () {
     return (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.buildScheduleFromForm)(form.data);
   }, [form.data]);
-  var _useState1 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(1),
-    _useState10 = _slicedToArray(_useState1, 2),
-    currentPage = _useState10[0],
-    setCurrentPage = _useState10[1];
+  var _useState11 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(1),
+    _useState12 = _slicedToArray(_useState11, 2),
+    currentPage = _useState12[0],
+    setCurrentPage = _useState12[1];
   var pageSize = 6;
   var pageCount = Math.max(1, Math.ceil(schedule.length / pageSize));
   (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
@@ -354,9 +478,12 @@ function Create(_ref) {
             timer: 2000,
             showConfirmButton: false
           });
-          form.reset(['montant_demande', 'type', 'mode', 'periodicite', 'nombre_echeances', 'taux', 'taux_manuelle', 'date_debut']);
+          form.reset(['montant_demande', 'type', 'mode', 'periodicite', 'nombre_echeances', 'taux', 'taux_manuel', 'date_debut']);
           setClientSearch('');
           setActiveTab('identification');
+        },
+        onError: function onError(errors) {
+          console.log("Erreurs reçues:", errors); // <--- AJOUTE ÇA
         }
       });
     });
@@ -369,7 +496,7 @@ function Create(_ref) {
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h1", {
             className: "h3 text-primary mb-1",
-            children: "Nouvelle Demande de Cr\xE9dit"
+            children: "Demande de Cr\xE9dit"
           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
             className: "text-muted mb-0",
             children: "Saisie et simulation financi\xE8re"
@@ -608,22 +735,23 @@ function Create(_ref) {
                 children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
                   className: "form-label",
                   children: "Support (Num\xE9ro)"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", _defineProperty(_defineProperty({
                   className: "form-select ".concat(form.errors.carnet_id ? 'is-invalid' : ''),
                   value: form.data.carnet_id,
                   onChange: function onChange(e) {
                     return form.setData('carnet_id', e.target.value);
-                  },
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                    value: "",
-                    children: "S\xE9lectionner un support"
-                  }), availableCarnets.map(function (c) {
-                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("option", {
-                      value: c.id,
-                      children: ["N\xB0 ", c.numero]
-                    }, c.id);
-                  })]
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
+                  }
+                }, "onChange", function onChange(e) {
+                  return handleCarnetChange(e.target.value);
+                }), "children", [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                  value: "",
+                  children: "S\xE9lectionner un support"
+                }), availableCarnets.map(function (c) {
+                  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("option", {
+                    value: c.id,
+                    children: ["N\xB0 ", c.numero]
+                  }, c.id);
+                })])), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
                   field: "carnet_id"
                 })]
               })]
@@ -1017,10 +1145,10 @@ function Create(_ref) {
                     })]
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("select", {
                     id: "objet_credit",
-                    className: "form-select ".concat(form.errors.objet_credit ? 'is-invalid' : ''),
-                    value: form.data.objet_credit || '',
+                    className: "form-select ".concat(form.errors.credit_object_id ? 'is-invalid' : ''),
+                    value: form.data.credit_object_id || '',
                     onChange: function onChange(e) {
-                      return form.setData('objet_credit', e.target.value);
+                      return form.setData('credit_object_id', e.target.value);
                     },
                     disabled: !form.data.credit_product_id,
                     required: true,
@@ -1252,17 +1380,17 @@ function Create(_ref) {
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                   className: "col-md-4",
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-                    htmlFor: "taux_manuelle",
+                    htmlFor: "taux_manuel",
                     className: "form-label text-warning fw-semibold",
                     children: "Taux manuel (%)"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
-                    id: "taux_manuelle",
+                    id: "taux_manuel",
                     type: "number",
                     step: "0.01",
                     className: "form-control border-warning fw-bold text-warning",
-                    value: form.data.taux_manuelle || '',
+                    value: form.data.taux_manuel || '',
                     onChange: function onChange(e) {
-                      return form.setData('taux_manuelle', e.target.value);
+                      return form.setData('taux_manuel', e.target.value);
                     },
                     placeholder: "D\xE9rogation g\xE9rant"
                   })]
@@ -1434,7 +1562,7 @@ function Create(_ref) {
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                           className: "col-md-12",
                           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
-                            htmlFor: "garant_nom_prenom",
+                            htmlFor: "nom_prenom",
                             className: "form-label fw-semibold",
                             children: ["Nom & Pr\xE9noms du garant ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                               className: "text-danger",
@@ -1448,23 +1576,23 @@ function Create(_ref) {
                                 className: "bi bi-person"
                               })
                             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
-                              id: "garant_nom_prenom",
+                              id: "nom_prenom",
                               type: "text",
-                              className: "form-control ".concat(form.errors.garant_nom_prenom ? 'is-invalid' : ''),
+                              className: "form-control ".concat(form.errors.nom_prenom ? 'is-invalid' : ''),
                               placeholder: "Ex: Jean KOFFI",
-                              value: form.data.garant_nom_prenom,
+                              value: form.data.nom_prenom,
                               onChange: function onChange(e) {
-                                return form.setData('garant_nom_prenom', e.target.value);
+                                return form.setData('nom_prenom', e.target.value);
                               },
                               required: true
                             })]
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
-                            field: "garant_nom_prenom"
+                            field: "nom_prenom"
                           })]
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                           className: "col-md-12",
                           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
-                            htmlFor: "garant_telephone",
+                            htmlFor: "telephone",
                             className: "form-label fw-semibold",
                             children: ["Num\xE9ro de T\xE9l\xE9phone ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                               className: "text-danger",
@@ -1478,54 +1606,54 @@ function Create(_ref) {
                                 className: "bi bi-telephone"
                               })
                             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
-                              id: "garant_telephone",
+                              id: "telephone",
                               type: "tel",
-                              className: "form-control ".concat(form.errors.garant_telephone ? 'is-invalid' : ''),
+                              className: "form-control ".concat(form.errors.telephone ? 'is-invalid' : ''),
                               placeholder: "Ex: +228 90 00 00 00",
-                              value: form.data.garant_telephone,
+                              value: form.data.telephone,
                               onChange: function onChange(e) {
-                                return form.setData('garant_telephone', e.target.value);
+                                return form.setData('telephone', e.target.value);
                               },
                               required: true
                             })]
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
-                            field: "garant_telephone"
+                            field: "telephone"
                           })]
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                           className: "col-md-6",
                           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-                            htmlFor: "garant_profession",
+                            htmlFor: "profession",
                             className: "form-label fw-semibold",
                             children: "Profession / Secteur d'activit\xE9"
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
-                            id: "garant_profession",
+                            id: "profession",
                             type: "text",
                             className: "form-control",
                             placeholder: "Ex: Revendeuse, Fonctionnaire...",
-                            value: form.data.garant_profession,
+                            value: form.data.profession,
                             onChange: function onChange(e) {
-                              return form.setData('garant_profession', e.target.value);
+                              return form.setData('profession', e.target.value);
                             }
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
-                            field: "garant_profession"
+                            field: "profession"
                           })]
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                           className: "col-md-6",
                           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
-                            htmlFor: "garant_adresse",
+                            htmlFor: "adresse",
                             className: "form-label fw-semibold",
                             children: "Quartier de r\xE9sidence"
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
-                            id: "garant_adresse",
+                            id: "adresse",
                             type: "text",
                             className: "form-control",
                             placeholder: "Ex: Adidogom\xE9, Hedzranawo\xE9",
-                            value: form.data.garant_adresse,
+                            value: form.data.adresse,
                             onChange: function onChange(e) {
-                              return form.setData('garant_adresse', e.target.value);
+                              return form.setData('adresse', e.target.value);
                             }
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
-                            field: "garant_adresse"
+                            field: "adresse"
                           })]
                         })]
                       })]
@@ -1639,15 +1767,17 @@ function Create(_ref) {
                   }), "Retour aux r\xE9sum\xE9s"]
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
                   type: "submit",
-                  className: "btn btn-success px-5 shadow-sm text-nowrap fw-semibold",
                   disabled: form.processing,
+                  className: "btn ".concat(isDraftModification ? 'btn-warning text-dark' : 'btn-primary'),
                   children: form.processing ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
-                      className: "spinner-border spinner-border-sm me-2",
+                      "class": "spinner-border spinner-border-sm me-2",
                       role: "status",
                       "aria-hidden": "true"
-                    }), "Chargement..."]
-                  }) : 'Enregistrer la demande'
+                    }), "Traitement en cours..."]
+                  }) :
+                  // Le texte s'adapte dynamiquement ici 👇
+                  isDraftModification ? 'Mettre à jour le brouillon' : 'Enregistrer la demande'
                 })]
               })
             })]
@@ -1722,36 +1852,38 @@ function calculateRate(taux, tauxManuel) {
 }
 function buildScheduleFromForm(form) {
   var montant = Number(form.montant_demande || 0);
-  var taux = calculateRate(form.taux, form.taux_manuelle) / 100;
+
+  // 1. On prend le taux directement (pas de division par 12 ou 24)
+  var tauxAnnuel = calculateRate(form.taux, form.taux_manuel);
+  var tauxFixeGlobal = tauxAnnuel / 100;
+
+  // 2. Calcul des intérêts totaux dès le départ
+  var interetTotal = Math.round(montant * tauxFixeGlobal * 100) / 100;
   var nombre = Math.max(1, Number(form.nombre_echeances || 1));
-  var mode = form.mode || 'fixe';
+  var differe = Math.max(0, Number(form.differe || 0));
   var periodicite = form.periodicite || 'mensuelle';
   var start = form.date_debut || new Date().toISOString().slice(0, 10);
+  var startDate = typeof parseDateString === 'function' ? parseDateString(start) : new Date(start + 'T00:00:00');
 
-  // Utilise votre fonction de parsing ou crée une date locale sécurisée
-  var startDate = typeof parseDateString === 'function' ? parseDateString(start) : new Date(start + 'T00:00:00'); // Évite les décalages de fuseau horaire au parsing
-
-  var principalBase = Math.round(montant / nombre * 100) / 100;
-  var remaining = montant;
+  // 3. Répartition du principal et des intérêts
+  var echeancesAmortissables = Math.max(1, nombre - differe);
+  var principalParEcheance = Math.round(montant / echeancesAmortissables * 100) / 100;
+  var interetParEcheance = Math.round(interetTotal / nombre * 100) / 100;
   var schedule = [];
   for (var i = 1; i <= nombre; i += 1) {
-    // 1. Calcul des intérêts (Fixe ou Dégressif)
-    var interest = mode === 'degressif' ? Math.round(remaining * taux * 100) / 100 : Math.round(montant * taux * 100) / 100;
+    // Le principal est 0 pendant le différé
+    var principal = i <= differe ? 0 : principalParEcheance;
 
-    // 2. Ajustement de la dernière échéance pour vider le capital restant dû
-    var principal = i === nombre ? Math.round(remaining * 100) / 100 : principalBase;
-    var total = Math.round((principal + interest) * 100) / 100;
+    // Si c'est la dernière échéance, on ajuste le principal pour retomber juste sur le montant
+    if (i === nombre) {
+      var totalDejaAmorti = principalParEcheance * (echeancesAmortissables - 1);
+      principal = Math.round((montant - totalDejaAmorti) * 100) / 100;
+    }
+    var total = Math.round((principal + interetParEcheance) * 100) / 100;
 
-    // 3. Gestion dynamique et précise de la date d'échéance
+    // Gestion des dates
     var dueDate = new Date(startDate);
-    if (periodicite === 'mensuelle') {
-      // Ajoute exactement (i - 1) mois (Ex: 1er Janvier -> 1er Février -> 1er Mars)
-      dueDate.setMonth(dueDate.getMonth() + (i - 1));
-    } else if (periodicite === 'quinzaine') {
-      // Ajoute 14 jours par échéance
-      dueDate.setDate(dueDate.getDate() + (i - 1) * 14);
-    } else {
-      // Fallback si vous utilisez periodDays pour d'autres cas spécifiques
+    if (periodicite === 'mensuelle') dueDate.setMonth(dueDate.getMonth() + (i - 1));else if (periodicite === 'quinzaine') dueDate.setDate(dueDate.getDate() + (i - 1) * 14);else {
       var periodDaysCount = typeof periodDays === 'function' ? periodDays(periodicite) : 30;
       dueDate.setDate(dueDate.getDate() + (i - 1) * periodDaysCount);
     }
@@ -1759,12 +1891,10 @@ function buildScheduleFromForm(form) {
       numero: i,
       date: dueDate.toISOString().slice(0, 10),
       principal: principal,
-      interest: interest,
-      total: total
+      interest: interetParEcheance,
+      total: total,
+      is_differe: i <= differe
     });
-
-    // 4. Mise à jour du capital restant pour le prochain tour
-    remaining = Math.round((remaining - principal) * 100) / 100;
   }
   return schedule;
 }

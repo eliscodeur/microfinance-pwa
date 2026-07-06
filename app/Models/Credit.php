@@ -13,17 +13,23 @@ class Credit extends Model
         'credit_uid',
         'client_id',
         'carnet_id',
+        'cycle_id',
         'agent_id',
         'admin_id',
+        'credit_product_id', 
+        'credit_object_id',  
+        'type_support',     
         'montant_demande',
         'montant_accorde',
         'taux',
-        'taux_manuelle',
-        'type',
+        'taux_manuel',      
         'mode',
         'periodicite',
         'nombre_echeances',
+        'differe',
+        'frais_dossier',    
         'montant_echeance',
+        'montant_echeance_differe', 
         'interet_total',
         'montant_rembourse',
         'blocked_amount',
@@ -36,21 +42,31 @@ class Credit extends Model
         'metadata',
     ];
 
+    /**
+     * Typage strict pour éviter les bugs de centimes en FCFA (integer pour la monnaie)
+     */
     protected $casts = [
-        'date_demande' => 'date',
-        'date_debut' => 'date',
-        'date_fin_prevue' => 'date',
-        'approved_at' => 'datetime',
-        'metadata' => 'array',
-        'montant_demande' => 'decimal:2',
-        'montant_accorde' => 'decimal:2',
-        'taux' => 'decimal:4',
-        'taux_manuelle' => 'decimal:4',
-        'interet_total' => 'decimal:2',
-        'montant_rembourse' => 'decimal:2',
-        'blocked_amount' => 'decimal:2',
-        'penalty_amount' => 'decimal:2',
+        'date_demande'             => 'date',
+        'date_debut'               => 'date:Y-m-d',
+        'date_fin_prevue'          => 'date',
+        'approved_at'              => 'datetime',
+        'metadata'                 => 'array',
+        'montant_demande'          => 'integer',
+        'montant_accorde'          => 'integer',
+        'frais_dossier'            => 'integer',
+        'montant_echeance'         => 'integer',
+        'montant_echeance_differe' => 'integer',
+        'interet_total'            => 'integer',
+        'montant_rembourse'        => 'integer',
+        'blocked_amount'           => 'integer',
+        'penalty_amount'           => 'integer',
+        'taux'                     => 'decimal:4',
+        'taux_manuel'              => 'decimal:4',
     ];
+
+    /* -------------------------------------------------------------------------
+     * RELATIONS
+     * ------------------------------------------------------------------------- */
 
     public function client()
     {
@@ -62,19 +78,67 @@ class Credit extends Model
         return $this->belongsTo(Carnet::class);
     }
 
-    public function payments()
+    public function agent()
     {
-        return $this->hasMany(CreditPayment::class);
+        return $this->belongsTo(User::class, 'agent_id');
     }
 
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');
     }
-    public function getMontantRestantAttribute()
+
+    public function cycle()
     {
-        // L'encours est : (Montant accordé + Intérêts) - Montant remboursé
-        // Ici, on fait simple : montant accordé moins montant remboursé
-        return max(0, ($this->montant_accorde + $this->interet_total) - $this->montant_rembourse);
+        return $this->belongsTo(Cycle::class);
+    }
+
+    // --- NOUVELLES RELATIONS ---
+    
+    public function creditProduct()
+    {
+        return $this->belongsTo(CreditProduct::class);
+    }
+
+    public function creditObject()
+    {
+        return $this->belongsTo(CreditObject::class);
+    }
+
+    
+    public function creditGuarantor() 
+    {
+        return $this->hasOne(CreditGuarantor::class, 'credit_id');
+    }
+    // ---------------------------
+
+    public function payments()
+    {
+        return $this->hasMany(CreditPayment::class);
+    }
+
+    public function schedules()
+    {
+        return $this->hasMany(CreditSchedule::class);
+    }
+
+    /* -------------------------------------------------------------------------
+     * ACCESSEURS & MUTATEURS
+     * ------------------------------------------------------------------------- */
+
+    public function getMontantRestantAttribute(): int
+    {
+        return (int) max(0, ($this->montant_accorde + $this->interet_total) - $this->montant_rembourse);
+    }
+
+    public function getIsInDiffereAttribute(): bool
+    {
+        if (!$this->differe || $this->differe <= 0) {
+            return false;
+        }
+
+        $paidSchedulesCount = $this->schedules()->where('statut', 'paye')->count();
+        
+        return $paidSchedulesCount < $this->differe;
     }
 }
