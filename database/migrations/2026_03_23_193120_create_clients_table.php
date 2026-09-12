@@ -15,6 +15,7 @@ return new class extends Migration
 
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
+            $table->ulid('ulid')->unique();
             $table->string('nom');
             $table->string('prenom')->nullable();
             $table->date('date_naissance')->nullable();
@@ -25,10 +26,10 @@ return new class extends Migration
             $table->string('profession')->nullable();
             $table->string('telephone')->unique();
             $table->string('adresse')->nullable();
-            $table->foreignId('agent_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('photo')->nullable();
             $table->string('reference_nom')->nullable();
             $table->string('reference_telephone')->nullable();
+            $table->boolean('is_active')->default(true); 
             $table->timestamps();
         });
     }

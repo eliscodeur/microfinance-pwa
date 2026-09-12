@@ -1,10 +1,9 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Bonus;
 use App\Models\Agent;
+use App\Models\Bonus;
 use App\Models\Paiement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +21,7 @@ class BonusController extends Controller
         // On filtre sur statut 'en_attente' et paiement_id NULL pour la sécurité
         $bonusesByAgent = Bonus::where('statut', 'en_attente')
             ->whereNull('paiement_id')
-            ->with(['agent', 'cycle']) // Eager loading pour éviter le problème N+1
+            ->with(['agent', 'cycle'])
             ->get()
             ->groupBy('agent_id')
             ->map(function ($group) {
@@ -31,20 +30,20 @@ class BonusController extends Controller
                     'agent_id'          => $group->first()->agent_id,
                     'agent'             => $group->first()->agent,
                     'items'             => $group,
-                    
+
                     // Utilisation de cycle_id pour différencier Commissions et Bonus
                     'total_commissions' => $group->whereNotNull('cycle_id')->sum('montant'),
                     'total_manuels'     => $group->whereNull('cycle_id')->sum('montant'),
-                    
+
                     'total_global'      => $group->sum('montant'),
-                    'nb_items'          => $group->count()
+                    'nb_items'          => $group->count(),
                 ];
             })
             ->sortByDesc('total_global'); // On affiche les plus gros montants en premier
 
         // 2. Calcul des statistiques globales pour les badges d'en-tête
         $stats = (object) [
-            'montant_total_attente' => $bonusesByAgent->sum('total_global'),
+            'montant_total_attente'   => $bonusesByAgent->sum('total_global'),
             'nombre_agents_concernes' => $bonusesByAgent->count(),
             'nombre_lignes_total'     => $bonusesByAgent->sum('nb_items'),
         ];
@@ -57,7 +56,7 @@ class BonusController extends Controller
             'bonusesByAgent' => $bonusesByAgent,
             'agents'         => $agents,
             'stats'          => $stats,
-            'pageTitle'      => 'Gestion des Commissions et Bonus'
+            'pageTitle'      => 'Gestion des Commissions et Bonus',
         ]);
     }
 
@@ -73,9 +72,9 @@ class BonusController extends Controller
             'date_attribution' => 'required|date',
         ]);
 
-        $validated['admin_id'] = Auth::id();
-        $validated['commission_genere'] = 0; 
-        $validated['statut'] = 'en_attente'; // Sécurité pour forcer le statut initial
+        $validated['admin_id']          = Auth::id();
+        $validated['commission_genere'] = 0;
+        $validated['statut']            = 'en_attente'; // Sécurité pour forcer le statut initial
 
         try {
             Bonus::create($validated);
@@ -84,25 +83,25 @@ class BonusController extends Controller
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Le bonus a été enregistré avec succès et mis en attente.'
+                    'message' => 'Le bonus a été enregistré avec succès et mis en attente.',
                 ]);
             }
 
-            // Fallback classique (si tu as encore un formulaire normal quelque part)
+                                                      // Fallback classique (si tu as encore un formulaire normal quelque part)
             return redirect()->route('bonuses.index') // Route corrigée selon ton Route::resource
-                            ->with('success', 'Le bonus a été enregistré en attente de paiement.');
+                ->with('success', 'Le bonus a été enregistré en attente de paiement.');
 
         } catch (\Exception $e) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Erreur lors de la sauvegarde : ' . $e->getMessage()
+                    'message' => 'Erreur lors de la sauvegarde : ' . $e->getMessage(),
                 ], 500);
             }
 
             return redirect()->back()
-                            ->with('error', 'Erreur : ' . $e->getMessage())
-                            ->withInput();
+                ->with('error', 'Erreur : ' . $e->getMessage())
+                ->withInput();
         }
     }
 
@@ -154,7 +153,7 @@ class BonusController extends Controller
     /**
      * Valider un seul élément et générer un reçu spécifique.
      */
-    public function approveSingle($id)
+    public function approveSingle(int $id)
     {
         // On récupère le bonus avec un verrou de ligne (optional mais conseillé en tontine)
         $bonus = Bonus::whereNull('paiement_id')->findOrFail($id);
@@ -165,23 +164,23 @@ class BonusController extends Controller
                 $paiement = Paiement::create([
                     'agent_id'      => $bonus->agent_id,
                     'montant_total' => $bonus->montant,
-                    'type'          => 'deboursement', 
+                    'type'          => 'deboursement',
                     'reference'     => 'PAY-S-' . strtoupper(Str::random(5)) . '-' . date('Ymd'),
                     'validated_by'  => Auth::id(),
                 ]);
 
                 // Vérification de sécurité : si l'id n'est pas généré, on stoppe
-                if (!$paiement->id) {
+                if (! $paiement->id) {
                     throw new \Exception("Le paiement n'a pas pu être généré.");
                 }
 
                 // 2. Mise à jour du bonus avec l'ID tout juste créé
                 // On utilise update sur l'instance ou directement via la requête pour être sûr
-                $bonus->paiement_id = $paiement->id;
-                $bonus->statut = 'valide'; // Changement d'état : en_attente -> valide
+                $bonus->paiement_id  = $paiement->id;
+                $bonus->statut       = 'valide'; // Changement d'état : en_attente -> valide
                 $bonus->validated_at = now();
                 $bonus->validated_by = Auth::id();
-                
+
                 // save() est souvent plus explicite que update() quand l'objet est déjà chargé
                 $bonus->save();
             });
@@ -195,7 +194,7 @@ class BonusController extends Controller
     /**
      * Supprimer un bonus en attente.
      */
-    public function rejectSingle($id)
+    public function rejectSingle(int $id)
     {
         // On récupère le bonus qui n'a pas encore de paiement associé
         $bonus = Bonus::whereNull('paiement_id')->findOrFail($id);
@@ -206,7 +205,7 @@ class BonusController extends Controller
                 // On met le montant à 0 car aucun argent n'est réellement décaissé
                 $paiement = Paiement::create([
                     'agent_id'      => $bonus->agent_id,
-                    'montant_total' => 0, 
+                    'montant_total' => 0,
                     'type'          => 'rejet',
                     'reference'     => 'REJ-S-' . strtoupper(Str::random(5)) . '-' . date('Ymd'),
                     'validated_by'  => Auth::id(),

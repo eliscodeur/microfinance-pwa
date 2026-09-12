@@ -161,17 +161,10 @@
                         
                         // Si le lien est interne et n'est pas une déconnexion
                         if (href && href.startsWith('/') && !href.includes('logout') && !href.startsWith('#')) {
-                            e.preventDefault(); // Bloque le rechargement de page classique
-                            
-                            // On appelle Inertia pour charger la page de manière fluide
-                            if (window.Inertia) {
-                                window.Inertia.visit(href);
-                            } else if (window.router) { // Pour les versions récentes d'Inertia (@inertiajs/react)
-                                window.router.visit(href);
-                            } else {
-                                // Sécurité au cas où l'objet global est attaché différemment
-                                e.defaultPrevented = false;
-                                window.location.href = href;
+                            const inertiaVisit = window.Inertia?.visit || window.router?.visit;
+                            if (inertiaVisit) {
+                                e.preventDefault(); // Bloque le rechargement de page classique
+                                inertiaVisit(href);
                             }
                         }
                     }

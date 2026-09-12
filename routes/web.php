@@ -1,23 +1,25 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
-use App\Models\Agent;
-use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\AgentController;
+use App\Http\Controllers\Admin\BonusController;
+use App\Http\Controllers\Admin\CarnetController;
+use App\Http\Controllers\Admin\CategoryTontineController;
 use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\CollecteController;
+use App\Http\Controllers\Admin\CreditController;
 use App\Http\Controllers\Admin\CycleController as AdminCycleController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\SyncBatchController;
+use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SyncBatchController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\CategoryTontineController;
-use App\Http\Controllers\Admin\BonusController;
-use App\Http\Controllers\Pwa\PwaController; 
-use App\Http\Controllers\Admin\CarnetController;
-use App\Http\Controllers\Admin\CreditController;
 use App\Http\Controllers\Api\SyncController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PretInstructionController;
+use App\Http\Controllers\Pwa\PwaController;
+use App\Models\Agent;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +28,7 @@ use App\Http\Controllers\PretInstructionController;
 */
 
 // --- AUTHENTIFICATION ---
-Route::get('/', function () { return redirect()->route('agent.login'); });
+Route::get('/', function () {return redirect()->route('agent.login');});
 Route::get('/refresh-csrf', function () {
     return response()->json(['token' => csrf_token()]);
 });
@@ -40,28 +42,36 @@ Route::post('agent/login-submit', [LoginController::class, 'agentLogin'])->name(
 
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
-
 // --- ESPACE ADMINISTRATEUR (WEB) ---
 Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
-    Route::get('/sync-batches', [SyncBatchController::class, 'index'])->name('sync-batches.index')->middleware('can:Valider Synchro');
-    Route::get('/sync-batches/{syncBatch}', [SyncBatchController::class, 'show'])->name('sync-batches.show')->middleware('can:Valider Synchro');
-    Route::post('/sync-batches/{syncBatch}/approve', [SyncBatchController::class, 'approve'])->name('sync-batches.approve')->middleware('can:Valider Synchro');
-    Route::post('/sync-batches/{syncBatch}/reject', [SyncBatchController::class, 'reject'])->name('sync-batches.reject')->middleware('can:Valider Synchro');
+    Route::get('/sync-batches', [SyncBatchController::class, 'index'])->name('sync-batches.index')->middleware('can:Valider Synchros');
+    Route::get('/sync-batches/{syncBatch}', [SyncBatchController::class, 'show'])->name('sync-batches.show')->middleware('can:Valider Synchros');
+    Route::post('/sync-batches/{syncBatch}/approve', [SyncBatchController::class, 'approve'])->name('sync-batches.approve')->middleware('can:Valider Synchros');
+    Route::post('/sync-batches/{syncBatch}/reject', [SyncBatchController::class, 'reject'])->name('sync-batches.reject')->middleware('can:Valider Synchros');
     Route::get('/cycles', [AdminCycleController::class, 'index'])->name('cycles.index');
+    Route::get('/agents/{id}/chart-data', [AgentController::class, 'getChartData'])->name('agents.chartData');
+    Route::post('/cycles/store', [AdminCycleController::class, 'store'])->name('cycles.store');
+    Route::post('/collectes/store', [CollecteController::class, 'store'])->name('collectes.store');
     Route::patch('/cycles/{cycle}/mark-withdrawn', [AdminCycleController::class, 'markWithdrawn'])->name('cycles.mark-withdrawn');
     Route::patch('/agents/{id}/toggle-sync', [AgentController::class, 'toggleSync'])->name('agents.toggle-sync');
     Route::get('/agents/sync-status', function () {
         return response()->json(Agent::pluck('can_sync', 'id'));
     })->name('agents.sync-status');
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('payrolls.index');
+    // Route::get('/payrolls/{salaire}/details', [PayrollController::class, 'details'])->name('payrolls.details');
+    Route::get('/payrolls/preview-details', [PayrollController::class, 'previewDetails'])->name('payrolls.details');
+    // Route::post('/payroll', [PayrollController::class, 'store'])->name('payrolls.create');
+    Route::post('/payroll', [PayrollController::class, 'store'])->name('payrolls.store');
     Route::resource('agents', AgentController::class)->middleware('can:Gérer Agents');
     Route::patch('agents/{agent}/toggle-status', [AgentController::class, 'toggleStatus'])->name('agents.toggleStatus');
     Route::get('agents/export/{format}', [AgentController::class, 'export'])->name('agents.export');
     Route::post('agents/{agent}/bonus', [AgentController::class, 'storeBonus'])->name('agents.storeBonus');
     Route::post('agents/{agent}/calculate-commissions', [AgentController::class, 'calculateCommissions'])->name('agents.calculateCommissions');
-
+    Route::get('/agents-list/{historyUlid}', [AgentController::class, 'getAgentsExceptCurrent'])->name('agents.list.except');
+    Route::post('/carnet-historique/{ulid}/reassign', [CarnetController::class, 'reassign'])->name('carnets.reassign');
     Route::resource('bonuses', BonusController::class)->only(['index', 'store', 'destroy'])->middleware('can:Gérer Commissions');
 
     Route::resource('clients', ClientController::class)->middleware('can:Gérer Clients');
@@ -74,10 +84,11 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::patch('credits/{credit}/payments/{payment}', [CreditController::class, 'updatePayment'])->name('credits.payments.update');
     Route::get('/credits/check-pending/{carnetId}', [CreditController::class, 'checkPending'])->name('credits.check-pending');
     Route::get('/carnets/get-tontines/{clientId}', [CarnetController::class, 'getTontinesByClient'])->name('carnets.get-tontines');
+    Route::get('/carnets/get-available-numbers/{clientId}', [CarnetController::class, 'getAvailableCarnetNumbers'])->name('carnets.get-available-numbers');
     Route::get('/carnets/get-by-client/{clientId}', [CarnetController::class, 'getCarnetsByClient'])->name('carnets.get-by-client');
     Route::get('/carnets/get-by-client-credit/{clientId}', [CreditController::class, 'getCarnetsByClient'])->name('carnets.get-by-client-credit');
-    Route::get('/carnets/details/{carnet}', [CreditController::class, 'getCarnetDetails'])->name('carnets.details');
-    Route::get('/carnets', [CarnetController::class, 'index'])->name('carnets.index')->middleware('can:Gérer Carnets');
+    Route::get('/carnets/details/{id}', [CreditController::class, 'getCarnetDetails'])->name('carnets.details');
+    Route::get('/carnets/{type?}', [CarnetController::class, 'index'])->name('carnets.index')->middleware('can:Gérer Carnets')->where('type', 'tontine|compte');
     Route::get('/carnets/{carnet}', [CarnetController::class, 'show'])->name('carnets.show')->middleware('can:Gérer Carnets');
     Route::post('/carnets/store', [CarnetController::class, 'store'])->name('carnets.store')->middleware('can:Gérer Carnets');
     Route::put('/carnets/{carnet}', [CarnetController::class, 'update'])->name('carnets.update')->middleware('can:Gérer Carnets');
@@ -86,10 +97,10 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::post('/carnets/retrait', [CarnetController::class, 'storeRetrait'])->name('carnets.retrait');
     // Route pour l'attribution manuelle d'un bonus
     Route::post('/bonuses/store', [BonusController::class, 'store'])->name('admin.bonuses.store')->middleware('can:Gérer Commissions');
-
+    Route::post('/client-carnets', [ClientController::class, 'storeNumCarnet'])->name('client-carnets.store');
     // --- NOUVELLES ROUTES POUR LA VALIDATION ---
 
-   // 1. Routes personnalisées (DÉCLARER AVANT LE RESOURCE)
+    // 1. Routes personnalisées (DÉCLARER AVANT LE RESOURCE)
     Route::post('bonuses/bulk-approve', [BonusController::class, 'bulkApprove'])->name('bonuses.bulk-approve');
     Route::post('bonuses/{id}/approve-single', [BonusController::class, 'approveSingle'])->name('bonuses.approve-single');
     Route::delete('bonuses/{id}/reject-single', [BonusController::class, 'rejectSingle'])->name('bonuses.reject-single');
@@ -97,13 +108,13 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     // 2. Route Resource (Seulement pour index, store et destroy)
     Route::resource('bonuses', BonusController::class)->only(['index', 'store', 'destroy']);
     Route::get('paiements/historique', [BonusController::class, 'history'])->name('bonuses.history')->middleware('can:Gérer Commissions');
-    
+
     Route::resource('roles', RoleController::class)->middleware('can:Gérer Utilisateurs');
     Route::resource('users', UserController::class)->middleware('can:Gérer Utilisateurs');
     // Dans routes/web.php
     Route::resource('categories', CategoryTontineController::class)->middleware('can:Gérer Carnets');
     Route::post('agents/{agent}/reset-pin', [AgentController::class, 'resetPin'])->name('agents.reset-pin');
-    
+
     // Routes pour gestion / instruction des prêts (validation, décaissement)
     Route::get('prets', [PretInstructionController::class, 'index'])->name('prets.index')->middleware('can:Gérer Crédits');
     Route::get('prets/{id}', [PretInstructionController::class, 'show'])->name('prets.show')->middleware('can:Gérer Crédits');
@@ -112,16 +123,18 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
 });
 
 Route::get('/api/sync-batches/partial', function (Request $request) {
-    $since = $request->query('since');
+    $since     = $request->query('since');
     $sinceDate = \Carbon\Carbon::parse($since);
-    
+
     $batches = \App\Models\SyncBatch::where('created_at', '>', $sinceDate)->latest()->get();
 
-    if ($batches->isEmpty()) return response()->json(['html' => '']); 
+    if ($batches->isEmpty()) {
+        return response()->json(['html' => '']);
+    }
 
     return response()->json([
-        'html' => view('admin.partials.sync-table-rows', compact('batches'))->render(),
-        'serverTime' => now()->toDateTimeString() // On envoie l'heure exacte du serveur
+        'html'       => view('admin.partials.sync-table-rows', compact('batches'))->render(),
+        'serverTime' => now()->toDateTimeString(), // On envoie l'heure exacte du serveur
     ]);
 });
 
@@ -150,7 +163,7 @@ Route::middleware(['auth', 'role:Agent'])->prefix('pwa')->name('pwa.')->group(fu
     Route::post('/store-carnet', [CarnetController::class, 'store'])->name('carnets.store');
     Route::get('/security-pin', [PwaController::class, 'showSecurityPin'])->name('pin');
     Route::get('/check-status/{matricule}', [PwaController::class, 'checkAgentStatus']);
-   
+
 });
 Route::middleware('throttle:sync')->prefix('pwa')->name('pwa.')->group(function () {
     Route::post('/lock-sync', [PwaController::class, 'lockSync'])->name('lock-sync');

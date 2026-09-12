@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -13,19 +12,27 @@ class Collecte extends Model
         'cycle_uid',
         'client_id',
         'agent_id',
+        'user_id',
         'pointage',
         'numero_case',
         'montant',
         'date_saisie',
-        'sync_uuid'
+        'sync_uuid',
     ];
 
     protected $casts = [
         'date_saisie' => 'datetime',
-        'montant' => 'decimal:2'
+        'montant'     => 'decimal:2',
     ];
 
-    public function cycle(): BelongsTo { return $this->belongsTo(Cycle::class); }
-    public function client(): BelongsTo { return $this->belongsTo(Client::class); }
-    public function agent(): BelongsTo { return $this->belongsTo(Agent::class, 'agent_id');}
+    public function cycle(): BelongsTo
+    {return $this->belongsTo(Cycle::class);}
+    public function client(): BelongsTo
+    {return $this->belongsTo(Client::class);}
+    public function agent(): BelongsTo
+    {return $this->belongsTo(Agent::class, 'agent_id');}
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

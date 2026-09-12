@@ -4,10 +4,11 @@ namespace Database\Seeders;
 
 use App\Models\Agent;
 use App\Models\Client;
-use App\Models\ClientAgentHistory; // Import de ton modèle d'historique
+use App\Models\ClientAgentHistory;
 use Illuminate\Database\Seeder;
 use Faker\Factory as Faker;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ClientSeeder extends Seeder
 {
@@ -18,12 +19,13 @@ class ClientSeeder extends Seeder
         $agentIds = Agent::pluck('id')->toArray();
 
         if (empty($agentIds)) {
-            $this->command->error("Aucun agent trouvé !");
+            $this->command->error("Aucun agent trouvé ! Exécutez d'abord AgentSeeder.");
             return;
         }
 
-        // On va créer les clients un par un ou par petits groupes pour l'historique
-        for ($i = 0; $i < 200; $i++) {
+        $count = 50; 
+
+        for ($i = 0; $i < $count; $i++) {
             
             DB::transaction(function () use ($faker, $agentIds) {
                 $genre = $faker->randomElement(['Masculin', 'Féminin']);
@@ -43,11 +45,11 @@ class ClientSeeder extends Seeder
                     'adresse'             => $faker->address,
                     'reference_nom'       => $faker->name,
                     'reference_telephone' => '228' . rand(90, 99) . rand(100000, 999999),
-                    'agent_id'            => $agentId,
                 ]);
 
-                // 2. Création automatique de l'historique (comme dans ton controller)
+                // 2. Création de l'historique avec génération d'ULID explicite
                 ClientAgentHistory::create([
+                    'ulid'        => strtolower((string) Str::ulid()),
                     'client_id'   => $client->id,
                     'agent_id'    => $agentId,
                     'assigned_at' => now(),
@@ -55,6 +57,6 @@ class ClientSeeder extends Seeder
             });
         }
 
-        $this->command->info('200 clients et leurs historiques de recrutement ont été créés.');
+        $this->command->info("{$count} clients et leurs historiques d'affectation ont été créés.");
     }
 }

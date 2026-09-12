@@ -69,34 +69,34 @@ function Create(_ref) {
     creditProducts = _ref$creditProducts === void 0 ? [] : _ref$creditProducts;
   var form = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_0__.useForm)({
     // 1. Données de contexte / sélection du client
-    client_id: '',
-    carnet_id: '',
-    type_support: 'compte',
+    client_id: "",
+    carnet_id: "",
+    type_support: "compte",
     // 'compte' ou 'tontine'
 
     // 2. Configuration et détails du crédit
-    credit_type_id: '',
-    credit_product_id: '',
-    credit_object_id: '',
+    credit_type_id: "",
+    credit_product_id: "",
+    credit_object_id: "",
     montant_demande: 0,
     // 3. Échéancier et tarification
-    periodicite: 'mensuelle',
+    periodicite: "mensuelle",
     nombre_echeances: 5,
     date_debut: new Date().toISOString().slice(0, 10),
     differe: 0,
-    frais_dossier: '',
-    garantie: '',
-    mode: 'degressif',
+    frais_dossier: "",
+    garantie: "",
+    mode: "degressif",
     taux: 1.5,
-    taux_manuel: '',
+    taux_manuel: "",
     // 4.1 Caution Solidaire / Avaliste
-    nom_prenom: '',
+    nom_prenom: "",
     // Nom & Prénoms du garant
-    telephone: '',
+    telephone: "",
     // Numéro de Téléphone
-    profession: '',
+    profession: "",
     // Profession / Secteur d'activité
-    adresse: '',
+    adresse: "",
     // Quartier de résidence
 
     // 4.2 Documents & KYC d'Audit (Initialisés à null pour la gestion des fichiers)
@@ -121,11 +121,11 @@ function Create(_ref) {
     _useState4 = _slicedToArray(_useState3, 2),
     isDraftModification = _useState4[0],
     setIsDraftModification = _useState4[1];
-  var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)('identification'),
+  var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)("identification"),
     _useState6 = _slicedToArray(_useState5, 2),
     activeTab = _useState6[0],
     setActiveTab = _useState6[1];
-  var _useState7 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(''),
+  var _useState7 = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(""),
     _useState8 = _slicedToArray(_useState7, 2),
     clientSearch = _useState8[0],
     setClientSearch = _useState8[1];
@@ -140,8 +140,8 @@ function Create(_ref) {
   var selectedCarnet = carnets.find(function (carnet) {
     return String(carnet.id) === String(form.data.carnet_id);
   });
-  var isCompteCarnetSelected = (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'compte';
-  var isTontineCarnetSelected = (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === 'tontine';
+  var isCompteCarnetSelected = (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === "compte";
+  var isTontineCarnetSelected = (selectedCarnet === null || selectedCarnet === void 0 ? void 0 : selectedCarnet.type) === "tontine";
   var isTypeFixedByCarnet = !!selectedCarnet;
 
   // Alerte pointage conservée et mise en évidence
@@ -197,8 +197,8 @@ function Create(_ref) {
               return String(c.id) === String(carnetId);
             });
             activeCycleId = (_selectedCarnet === null || _selectedCarnet === void 0 || (_selectedCarnet$cycle = _selectedCarnet.cycles) === null || _selectedCarnet$cycle === void 0 || (_selectedCarnet$cycle = _selectedCarnet$cycle.find(function (cycle) {
-              return cycle.statut === 'en_cours';
-            })) === null || _selectedCarnet$cycle === void 0 ? void 0 : _selectedCarnet$cycle.id) || '';
+              return cycle.statut === "en_cours";
+            })) === null || _selectedCarnet$cycle === void 0 ? void 0 : _selectedCarnet$cycle.id) || "";
             _context.p = 1;
             _context.n = 2;
             return axios.get("/admin/credits/check-pending/".concat(carnetId));
@@ -212,15 +212,15 @@ function Create(_ref) {
               break;
             }
             sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
-              icon: 'error',
-              title: 'Accès refusé',
+              icon: "error",
+              title: "Accès refusé",
               text: response.data.message,
-              confirmButtonColor: '#3085d6',
-              confirmButtonText: 'Compris'
+              confirmButtonColor: "#3085d6",
+              confirmButtonText: "Compris"
             });
             form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
-              carnet_id: '',
-              cycle_id: ''
+              carnet_id: "",
+              cycle_id: ""
             }));
             setIsDraftModification(false);
             return _context.a(2);
@@ -230,11 +230,11 @@ function Create(_ref) {
               setIsDraftModification(true); // 👈 Passe en mode MODIFICATION
 
               sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
-                icon: 'info',
-                title: 'Brouillon récupéré',
-                text: 'Le formulaire a été pré-rempli avec vos données en attente.',
+                icon: "info",
+                title: "Brouillon récupéré",
+                text: "Le formulaire a été pré-rempli avec vos données en attente.",
                 toast: true,
-                position: 'top-end',
+                position: "top-end",
                 showConfirmButton: false,
                 timer: 4000,
                 timerProgressBar: true
@@ -242,23 +242,23 @@ function Create(_ref) {
               form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
                 carnet_id: carnetId,
                 cycle_id: (_response$data$cycle_ = response.data.cycle_id) !== null && _response$data$cycle_ !== void 0 ? _response$data$cycle_ : activeCycleId,
-                credit_type_id: (_response$data$credit = response.data.credit_type_id) !== null && _response$data$credit !== void 0 ? _response$data$credit : '',
-                credit_product_id: (_response$data$credit2 = response.data.credit_product_id) !== null && _response$data$credit2 !== void 0 ? _response$data$credit2 : '',
-                credit_object_id: (_response$data$credit3 = response.data.credit_object_id) !== null && _response$data$credit3 !== void 0 ? _response$data$credit3 : '',
+                credit_type_id: (_response$data$credit = response.data.credit_type_id) !== null && _response$data$credit !== void 0 ? _response$data$credit : "",
+                credit_product_id: (_response$data$credit2 = response.data.credit_product_id) !== null && _response$data$credit2 !== void 0 ? _response$data$credit2 : "",
+                credit_object_id: (_response$data$credit3 = response.data.credit_object_id) !== null && _response$data$credit3 !== void 0 ? _response$data$credit3 : "",
                 montant_demande: (_response$data$montan = response.data.montant_demande) !== null && _response$data$montan !== void 0 ? _response$data$montan : 0,
                 date_debut: response.data.date_debut ? response.data.date_debut.slice(0, 10) : new Date().toISOString().slice(0, 10),
-                periodicite: (_response$data$period = response.data.periodicite) !== null && _response$data$period !== void 0 ? _response$data$period : 'mensuelle',
+                periodicite: (_response$data$period = response.data.periodicite) !== null && _response$data$period !== void 0 ? _response$data$period : "mensuelle",
                 nombre_echeances: (_response$data$nombre = response.data.nombre_echeances) !== null && _response$data$nombre !== void 0 ? _response$data$nombre : 5,
                 differe: (_response$data$differ = response.data.differe) !== null && _response$data$differ !== void 0 ? _response$data$differ : 0,
-                frais_dossier: (_response$data$frais_ = response.data.frais_dossier) !== null && _response$data$frais_ !== void 0 ? _response$data$frais_ : '',
-                garantie: (_response$data$garant = response.data.garantie) !== null && _response$data$garant !== void 0 ? _response$data$garant : '',
-                mode: (_response$data$mode = response.data.mode) !== null && _response$data$mode !== void 0 ? _response$data$mode : 'degressif',
+                frais_dossier: (_response$data$frais_ = response.data.frais_dossier) !== null && _response$data$frais_ !== void 0 ? _response$data$frais_ : "",
+                garantie: (_response$data$garant = response.data.garantie) !== null && _response$data$garant !== void 0 ? _response$data$garant : "",
+                mode: (_response$data$mode = response.data.mode) !== null && _response$data$mode !== void 0 ? _response$data$mode : "degressif",
                 taux: (_response$data$taux = response.data.taux) !== null && _response$data$taux !== void 0 ? _response$data$taux : 1.5,
-                taux_manuel: (_response$data$taux_m = response.data.taux_manuel) !== null && _response$data$taux_m !== void 0 ? _response$data$taux_m : '',
-                nom_prenom: ((_response$data$credit4 = response.data.credit_guarantor) === null || _response$data$credit4 === void 0 ? void 0 : _response$data$credit4.nom_prenom) || '',
-                telephone: ((_response$data$credit5 = response.data.credit_guarantor) === null || _response$data$credit5 === void 0 ? void 0 : _response$data$credit5.telephone) || '',
-                profession: ((_response$data$credit6 = response.data.credit_guarantor) === null || _response$data$credit6 === void 0 ? void 0 : _response$data$credit6.profession) || '',
-                adresse: ((_response$data$credit7 = response.data.credit_guarantor) === null || _response$data$credit7 === void 0 ? void 0 : _response$data$credit7.adresse) || '',
+                taux_manuel: (_response$data$taux_m = response.data.taux_manuel) !== null && _response$data$taux_m !== void 0 ? _response$data$taux_m : "",
+                nom_prenom: ((_response$data$credit4 = response.data.credit_guarantor) === null || _response$data$credit4 === void 0 ? void 0 : _response$data$credit4.nom_prenom) || "",
+                telephone: ((_response$data$credit5 = response.data.credit_guarantor) === null || _response$data$credit5 === void 0 ? void 0 : _response$data$credit5.telephone) || "",
+                profession: ((_response$data$credit6 = response.data.credit_guarantor) === null || _response$data$credit6 === void 0 ? void 0 : _response$data$credit6.profession) || "",
+                adresse: ((_response$data$credit7 = response.data.credit_guarantor) === null || _response$data$credit7 === void 0 ? void 0 : _response$data$credit7.adresse) || "",
                 piece_identite: null,
                 justificatif_revenu: null
               }));
@@ -288,8 +288,8 @@ function Create(_ref) {
           case 6:
             setIsDraftModification(false);
             form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
-              carnet_id: '',
-              cycle_id: ''
+              carnet_id: "",
+              cycle_id: ""
             }));
           case 7:
             return _context.a(2);
@@ -301,12 +301,12 @@ function Create(_ref) {
     };
   }();
   var handleTypeChange = function handleTypeChange(val) {
-    setClientSearch('');
+    setClientSearch("");
     form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
       type_support: val,
-      client_id: '',
-      carnet_id: '',
-      type: val === 'compte' ? 'compte' : 'quinzaine'
+      client_id: "",
+      carnet_id: "",
+      type: val === "compte" ? "compte" : "quinzaine"
     }));
   };
   (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
@@ -317,31 +317,31 @@ function Create(_ref) {
         frais_dossier: selectedProduct.frais_dossier_defaut,
         nombre_echeances: form.data.nombre_echeances || selectedProduct.duree_max_mois,
         // Gestion du type de crédit selon le support
-        type: form.data.type_support === 'compte' ? 'compte' : form.data.type || 'quinzaine',
-        periodicite: form.data.type_support === 'tontine' ? 'quinzaine' : 'mensuelle'
+        type: form.data.type_support === "compte" ? "compte" : form.data.type || "quinzaine",
+        periodicite: form.data.type_support === "tontine" ? "quinzaine" : "mensuelle"
       }));
     }
   }, [form.data.credit_product_id, selectedProduct]);
   (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
-    if (isCompteCarnetSelected && form.data.type !== 'compte') {
-      form.setData('type', 'compte');
+    if (isCompteCarnetSelected && form.data.type !== "compte") {
+      form.setData("type", "compte");
     }
-    if (isTontineCarnetSelected && form.data.type !== 'quinzaine') {
-      form.setData('type', 'quinzaine');
+    if (isTontineCarnetSelected && form.data.type !== "quinzaine") {
+      form.setData("type", "quinzaine");
     }
   }, [isCompteCarnetSelected, isTontineCarnetSelected, form.data.type]);
   (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(function () {
     if (!form.data.client_id) {
       setCarnets([]);
-      form.setData('carnet_id', '');
+      form.setData("carnet_id", "");
       return;
     }
     var controller = new AbortController();
     var url = "/admin/carnets/get-by-client/".concat(form.data.client_id, "?t=").concat(Date.now());
     fetch(url, {
       headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Accept': 'application/json'
+        "X-Requested-With": "XMLHttpRequest",
+        Accept: "application/json"
       },
       signal: controller.signal
     }).then(function (response) {
@@ -353,13 +353,13 @@ function Create(_ref) {
         if (!data.some(function (item) {
           return String(item.id) === String(form.data.carnet_id);
         })) {
-          form.setData('carnet_id', '');
+          form.setData("carnet_id", "");
         }
       } else {
         setCarnets([]);
       }
     })["catch"](function (err) {
-      if (err.name !== 'AbortError') setCarnets([]);
+      if (err.name !== "AbortError") setCarnets([]);
     });
     return function () {
       return controller.abort();
@@ -377,8 +377,8 @@ function Create(_ref) {
     var url = "/admin/carnets/details/".concat(form.data.carnet_id);
     fetch(url, {
       headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Accept': 'application/json'
+        "X-Requested-With": "XMLHttpRequest",
+        Accept: "application/json"
       },
       signal: controller.signal
     }).then(function (response) {
@@ -390,8 +390,8 @@ function Create(_ref) {
       }
       setLoadingDetails(false);
     })["catch"](function (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Error fetching carnet details:', err);
+      if (err.name !== "AbortError") {
+        console.error("Error fetching carnet details:", err);
         setCarnetDetails(null);
       }
       setLoadingDetails(false);
@@ -402,24 +402,24 @@ function Create(_ref) {
   }, [form.data.carnet_id, selectedCarnet]);
   var handleTabChange = function handleTabChange(targetTab) {
     // Validation renforcée pour bloquer l'accès aux onglets suivants sans carnet
-    if (['details', 'simulation', 'resumes', 'garanties'].includes(targetTab)) {
+    if (["details", "simulation", "resumes", "garanties"].includes(targetTab)) {
       if (!form.data.client_id || !form.data.carnet_id) {
         sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
-          icon: 'warning',
-          title: 'Informations manquantes',
-          text: 'Veuillez sélectionner un client et un support avant de continuer.',
-          confirmButtonColor: '#3085d6'
+          icon: "warning",
+          title: "Informations manquantes",
+          text: "Veuillez sélectionner un client et un support avant de continuer.",
+          confirmButtonColor: "#3085d6"
         });
         return;
       }
     }
-    if (['garanties', 'resumes'].includes(targetTab)) {
-      if (!form.data.credit_product_id || !form.data.montant_demande || form.data.montant_demande <= 0 || !form.data.periodicite || !form.data.nombre_echeances || !form.data.date_debut || !form.data.credit_object_id || !form.data.credit_product_id || form.data.periodicite === '' || form.data.nombre_echeances <= 0) {
+    if (["garanties", "resumes"].includes(targetTab)) {
+      if (!form.data.credit_product_id || !form.data.montant_demande || form.data.montant_demande <= 0 || !form.data.periodicite || !form.data.nombre_echeances || !form.data.date_debut || !form.data.credit_object_id || !form.data.credit_product_id || form.data.periodicite === "" || form.data.nombre_echeances <= 0) {
         sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
-          icon: 'warning',
-          title: 'Simulation incomplète',
-          text: 'Veuillez remplir correctement les paramètres financiers.',
-          confirmButtonColor: '#3085d6'
+          icon: "warning",
+          title: "Simulation incomplète",
+          text: "Veuillez remplir correctement les paramètres financiers.",
+          confirmButtonColor: "#3085d6"
         });
         return;
       }
@@ -459,28 +459,28 @@ function Create(_ref) {
   var submit = function submit(e) {
     e.preventDefault();
     sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
-      title: 'Confirmer la demande ?',
-      text: 'Voulez-vous envoyer cette demande de crédit au back-office ?',
-      icon: 'warning',
+      title: "Confirmer la demande ?",
+      text: "Voulez-vous envoyer cette demande de crédit au back-office ?",
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'Oui, envoyer',
-      cancelButtonText: 'Annuler',
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33'
+      confirmButtonText: "Oui, envoyer",
+      cancelButtonText: "Annuler",
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33"
     }).then(function (result) {
       if (!result.isConfirmed) return;
-      form.post('/admin/credits', {
+      form.post("/admin/credits", {
         onSuccess: function onSuccess() {
           sweetalert2__WEBPACK_IMPORTED_MODULE_2___default().fire({
-            title: 'Demande envoyée',
-            text: 'La demande a bien été enregistrée.',
-            icon: 'success',
+            title: "Demande envoyée",
+            text: "La demande a bien été enregistrée.",
+            icon: "success",
             timer: 2000,
             showConfirmButton: false
           });
-          form.reset(['montant_demande', 'type', 'mode', 'periodicite', 'nombre_echeances', 'taux', 'taux_manuel', 'date_debut']);
-          setClientSearch('');
-          setActiveTab('identification');
+          form.reset(["montant_demande", "type", "mode", "periodicite", "nombre_echeances", "taux", "taux_manuel", "date_debut"]);
+          setClientSearch("");
+          setActiveTab("identification");
         },
         onError: function onError(errors) {
           console.log("Erreurs reçues:", errors); // <--- AJOUTE ÇA
@@ -522,16 +522,16 @@ function Create(_ref) {
             className: "nav-item",
             children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
               type: "button",
-              className: "nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ".concat(activeTab === 'identification' ? 'active text-primary border-bottom border-primary border-2 bg-transparent' : 'text-muted'),
+              className: "nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ".concat(activeTab === "identification" ? "active text-primary border-bottom border-primary border-2 bg-transparent" : "text-muted"),
               onClick: function onClick() {
-                return handleTabChange('identification');
+                return handleTabChange("identification");
               },
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("small", {
-                className: "badge rounded-circle d-flex align-items-center justify-content-center p-0 ".concat(activeTab === 'identification' ? 'bg-primary text-white' : 'bg-light text-secondary border'),
+                className: "badge rounded-circle d-flex align-items-center justify-content-center p-0 ".concat(activeTab === "identification" ? "bg-primary text-white" : "bg-light text-secondary border"),
                 style: {
-                  width: '22px',
-                  height: '22px',
-                  fontSize: '11px'
+                  width: "22px",
+                  height: "22px",
+                  fontSize: "11px"
                 },
                 children: "1"
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
@@ -542,16 +542,16 @@ function Create(_ref) {
             className: "nav-item",
             children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
               type: "button",
-              className: "nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ".concat(activeTab === 'details' ? 'active text-primary border-bottom border-primary border-2 bg-transparent' : 'text-muted'),
+              className: "nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ".concat(activeTab === "details" ? "active text-primary border-bottom border-primary border-2 bg-transparent" : "text-muted"),
               onClick: function onClick() {
-                return handleTabChange('details');
+                return handleTabChange("details");
               },
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("small", {
-                className: "badge rounded-circle d-flex align-items-center justify-content-center p-0 ".concat(activeTab === 'details' ? 'bg-primary text-white' : 'bg-light text-secondary border'),
+                className: "badge rounded-circle d-flex align-items-center justify-content-center p-0 ".concat(activeTab === "details" ? "bg-primary text-white" : "bg-light text-secondary border"),
                 style: {
-                  width: '22px',
-                  height: '22px',
-                  fontSize: '11px'
+                  width: "22px",
+                  height: "22px",
+                  fontSize: "11px"
                 },
                 children: "2"
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
@@ -562,16 +562,16 @@ function Create(_ref) {
             className: "nav-item",
             children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
               type: "button",
-              className: "nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ".concat(activeTab === 'simulation' ? 'active text-primary border-bottom border-primary border-2 bg-transparent' : 'text-muted'),
+              className: "nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ".concat(activeTab === "simulation" ? "active text-primary border-bottom border-primary border-2 bg-transparent" : "text-muted"),
               onClick: function onClick() {
-                return handleTabChange('simulation');
+                return handleTabChange("simulation");
               },
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("small", {
-                className: "badge rounded-circle d-flex align-items-center justify-content-center p-0 ".concat(activeTab === 'simulation' ? 'bg-primary text-white' : 'bg-light text-secondary border'),
+                className: "badge rounded-circle d-flex align-items-center justify-content-center p-0 ".concat(activeTab === "simulation" ? "bg-primary text-white" : "bg-light text-secondary border"),
                 style: {
-                  width: '22px',
-                  height: '22px',
-                  fontSize: '11px'
+                  width: "22px",
+                  height: "22px",
+                  fontSize: "11px"
                 },
                 children: "3"
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
@@ -582,16 +582,16 @@ function Create(_ref) {
             className: "nav-item",
             children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
               type: "button",
-              className: "nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ".concat(activeTab === 'resumes' ? 'active text-primary border-bottom border-primary border-2 bg-transparent' : 'text-muted'),
+              className: "nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ".concat(activeTab === "resumes" ? "active text-primary border-bottom border-primary border-2 bg-transparent" : "text-muted"),
               onClick: function onClick() {
-                return handleTabChange('resumes');
+                return handleTabChange("resumes");
               },
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("small", {
-                className: "badge rounded-circle d-flex align-items-center justify-content-center p-0 ".concat(activeTab === 'resumes' ? 'bg-primary text-white' : 'bg-light text-secondary border'),
+                className: "badge rounded-circle d-flex align-items-center justify-content-center p-0 ".concat(activeTab === "resumes" ? "bg-primary text-white" : "bg-light text-secondary border"),
                 style: {
-                  width: '22px',
-                  height: '22px',
-                  fontSize: '11px'
+                  width: "22px",
+                  height: "22px",
+                  fontSize: "11px"
                 },
                 children: "4"
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
@@ -602,16 +602,16 @@ function Create(_ref) {
             className: "nav-item",
             children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
               type: "button",
-              className: "nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ".concat(activeTab === 'garanties' ? 'active text-primary border-bottom border-primary border-2 bg-transparent' : 'text-muted'),
+              className: "nav-link pt-2 pb-3 fw-bold d-flex align-items-center gap-2 border-0 ".concat(activeTab === "garanties" ? "active text-primary border-bottom border-primary border-2 bg-transparent" : "text-muted"),
               onClick: function onClick() {
-                return handleTabChange('garanties');
+                return handleTabChange("garanties");
               },
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("small", {
-                className: "badge rounded-circle d-flex align-items-center justify-content-center p-0 ".concat(activeTab === 'garanties' ? 'bg-primary text-white' : 'bg-light text-secondary border'),
+                className: "badge rounded-circle d-flex align-items-center justify-content-center p-0 ".concat(activeTab === "garanties" ? "bg-primary text-white" : "bg-light text-secondary border"),
                 style: {
-                  width: '22px',
-                  height: '22px',
-                  fontSize: '11px'
+                  width: "22px",
+                  height: "22px",
+                  fontSize: "11px"
                 },
                 children: "5"
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
@@ -621,7 +621,7 @@ function Create(_ref) {
           })]
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
           className: "card-body p-4",
-          children: [activeTab === 'identification' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("fieldset", {
+          children: [activeTab === "identification" && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("fieldset", {
             className: "mb-2 animate__animated animate__fadeIn",
             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("legend", {
               className: "text-uppercase h6 text-secondary border-bottom pb-2 mb-3",
@@ -638,28 +638,28 @@ function Create(_ref) {
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                     className: "col-md-6",
                     children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
-                      className: "card h-100 border-2 rounded-3 ".concat(form.data.type_support === 'compte' ? 'border-primary bg-primary bg-opacity-10' : 'border-light shadow-sm'),
+                      className: "card h-100 border-2 rounded-3 ".concat(form.data.type_support === "compte" ? "border-primary bg-primary bg-opacity-10" : "border-light shadow-sm"),
                       style: {
-                        cursor: 'pointer'
+                        cursor: "pointer"
                       },
                       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                         type: "radio",
                         className: "btn-check",
                         name: "type_support",
-                        checked: form.data.type_support === 'compte',
+                        checked: form.data.type_support === "compte",
                         onChange: function onChange() {
-                          return handleTypeChange('compte');
+                          return handleTypeChange("compte");
                         }
                       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                         className: "card-body d-flex align-items-center p-3",
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                          className: "rounded-circle p-3 me-3 ".concat(form.data.type_support === 'compte' ? 'bg-primary text-white' : 'bg-light text-muted'),
+                          className: "rounded-circle p-3 me-3 ".concat(form.data.type_support === "compte" ? "bg-primary text-white" : "bg-light text-muted"),
                           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                             className: "bi bi-piggy-bank fs-4"
                           })
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h6", {
-                            className: "mb-0 fw-bold ".concat(form.data.type_support === 'compte' ? 'text-primary' : 'text-dark'),
+                            className: "mb-0 fw-bold ".concat(form.data.type_support === "compte" ? "text-primary" : "text-dark"),
                             children: "Compte \xC9pargne"
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("small", {
                             className: "text-muted",
@@ -671,28 +671,28 @@ function Create(_ref) {
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                     className: "col-md-6",
                     children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
-                      className: "card h-100 border-2 rounded-3 ".concat(form.data.type_support === 'tontine' ? 'border-primary bg-primary bg-opacity-10' : 'border-light shadow-sm'),
+                      className: "card h-100 border-2 rounded-3 ".concat(form.data.type_support === "tontine" ? "border-primary bg-primary bg-opacity-10" : "border-light shadow-sm"),
                       style: {
-                        cursor: 'pointer'
+                        cursor: "pointer"
                       },
                       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                         type: "radio",
                         className: "btn-check",
                         name: "type_support",
-                        checked: form.data.type_support === 'tontine',
+                        checked: form.data.type_support === "tontine",
                         onChange: function onChange() {
-                          return handleTypeChange('tontine');
+                          return handleTypeChange("tontine");
                         }
                       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                         className: "card-body d-flex align-items-center p-3",
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                          className: "rounded-circle p-3 me-3 ".concat(form.data.type_support === 'tontine' ? 'bg-primary text-white' : 'bg-light text-muted'),
+                          className: "rounded-circle p-3 me-3 ".concat(form.data.type_support === "tontine" ? "bg-primary text-white" : "bg-light text-muted"),
                           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                             className: "bi bi-wallet2 fs-4"
                           })
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h6", {
-                            className: "mb-0 fw-bold ".concat(form.data.type_support === 'tontine' ? 'text-primary' : 'text-dark'),
+                            className: "mb-0 fw-bold ".concat(form.data.type_support === "tontine" ? "text-primary" : "text-dark"),
                             children: "Tontine"
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("small", {
                             className: "text-muted",
@@ -710,7 +710,7 @@ function Create(_ref) {
                   children: "Client"
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                   list: "clients",
-                  className: "form-control ".concat(form.errors.client_id ? 'is-invalid' : ''),
+                  className: "form-control ".concat(form.errors.client_id ? "is-invalid" : ""),
                   placeholder: "Rechercher un client...",
                   value: clientSearch,
                   onChange: function onChange(e) {
@@ -718,7 +718,7 @@ function Create(_ref) {
                     var c = clients.find(function (x) {
                       return "".concat(x.nom, " ").concat(x.prenom) === e.target.value;
                     });
-                    form.setData('client_id', c ? c.id : '');
+                    form.setData("client_id", c ? c.id : "");
                   }
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("datalist", {
                   id: "clients",
@@ -735,23 +735,24 @@ function Create(_ref) {
                 children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("label", {
                   className: "form-label",
                   children: "Support (Num\xE9ro)"
-                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", _defineProperty(_defineProperty({
-                  className: "form-select ".concat(form.errors.carnet_id ? 'is-invalid' : ''),
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
+                  className: "form-select ".concat(form.errors.carnet_id ? "is-invalid" : ""),
                   value: form.data.carnet_id,
                   onChange: function onChange(e) {
-                    return form.setData('carnet_id', e.target.value);
-                  }
-                }, "onChange", function onChange(e) {
-                  return handleCarnetChange(e.target.value);
-                }), "children", [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
-                  value: "",
-                  children: "S\xE9lectionner un support"
-                }), availableCarnets.map(function (c) {
-                  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("option", {
-                    value: c.id,
-                    children: ["N\xB0 ", c.numero]
-                  }, c.id);
-                })])), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
+                    var value = e.target.value;
+                    form.setData("carnet_id", value);
+                    handleCarnetChange(value);
+                  },
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                    value: "",
+                    children: "S\xE9lectionner un support"
+                  }), availableCarnets.map(function (c) {
+                    return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("option", {
+                      value: c.id,
+                      children: ["N\xB0 ", c.numero]
+                    }, c.id);
+                  })]
+                }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
                   field: "carnet_id"
                 })]
               })]
@@ -761,14 +762,14 @@ function Create(_ref) {
                 type: "button",
                 className: "btn btn-primary px-4",
                 onClick: function onClick() {
-                  return handleTabChange('details');
+                  return handleTabChange("details");
                 },
-                children: ["V\xE9rifier le support ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
+                children: ["V\xE9rifier le support", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                   className: "bi bi-arrow-right ms-1"
                 })]
               })
             })]
-          }), activeTab === 'details' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+          }), activeTab === "details" && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
             className: "animate__animated animate__fadeIn",
             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("legend", {
               className: "text-uppercase h6 text-secondary border-bottom pb-2 mb-4",
@@ -786,7 +787,7 @@ function Create(_ref) {
                 className: "text-muted mt-2",
                 children: "Chargement des d\xE9tails du carnet..."
               })]
-            }), carnetDetails && carnetDetails.type === 'tontine' && carnetDetails.cycles && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+            }), carnetDetails && carnetDetails.type === "tontine" && carnetDetails.cycles && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               className: "card border-0 shadow-sm mb-4 rounded-4 overflow-hidden",
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                 className: "d-flex justify-content-between align-items-center p-3 p-md-4 border-bottom border-light",
@@ -795,8 +796,8 @@ function Create(_ref) {
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                     className: "d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded me-3",
                     style: {
-                      width: '40px',
-                      height: '40px'
+                      width: "40px",
+                      height: "40px"
                     },
                     children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                       className: "bi bi-wallet2 fs-5"
@@ -806,24 +807,24 @@ function Create(_ref) {
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                       className: "fw-bold text-dark",
                       style: {
-                        fontSize: '0.9rem'
+                        fontSize: "0.9rem"
                       },
                       children: "Carnet de Tontine"
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                       className: "text-muted",
                       style: {
-                        fontSize: '0.8rem'
+                        fontSize: "0.8rem"
                       },
-                      children: ["N\xB0 ", selectedCarnet.numero]
+                      children: ["N\xB0", " ", selectedCarnet.numero]
                     })]
                   })]
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                   children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                     className: "badge bg-light text-secondary border fw-medium rounded-pill px-3 py-2",
                     style: {
-                      fontSize: '0.75rem'
+                      fontSize: "0.75rem"
                     },
-                    children: [carnetDetails.cycles.length, " Cycle", carnetDetails.cycles.length > 1 ? 's' : '']
+                    children: [carnetDetails.cycles.length, " ", "Cycle", carnetDetails.cycles.length > 1 ? "s" : ""]
                   })
                 })]
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
@@ -836,50 +837,50 @@ function Create(_ref) {
                       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
                         className: "text-muted fw-semibold text-uppercase py-3 ps-4",
                         style: {
-                          fontSize: '0.65rem',
-                          letterSpacing: '0.5px'
+                          fontSize: "0.65rem",
+                          letterSpacing: "0.5px"
                         },
                         children: "P\xE9riode"
                       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
                         className: "text-muted fw-semibold text-uppercase py-3",
                         style: {
-                          fontSize: '0.65rem',
-                          letterSpacing: '0.5px'
+                          fontSize: "0.65rem",
+                          letterSpacing: "0.5px"
                         },
                         children: "Fin Pr\xE9vue"
                       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
                         className: "text-muted fw-semibold text-uppercase py-3",
                         style: {
-                          fontSize: '0.65rem',
-                          letterSpacing: '0.5px'
+                          fontSize: "0.65rem",
+                          letterSpacing: "0.5px"
                         },
                         children: "Fin R\xE9elle"
                       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
                         className: "text-muted fw-semibold text-uppercase py-3 text-center",
                         style: {
-                          fontSize: '0.65rem',
-                          letterSpacing: '0.5px'
+                          fontSize: "0.65rem",
+                          letterSpacing: "0.5px"
                         },
                         children: "Mise"
                       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
                         className: "text-muted fw-semibold text-uppercase py-3 text-center",
                         style: {
-                          fontSize: '0.65rem',
-                          letterSpacing: '0.5px'
+                          fontSize: "0.65rem",
+                          letterSpacing: "0.5px"
                         },
                         children: "Pointages"
                       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
                         className: "text-muted fw-semibold text-uppercase py-3 text-center",
                         style: {
-                          fontSize: '0.65rem',
-                          letterSpacing: '0.5px'
+                          fontSize: "0.65rem",
+                          letterSpacing: "0.5px"
                         },
                         children: "Statut"
                       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("th", {
                         className: "text-muted fw-semibold text-uppercase py-3 text-center pe-4",
                         style: {
-                          fontSize: '0.65rem',
-                          letterSpacing: '0.5px'
+                          fontSize: "0.65rem",
+                          letterSpacing: "0.5px"
                         },
                         children: "\xC9tat"
                       })]
@@ -890,50 +891,50 @@ function Create(_ref) {
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
                           className: "ps-4 fw-medium text-dark",
                           style: {
-                            fontSize: '0.85rem'
+                            fontSize: "0.85rem"
                           },
                           children: cycle.date_debut
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
                           className: "text-muted",
                           style: {
-                            fontSize: '0.8rem'
+                            fontSize: "0.8rem"
                           },
-                          children: cycle.date_fin_prevue || '-'
+                          children: cycle.date_fin_prevue || "-"
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
                           className: "text-muted",
                           style: {
-                            fontSize: '0.8rem'
+                            fontSize: "0.8rem"
                           },
-                          children: cycle.date_cloture_reelle || '-'
+                          children: cycle.date_cloture_reelle || "-"
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
                           className: "text-center fw-semibold text-dark",
                           style: {
-                            fontSize: '0.85rem'
+                            fontSize: "0.85rem"
                           },
                           children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(cycle.mise)
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
                           className: "text-center text-muted",
                           style: {
-                            fontSize: '0.85rem'
+                            fontSize: "0.85rem"
                           },
                           children: cycle.total_pointages
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
                           className: "text-center",
                           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
-                            className: "badge rounded-pill fw-medium ".concat(cycle.statut === 'termine' ? 'bg-success bg-opacity-10 text-success' : cycle.statut === 'en_cours' ? 'bg-primary bg-opacity-10 text-primary' : 'bg-secondary bg-opacity-10 text-secondary'),
+                            className: "badge rounded-pill fw-medium ".concat(cycle.statut === "termine" ? "bg-success bg-opacity-10 text-success" : cycle.statut === "en_cours" ? "bg-primary bg-opacity-10 text-primary" : "bg-secondary bg-opacity-10 text-secondary"),
                             style: {
-                              fontSize: '0.75rem'
+                              fontSize: "0.75rem"
                             },
-                            children: cycle.statut === 'en_cours' ? 'En cours' : cycle.statut === 'termine' ? 'Terminé' : cycle.statut
+                            children: cycle.statut === "en_cours" ? "En cours" : cycle.statut === "termine" ? "Terminé" : cycle.statut
                           })
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("td", {
                           className: "text-center pe-4",
                           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
-                            className: "badge rounded-pill fw-medium ".concat(cycle.en_retard ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success'),
+                            className: "badge rounded-pill fw-medium ".concat(cycle.en_retard ? "bg-danger bg-opacity-10 text-danger" : "bg-success bg-opacity-10 text-success"),
                             style: {
-                              fontSize: '0.75rem'
+                              fontSize: "0.75rem"
                             },
-                            children: cycle.en_retard ? 'En retard' : 'À jour'
+                            children: cycle.en_retard ? "En retard" : "À jour"
                           })
                         })]
                       }, idx);
@@ -941,7 +942,7 @@ function Create(_ref) {
                   })]
                 })
               })]
-            }), carnetDetails && carnetDetails.type === 'compte' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+            }), carnetDetails && carnetDetails.type === "compte" && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                 className: "card border-0 shadow-sm mb-4 rounded-4",
                 children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
@@ -951,8 +952,8 @@ function Create(_ref) {
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                       className: "d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded me-3",
                       style: {
-                        width: '40px',
-                        height: '40px'
+                        width: "40px",
+                        height: "40px"
                       },
                       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                         className: "bi bi-piggy-bank fs-5"
@@ -962,15 +963,15 @@ function Create(_ref) {
                       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                         className: "fw-bold text-dark",
                         style: {
-                          fontSize: '0.9rem'
+                          fontSize: "0.9rem"
                         },
                         children: "Compte \xC9pargne"
                       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                         className: "text-muted",
                         style: {
-                          fontSize: '0.8rem'
+                          fontSize: "0.8rem"
                         },
-                        children: ["N\xB0 ", selectedCarnet.numero]
+                        children: ["N\xB0", " ", selectedCarnet.numero]
                       })]
                     })]
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
@@ -978,15 +979,15 @@ function Create(_ref) {
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                       className: "text-muted text-uppercase fw-semibold mb-1",
                       style: {
-                        fontSize: '0.65rem',
-                        letterSpacing: '0.5px'
+                        fontSize: "0.65rem",
+                        letterSpacing: "0.5px"
                       },
                       children: "Solde disponible"
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                       className: "fw-bolder text-dark",
                       style: {
-                        fontSize: '1.75rem',
-                        lineHeight: '1'
+                        fontSize: "1.75rem",
+                        lineHeight: "1"
                       },
                       children: (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(carnetDetails.solde)
                     })]
@@ -1010,26 +1011,26 @@ function Create(_ref) {
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                           className: "d-flex align-items-center gap-2 flex-grow-1",
                           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-                            className: "d-flex align-items-center justify-content-center rounded ".concat(transaction.type_transaction === 'Dépôt' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'),
+                            className: "d-flex align-items-center justify-content-center rounded ".concat(transaction.type_transaction === "Dépôt" ? "bg-success bg-opacity-10 text-success" : "bg-danger bg-opacity-10 text-danger"),
                             style: {
-                              width: '32px',
-                              height: '32px'
+                              width: "32px",
+                              height: "32px"
                             },
                             children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
-                              className: "bi ".concat(transaction.type_transaction === 'Dépôt' ? 'bi-arrow-down-short' : 'bi-arrow-up-short', " fs-5")
+                              className: "bi ".concat(transaction.type_transaction === "Dépôt" ? "bi-arrow-down-short" : "bi-arrow-up-short", " fs-5")
                             })
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
                             className: "lh-sm",
                             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                               className: "fw-medium text-dark",
                               style: {
-                                fontSize: '0.85rem'
+                                fontSize: "0.85rem"
                               },
                               children: transaction.type_transaction
                             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("small", {
                               className: "text-muted",
                               style: {
-                                fontSize: '0.70rem'
+                                fontSize: "0.70rem"
                               },
                               children: transaction.date
                             })]
@@ -1037,11 +1038,11 @@ function Create(_ref) {
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                           className: "text-end",
                           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
-                            className: "fw-semibold ".concat(transaction.type_transaction === 'Dépôt' ? 'text-success' : 'text-danger'),
+                            className: "fw-semibold ".concat(transaction.type_transaction === "Dépôt" ? "text-success" : "text-danger"),
                             style: {
-                              fontSize: '0.85rem'
+                              fontSize: "0.85rem"
                             },
-                            children: [transaction.type_transaction === 'Dépôt' ? '+' : '-', " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(transaction.montant)]
+                            children: [transaction.type_transaction === "Dépôt" ? "+" : "-", " ", (0,_Utils_creditHelpers__WEBPACK_IMPORTED_MODULE_4__.formatCurrency)(transaction.montant)]
                           })
                         })]
                       }, idx);
@@ -1055,7 +1056,7 @@ function Create(_ref) {
                       className: "bi bi-journal-text fs-4 opacity-50 d-block mb-1"
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                       style: {
-                        fontSize: '0.8rem'
+                        fontSize: "0.8rem"
                       },
                       children: "Aucune transaction r\xE9cente"
                     })]
@@ -1073,23 +1074,23 @@ function Create(_ref) {
                 type: "button",
                 className: "btn btn-link text-secondary text-decoration-none p-0",
                 onClick: function onClick() {
-                  return handleTabChange('identification');
+                  return handleTabChange("identification");
                 },
                 children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                   className: "bi bi-arrow-left me-1"
-                }), " Modifier l'identification"]
+                }), " ", "Modifier l'identification"]
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                 type: "button",
                 className: "btn btn-primary px-4",
                 onClick: function onClick() {
-                  return handleTabChange('simulation');
+                  return handleTabChange("simulation");
                 },
-                children: ["\xC9tape 3 : Param\xE8tres financiers ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
+                children: ["\xC9tape 3 : Param\xE8tres financiers", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                   className: "bi bi-arrow-right ms-1"
                 })]
               })]
             })]
-          }), activeTab === 'simulation' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+          }), activeTab === "simulation" && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
             className: "animate__animated animate__fadeIn",
             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("fieldset", {
               className: "mb-4",
@@ -1105,18 +1106,18 @@ function Create(_ref) {
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
                     htmlFor: "credit_product_id",
                     className: "form-label fw-semibold",
-                    children: ["Produit de cr\xE9dit ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                    children: ["Produit de cr\xE9dit", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                       className: "text-danger",
                       children: "*"
                     })]
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
                     id: "credit_product_id",
-                    className: "form-select ".concat(form.errors.credit_product_id ? 'is-invalid' : ''),
-                    value: form.data.credit_product_id || '',
+                    className: "form-select ".concat(form.errors.credit_product_id ? "is-invalid" : ""),
+                    value: form.data.credit_product_id || "",
                     onChange: function onChange(e) {
                       form.setData(_objectSpread(_objectSpread({}, form.data), {}, {
                         credit_product_id: e.target.value,
-                        objet_credit: '' // Nettoie le motif pour éviter les incohérences
+                        objet_credit: "" // Nettoie le motif pour éviter les incohérences
                       }));
                     },
                     disabled: !form.data.type_support,
@@ -1139,16 +1140,16 @@ function Create(_ref) {
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
                     htmlFor: "objet_credit",
                     className: "form-label fw-semibold",
-                    children: ["Objet du cr\xE9dit ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                    children: ["Objet du cr\xE9dit", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                       className: "text-danger",
                       children: "*"
                     })]
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("select", {
                     id: "objet_credit",
-                    className: "form-select ".concat(form.errors.credit_object_id ? 'is-invalid' : ''),
-                    value: form.data.credit_object_id || '',
+                    className: "form-select ".concat(form.errors.credit_object_id ? "is-invalid" : ""),
+                    value: form.data.credit_object_id || "",
                     onChange: function onChange(e) {
-                      return form.setData('credit_object_id', e.target.value);
+                      return form.setData("credit_object_id", e.target.value);
                     },
                     disabled: !form.data.credit_product_id,
                     required: true,
@@ -1175,7 +1176,7 @@ function Create(_ref) {
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
                     htmlFor: "montant_demande",
                     className: "form-label fw-semibold",
-                    children: ["Montant demand\xE9 (FCFA) ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                    children: ["Montant demand\xE9 (FCFA)", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                       className: "text-danger",
                       children: "*"
                     })]
@@ -1185,10 +1186,10 @@ function Create(_ref) {
                       id: "montant_demande",
                       type: "number",
                       min: "0",
-                      className: "form-control ".concat(form.errors.montant_demande ? 'is-invalid' : ''),
-                      value: form.data.montant_demande || '',
+                      className: "form-control ".concat(form.errors.montant_demande ? "is-invalid" : ""),
+                      value: form.data.montant_demande || "",
                       onChange: function onChange(e) {
-                        return form.setData('montant_demande', e.target.value);
+                        return form.setData("montant_demande", e.target.value);
                       },
                       required: true
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
@@ -1206,17 +1207,17 @@ function Create(_ref) {
                     children: "Type de cr\xE9dit"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
                     id: "type_credit",
-                    className: "form-select ".concat(form.errors.type ? 'is-invalid' : ''),
-                    value: form.data.type || '',
+                    className: "form-select ".concat(form.errors.type ? "is-invalid" : ""),
+                    value: form.data.type || "",
                     onChange: function onChange(e) {
-                      return form.setData('type', e.target.value);
+                      return form.setData("type", e.target.value);
                     },
                     disabled: !form.data.credit_product_id,
                     required: true,
-                    children: [form.data.type_support === 'compte' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
+                    children: [form.data.type_support === "compte" && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                       value: "compte",
                       children: "Cr\xE9dit sur compte"
-                    }), form.data.type_support === 'tontine' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
+                    }), form.data.type_support === "tontine" && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
                       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                         value: "",
                         disabled: true,
@@ -1241,9 +1242,9 @@ function Create(_ref) {
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
                     id: "periodicite",
                     className: "form-select",
-                    value: form.data.periodicite || '',
+                    value: form.data.periodicite || "",
                     onChange: function onChange(e) {
-                      return form.setData('periodicite', e.target.value);
+                      return form.setData("periodicite", e.target.value);
                     },
                     required: true,
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
@@ -1269,9 +1270,9 @@ function Create(_ref) {
                     type: "number",
                     min: "1",
                     className: "form-control",
-                    value: form.data.nombre_echeances || '',
+                    value: form.data.nombre_echeances || "",
                     onChange: function onChange(e) {
-                      return form.setData('nombre_echeances', e.target.value);
+                      return form.setData("nombre_echeances", e.target.value);
                     },
                     required: true
                   })]
@@ -1285,9 +1286,9 @@ function Create(_ref) {
                     id: "date_debut",
                     type: "date",
                     className: "form-control",
-                    value: form.data.date_debut || '',
+                    value: form.data.date_debut || "",
                     onChange: function onChange(e) {
-                      return form.setData('date_debut', e.target.value);
+                      return form.setData("date_debut", e.target.value);
                     },
                     required: true
                   })]
@@ -1305,7 +1306,7 @@ function Create(_ref) {
                     placeholder: "0",
                     value: form.data.differe || 0,
                     onChange: function onChange(e) {
-                      return form.setData('differe', e.target.value);
+                      return form.setData("differe", e.target.value);
                     }
                   })]
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
@@ -1320,9 +1321,9 @@ function Create(_ref) {
                     min: "0",
                     className: "form-control border-success bg-success bg-opacity-10",
                     placeholder: "Frais d'instruction",
-                    value: form.data.frais_dossier || '',
+                    value: form.data.frais_dossier || "",
                     onChange: function onChange(e) {
-                      return form.setData('frais_dossier', e.target.value);
+                      return form.setData("frais_dossier", e.target.value);
                     }
                   })]
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
@@ -1337,9 +1338,9 @@ function Create(_ref) {
                     min: "0",
                     className: "form-control border-info bg-info bg-opacity-10",
                     placeholder: "\xC9pargne bloqu\xE9e obligatoirement",
-                    value: form.data.nantissement || '',
+                    value: form.data.nantissement || "",
                     onChange: function onChange(e) {
-                      return form.setData('nantissement', e.target.value);
+                      return form.setData("nantissement", e.target.value);
                     }
                   })]
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
@@ -1351,9 +1352,9 @@ function Create(_ref) {
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("select", {
                     id: "mode_calcul",
                     className: "form-select",
-                    value: form.data.mode || 'fixe',
+                    value: form.data.mode || "fixe",
                     onChange: function onChange(e) {
-                      return form.setData('mode', e.target.value);
+                      return form.setData("mode", e.target.value);
                     },
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("option", {
                       value: "fixe",
@@ -1374,7 +1375,7 @@ function Create(_ref) {
                     type: "number",
                     step: "0.01",
                     className: "form-control text-muted bg-light",
-                    value: form.data.taux || '',
+                    value: form.data.taux || "",
                     readOnly: true
                   })]
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
@@ -1388,9 +1389,9 @@ function Create(_ref) {
                     type: "number",
                     step: "0.01",
                     className: "form-control border-warning fw-bold text-warning",
-                    value: form.data.taux_manuel || '',
+                    value: form.data.taux_manuel || "",
                     onChange: function onChange(e) {
-                      return form.setData('taux_manuel', e.target.value);
+                      return form.setData("taux_manuel", e.target.value);
                     },
                     placeholder: "D\xE9rogation g\xE9rant"
                   })]
@@ -1402,23 +1403,23 @@ function Create(_ref) {
                 type: "button",
                 className: "btn btn-outline-secondary px-4",
                 onClick: function onClick() {
-                  return handleTabChange('details');
+                  return handleTabChange("details");
                 },
                 children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                   className: "bi bi-arrow-left me-2"
-                }), " Retour aux d\xE9tails"]
+                }), " ", "Retour aux d\xE9tails"]
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                 type: "button",
                 className: "btn btn-primary px-4 shadow-sm",
                 onClick: function onClick() {
-                  return handleTabChange('resumes');
+                  return handleTabChange("resumes");
                 },
-                children: ["\xC9tape 4 : \xC9ch\xE9ancier ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
+                children: ["\xC9tape 4 : \xC9ch\xE9ancier", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                   className: "bi bi-arrow-right ms-2"
                 })]
               })]
             })]
-          }), activeTab === 'resumes' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+          }), activeTab === "resumes" && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
             className: "animate__animated animate__fadeIn",
             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("fieldset", {
               className: "mb-4",
@@ -1502,7 +1503,7 @@ function Create(_ref) {
                 className: "d-flex justify-content-between align-items-center mt-2",
                 children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("span", {
                   className: "text-muted small",
-                  children: ["Page ", currentPage, " sur ", pageCount]
+                  children: ["Page ", currentPage, " sur", " ", pageCount]
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                   type: "button",
                   className: "btn btn-sm btn-outline-secondary",
@@ -1511,7 +1512,7 @@ function Create(_ref) {
                       return p < pageCount ? p + 1 : 1;
                     });
                   },
-                  children: ["Page suivante ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
+                  children: ["Page suivante", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                     className: "bi bi-chevron-right small"
                   })]
                 })]
@@ -1522,23 +1523,23 @@ function Create(_ref) {
                 type: "button",
                 className: "btn btn-outline-secondary px-4",
                 onClick: function onClick() {
-                  return handleTabChange('simulation');
+                  return handleTabChange("simulation");
                 },
                 children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                   className: "bi bi-arrow-left me-1"
-                }), " Retour \xE0 la simulation"]
+                }), " ", "Retour \xE0 la simulation"]
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("button", {
                 type: "button",
                 className: "btn btn-primary px-4",
                 onClick: function onClick() {
-                  return handleTabChange('garanties');
+                  return handleTabChange("garanties");
                 },
-                children: ["\xC9tape 5 : Garanties & Pi\xE8ces Justificatives ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
+                children: ["\xC9tape 5 : Garanties & Pi\xE8ces Justificatives", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                   className: "bi bi-arrow-right ms-1"
                 })]
               })]
             })]
-          }), activeTab === 'garanties' && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+          }), activeTab === "garanties" && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
             className: "animate__animated animate__fadeIn",
             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
               className: "row",
@@ -1564,7 +1565,7 @@ function Create(_ref) {
                           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
                             htmlFor: "nom_prenom",
                             className: "form-label fw-semibold",
-                            children: ["Nom & Pr\xE9noms du garant ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                            children: ["Nom & Pr\xE9noms du garant", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                               className: "text-danger",
                               children: "*"
                             })]
@@ -1578,11 +1579,11 @@ function Create(_ref) {
                             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                               id: "nom_prenom",
                               type: "text",
-                              className: "form-control ".concat(form.errors.nom_prenom ? 'is-invalid' : ''),
+                              className: "form-control ".concat(form.errors.nom_prenom ? "is-invalid" : ""),
                               placeholder: "Ex: Jean KOFFI",
                               value: form.data.nom_prenom,
                               onChange: function onChange(e) {
-                                return form.setData('nom_prenom', e.target.value);
+                                return form.setData("nom_prenom", e.target.value);
                               },
                               required: true
                             })]
@@ -1594,7 +1595,7 @@ function Create(_ref) {
                           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
                             htmlFor: "telephone",
                             className: "form-label fw-semibold",
-                            children: ["Num\xE9ro de T\xE9l\xE9phone ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                            children: ["Num\xE9ro de T\xE9l\xE9phone", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                               className: "text-danger",
                               children: "*"
                             })]
@@ -1608,11 +1609,11 @@ function Create(_ref) {
                             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                               id: "telephone",
                               type: "tel",
-                              className: "form-control ".concat(form.errors.telephone ? 'is-invalid' : ''),
+                              className: "form-control ".concat(form.errors.telephone ? "is-invalid" : ""),
                               placeholder: "Ex: +228 90 00 00 00",
                               value: form.data.telephone,
                               onChange: function onChange(e) {
-                                return form.setData('telephone', e.target.value);
+                                return form.setData("telephone", e.target.value);
                               },
                               required: true
                             })]
@@ -1632,7 +1633,7 @@ function Create(_ref) {
                             placeholder: "Ex: Revendeuse, Fonctionnaire...",
                             value: form.data.profession,
                             onChange: function onChange(e) {
-                              return form.setData('profession', e.target.value);
+                              return form.setData("profession", e.target.value);
                             }
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
                             field: "profession"
@@ -1650,7 +1651,7 @@ function Create(_ref) {
                             placeholder: "Ex: Adidogom\xE9, Hedzranawo\xE9",
                             value: form.data.adresse,
                             onChange: function onChange(e) {
-                              return form.setData('adresse', e.target.value);
+                              return form.setData("adresse", e.target.value);
                             }
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
                             field: "adresse"
@@ -1680,7 +1681,7 @@ function Create(_ref) {
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("label", {
                           htmlFor: "piece_identite",
                           className: "form-label fw-semibold",
-                          children: ["Pi\xE8ce d'identit\xE9 (Client) ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+                          children: ["Pi\xE8ce d'identit\xE9 (Client)", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                             className: "text-danger",
                             children: "*"
                           })]
@@ -1691,10 +1692,10 @@ function Create(_ref) {
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                             id: "piece_identite",
                             type: "file",
-                            className: "form-control form-control-sm ".concat(form.errors.piece_identite ? 'is-invalid' : ''),
+                            className: "form-control form-control-sm ".concat(form.errors.piece_identite ? "is-invalid" : ""),
                             accept: "image/*,application/pdf",
                             onChange: function onChange(e) {
-                              return form.setData('piece_identite', e.target.files[0]);
+                              return form.setData("piece_identite", e.target.files[0]);
                             },
                             required: true
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
@@ -1704,7 +1705,7 @@ function Create(_ref) {
                             className: "badge bg-success mt-2",
                             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                               className: "bi bi-check-circle-fill me-1"
-                            }), " Fichier s\xE9lectionn\xE9"]
+                            }), " ", "Fichier s\xE9lectionn\xE9"]
                           })]
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
                           field: "piece_identite"
@@ -1722,10 +1723,10 @@ function Create(_ref) {
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("input", {
                             id: "justificatif_revenu",
                             type: "file",
-                            className: "form-control form-control-sm ".concat(form.errors.justificatif_revenu ? 'is-invalid' : ''),
+                            className: "form-control form-control-sm ".concat(form.errors.justificatif_revenu ? "is-invalid" : ""),
                             accept: "image/*,application/pdf",
                             onChange: function onChange(e) {
-                              return form.setData('justificatif_revenu', e.target.files[0]);
+                              return form.setData("justificatif_revenu", e.target.files[0]);
                             }
                           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
                             className: "form-text small text-muted mt-1",
@@ -1734,7 +1735,7 @@ function Create(_ref) {
                             className: "badge bg-success mt-2",
                             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                               className: "bi bi-check-circle-fill me-1"
-                            }), " Fichier s\xE9lectionn\xE9"]
+                            }), " ", "Fichier s\xE9lectionn\xE9"]
                           })]
                         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(ErrorMsg, {
                           field: "justificatif_revenu"
@@ -1748,7 +1749,7 @@ function Create(_ref) {
               className: "text-muted small d-none d-lg-block flex-grow-1 text-center px-2",
               children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                 className: "bi bi-info-circle text-primary me-1"
-              }), " Tous les champs marqu\xE9s d'une ast\xE9risque (", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
+              }), " ", "Tous les champs marqu\xE9s d'une ast\xE9risque (", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                 className: "text-danger",
                 children: "*"
               }), ") sont requis pour le comit\xE9."]
@@ -1760,7 +1761,7 @@ function Create(_ref) {
                   type: "button",
                   className: "btn btn-outline-secondary px-4 text-nowrap",
                   onClick: function onClick() {
-                    return handleTabChange('resumes');
+                    return handleTabChange("resumes");
                   },
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("i", {
                     className: "bi bi-arrow-left me-2"
@@ -1768,7 +1769,7 @@ function Create(_ref) {
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("button", {
                   type: "submit",
                   disabled: form.processing,
-                  className: "btn ".concat(isDraftModification ? 'btn-warning text-dark' : 'btn-primary'),
+                  className: "btn ".concat(isDraftModification ? "btn-warning text-dark" : "btn-primary"),
                   children: form.processing ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.Fragment, {
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("span", {
                       "class": "spinner-border spinner-border-sm me-2",
@@ -1777,7 +1778,7 @@ function Create(_ref) {
                     }), "Traitement en cours..."]
                   }) :
                   // Le texte s'adapte dynamiquement ici 👇
-                  isDraftModification ? 'Mettre à jour le brouillon' : 'Enregistrer la demande'
+                  isDraftModification ? "Mettre à jour le brouillon" : "Enregistrer la demande"
                 })]
               })
             })]

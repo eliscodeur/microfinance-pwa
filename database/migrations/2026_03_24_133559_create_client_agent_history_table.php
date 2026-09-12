@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::create('client_agent_history', function (Blueprint $table) {
             $table->id();
+            $table->ulid('ulid')->unique();
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
             $table->foreignId('agent_id')->constrained()->onDelete('cascade');
             $table->timestamp('assigned_at');

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +13,7 @@ class Bonus extends Model
         'cycle_id',
         'paiement_id', // Ajout nécessaire
         'montant',
-        'statut',      // Ajout nécessaire (en_attente, valide, refuse)
+        'statut', // Ajout nécessaire (en_attente, valide, refuse)
         'motif',
         'commission_genere',
         'admin_id',
@@ -22,11 +21,11 @@ class Bonus extends Model
         'validated_by',
         'date_attribution',
     ];
-    
+
     protected $casts = [
-        'montant' => 'decimal:2',
-        'date_attribution' => 'date:Y-m-d', // 👈 Force le format texte standard pour le JSON
-        'validated_at' => 'datetime:Y-m-d H:i:s', // 👈 Idem pour le datetime
+        'montant'          => 'decimal:2',
+        'date_attribution' => 'date:Y-m-d',
+        'validated_at'     => 'datetime:Y-m-d H:i:s',
     ];
 
     // --- RELATIONS ---

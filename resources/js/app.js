@@ -1,8 +1,14 @@
 import './bootstrap';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { Inertia } from '@inertiajs/inertia';
 import { createInertiaApp } from '@inertiajs/inertia-react';
 import { InertiaProgress } from '@inertiajs/progress';
+
+window.Inertia = Inertia;
+window.router = {
+    visit: (...args) => Inertia.visit(...args),
+};
 
 const el = document.getElementById('app');
 

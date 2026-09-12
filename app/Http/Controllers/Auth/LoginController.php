@@ -1,35 +1,37 @@
 <?php
-
-namespace App\Http\Controllers\Auth; 
+namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Agent;
 
 class LoginController extends Controller
 {
     // Affiche le login Admin
-    public function showAdminLogin() {
+    public function showAdminLogin()
+    {
         return view('auth.admin-login');
     }
 
     // Affiche le login Agent
-    public function showAgentLogin() {
+    public function showAgentLogin()
+    {
         return view('auth.agent-login');
     }
 
     // Connexion Admin (Email)
-    public function adminLogin(Request $request) {
+    public function adminLogin(Request $request)
+    {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'email'    => ['required', 'email'],
             'password' => ['required'],
         ]);
 
         if (Auth::attempt($credentials, $request->remember)) {
             if (Auth::user()->type === 'admin') {
                 $request->session()->regenerate();
-                return redirect()->route('admin.dashboard'); 
+                return redirect()->route('admin.dashboard');
             }
             Auth::logout();
             return back()->withErrors(['email' => 'Accès réservé aux administrateurs.']);
@@ -38,41 +40,42 @@ class LoginController extends Controller
     }
 
     // Connexion Agent (Matricule)
-   // Connexion Agent (Matricule)
-    public function agentLogin(Request $request) {
+
+    public function agentLogin(Request $request)
+    {
         $credentials = $request->validate([
-            'username' => ['required'], 
+            'username' => ['required'],
             'password' => ['required'],
         ]);
 
         if (Auth::attempt($credentials, $request->remember)) {
             $user = Auth::user();
-            
+
             if ($user->type === 'agent') {
                 $request->session()->regenerate();
 
                 if ($request->expectsJson()) {
                     // 1. Récupérer l'agent
                     $agent = Agent::where('user_id', $user->id)->first();
-                    
+
                     return response()->json([
                         'agent' => [
-                            'id' => $agent->id,
-                            'nom' => $agent->nom,
+                            'id'        => $agent->id,
+                            'nom'       => $agent->nom,
                             'matricule' => $agent->code_agent,
-                            'photo' => $agent->image,
-                            'actif' => $agent->actif,
-                            'sync' => $agent->can_sync,
-                            'pin_hash' => $agent->pin_hash, // CRITIQUE pour le mode offline
+                            'photo'     => $agent->image,
+                            'actif'     => $agent->actif,
+                            'sync'      => $agent->can_sync,
+                            'pin_hash'  => $agent->pin_hash,
                         ],
-        
+
                     ], 200);
                 }
 
                 return redirect()->route('pwa.index');
             }
             Auth::logout();
-            return $request->expectsJson() 
+            return $request->expectsJson()
                 ? response()->json(['message' => 'Accès réservé aux agents.'], 403)
                 : back()->withErrors(['username' => 'Accès réservé aux agents.']);
         }
@@ -83,19 +86,20 @@ class LoginController extends Controller
     }
 
     // Déconnexion
-    public function logout(Request $request) {
+    public function logout(Request $request)
+    {
         $type = Auth::user() ? Auth::user()->type : 'admin';
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        $response = ($type === 'agent') 
-            ? redirect()->route('agent.login') 
+        $response = ($type === 'agent')
+            ? redirect()->route('agent.login')
             : redirect()->route('admin.login');
 
         // Ajouter des headers pour empêcher le cache
         return $response->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-                        ->header('Pragma', 'no-cache')
-                        ->header('Expires', '0');
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 }

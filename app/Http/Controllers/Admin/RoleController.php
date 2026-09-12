@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -28,18 +27,18 @@ class RoleController extends Controller
         $allowed = config('role_permissions.labels', []);
 
         $request->validate([
-            'nom' => 'required|string|max:255|unique:roles,nom',
-            'permissions' => 'required|array|min:1',
+            'nom'           => 'required|string|max:255|unique:roles,nom',
+            'permissions'   => 'required|array|min:1',
             'permissions.*' => ['string', Rule::in($allowed)],
         ], [
-            'nom.unique' => 'Ce rôle existe déjà dans le système.',
-            'nom.required' => 'Le nom du rôle est obligatoire.',
+            'nom.unique'           => 'Ce rôle existe déjà dans le système.',
+            'nom.required'         => 'Le nom du rôle est obligatoire.',
             'permissions.required' => 'Veuillez sélectionner au moins une permission.',
-            'permissions.min' => 'Veuillez sélectionner au moins une permission.',
+            'permissions.min'      => 'Veuillez sélectionner au moins une permission.',
         ]);
 
         Role::create([
-            'nom' => $request->nom,
+            'nom'         => $request->nom,
             'permissions' => $request->permissions,
         ]);
 
@@ -51,13 +50,13 @@ class RoleController extends Controller
         $allowed = config('role_permissions.labels', []);
 
         $request->validate([
-            'nom' => 'required|string|max:255|unique:roles,nom,' . $role->id,
-            'permissions' => 'required|array|min:1',
+            'nom'           => 'required|string|max:255|unique:roles,nom,' . $role->id,
+            'permissions'   => 'required|array|min:1',
             'permissions.*' => ['string', Rule::in($allowed)],
         ], [
-            'nom.unique' => 'Ce nom de rôle est déjà utilisé par un autre enregistrement.',
+            'nom.unique'           => 'Ce nom de rôle est déjà utilisé par un autre enregistrement.',
             'permissions.required' => 'Veuillez sélectionner au moins une permission.',
-            'permissions.min' => 'Veuillez sélectionner au moins une permission.',
+            'permissions.min'      => 'Veuillez sélectionner au moins une permission.',
         ]);
 
         $role->update($request->only(['nom', 'permissions']));
@@ -66,15 +65,15 @@ class RoleController extends Controller
     }
     public function edit(Role $role)
     {
-        // Au lieu d'afficher une vue, on renvoie vers l'index avec l'ID en paramètre
+
         return redirect()->route('admin.roles.index', ['id' => $role->id]);
     }
     // Supprimer un rôle
-   
+
     public function destroy(Role $role)
     {
         // Sécurité : vérifier si le rôle est utilisé par des membres de la tontine/agents
-        if($role->users()->count() > 0) {
+        if ($role->users()->count() > 0) {
             return redirect()->back()->with('error', 'Impossible de supprimer ce rôle car il est attribué à des utilisateurs.');
         }
 

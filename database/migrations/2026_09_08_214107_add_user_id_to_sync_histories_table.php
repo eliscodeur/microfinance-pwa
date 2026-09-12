@@ -13,8 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('agents', function (Blueprint $table) {
-            $table->string('image')->nullable();
+        Schema::table('sync_histories', function (Blueprint $table) {
+            $table->foreignId('user_id')->nullable()->after('agent_id')->constrained('users')->nullOnDelete();
         });
     }
 
@@ -25,8 +25,9 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('agents', function (Blueprint $table) {
-            $table->dropColumn('image');
+        Schema::table('sync_histories', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropColumn('user_id');
         });
     }
 };

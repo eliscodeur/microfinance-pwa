@@ -6,29 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
-    public function up()
+    public function up(): void
     {
+        Schema::dropIfExists('carnets');
+
         Schema::create('carnets', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('client_id')->constrained()->onDelete('cascade');
-            $table->string('numero')->unique(); // Ex: CAR-001
-            $table->enum('statut', ['actif', 'termine', 'en_attente'])->default('actif');
+            $table->ulid('ulid')->unique();
+            $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
+            $table->string('type'); // 'tontine', 'epargne', etc.
+            $table->foreignId('category_tontine_id')->nullable()->constrained('category_tontines')->nullOnDelete();
+            $table->foreignId('parent_id')->nullable()->constrained('carnets')->nullOnDelete();
+            $table->string('numero')->unique();
+            $table->string('statut')->default('actif'); // 'actif', 'termine', 'suspendu'
             $table->date('date_debut')->nullable();
+            $table->foreignId('agent_id')->nullable()->constrained('agents')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('carnets');
     }

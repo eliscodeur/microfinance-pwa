@@ -1,44 +1,36 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
-use App\Models\CategoryTontine;
+use App\Models\Agent;
 use App\Models\Carnet;
-use App\Models\Depot;
+use App\Models\CarnetAgentHistory;
+use App\Models\CategoryTontine;
+use App\Models\Client;
+use App\Models\clientCarnetNumber;
 use App\Models\Cycle;
+use App\Models\Depot;
 use App\Models\Retrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CarnetController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, string $type = 'tontine')
     {
         try {
+            $currentType = in_array($type, ['tontine', 'compte']) ? $type : 'tontine';
+
             $query = Carnet::with([
                 'client',
                 'categoryTontine',
                 'parent',
                 'cycles.collectes',
-                'credits' => function($q) {
+                'credits' => function ($q) {
                     $q->where('statut', 'active');
-                }
+                },
             ])->withCount('cycles');
-
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('numero', 'LIKE', "%$search%")
-                      ->orWhereHas('client', function($sq) use ($search) {
-                          $sq->where('nom', 'LIKE', "%$search%")
-                             ->orWhere('prenom', 'LIKE', "%$search%")
-                             ->orWhere('telephone', 'LIKE', "%$search%")
-                             ->orWhere(\DB::raw("CONCAT(nom, ' ', prenom)"), 'LIKE', "%$search%");
-                      });
-                });
-            }
 
             if ($request->filled('filter')) {
                 if ($request->filter == 'vierge') {
@@ -48,15 +40,16 @@ class CarnetController extends Controller
                 }
             }
 
-            $currentType   = $request->input('type', 'tontine');
             $totalTontines = (clone $query)->where('type', 'tontine')->count();
             $totalComptes  = (clone $query)->where('type', 'compte')->count();
             $totalGeneral  = $totalTontines + $totalComptes;
 
-            $query->where('type', $currentType);
-            $carnets    = $query->latest()->paginate(20)->withQueryString();
+            // Récupération de la collection pour l'onglet actif
+            $carnets = $query->where('type', $currentType)->latest()->get();
+
             $categories = CategoryTontine::all();
             $clients    = Client::select('id', 'nom', 'prenom')->orderBy('nom')->get();
+            $agents     = Agent::select('ulid', 'id', 'nom', 'code_agent')->orderBy('nom')->get();
 
             $tontinesActives = Carnet::where('type', 'tontine')
                 ->where('statut', 'actif')
@@ -65,42 +58,73 @@ class CarnetController extends Controller
 
             return view('admin.carnets.index', compact(
                 'carnets', 'clients', 'categories', 'tontinesActives',
-                'currentType', 'totalTontines', 'totalComptes', 'totalGeneral'
+                'currentType', 'totalTontines', 'totalComptes', 'totalGeneral', 'agents'
             ));
 
         } catch (\Exception $e) {
-            \Log::error("Erreur Carnets index : " . $e->getMessage());
-            return redirect()->back()->with('error', "Une erreur est survenue.");
+            return redirect()->back()->with('error', "Une erreur est survenue : " . $e->getMessage());
         }
     }
-
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'client_id'           => 'required|exists:clients,id',
-            'type'                => 'required|in:tontine,compte',
-            'date_debut'          => 'required|date',
-            'category_tontine_id' => 'required_if:type,tontine',
-            'parent_id'           => 'nullable|exists:carnets,id',
+            'client_id'               => 'required|exists:clients,id',
+            'type'                    => 'required|in:tontine,compte',
+            'category_tontine_id'     => 'required_if:type,tontine',
+            'parent_id'               => 'nullable|exists:carnets,id',
+            'client_carnet_number_id' => 'required|exists:client_carnet_numbers,id',
+            'agent_id'                => 'required|exists:agents,id',
         ], [
             'client_id.required'               => 'Le client est obligatoire.',
             'category_tontine_id.required_if'  => 'Veuillez choisir une catégorie pour la tontine.',
+            'client_carnet_number_id.required' => 'Veuillez sélectionner un numéro de carnet.',
+            'agent_id.required'                => 'Veuillez sélectionner un agent.',
         ]);
 
         DB::beginTransaction();
         try {
-            $validated['statut'] = 'actif';
+            // 1. Récupérer le numéro physique source
+            $carnetNumber = ClientCarnetNumber::findOrFail($request->client_carnet_number_id);
+
+            $validated['numero']     = $carnetNumber->numero;
+            $validated['ulid']       = strtolower((string) \Illuminate\Support\Str::ulid());
+            $validated['statut']     = 'actif';
+            $validated['date_debut'] = now()->toDateString();
+            $validated['created_by'] = auth()->id();
+
+            if ($validated['type'] === 'compte') {
+                $validated['category_tontine_id'] = null;
+            }
+            // Créer le carnet
             $carnet = Carnet::create($validated);
+            // Enregistrer l'historique de l'attribution de l'agent
+            CarnetAgentHistory::create([
+                'ulid'        => strtolower((string) \Illuminate\Support\Str::ulid()),
+                'carnet_id'   => $carnet->id,
+                'agent_id'    => $validated['agent_id'],
+                'assigned_at' => now(),
+            ]);
+
+            DB::table('client_carnet_numbers')
+                ->where('id', $carnetNumber->id)
+                ->update([
+                    'statut'     => 'utilise',
+                    'used_at'    => now(),
+                    'updated_at' => now(),
+                ]);
+
             DB::commit();
             return redirect()->route('admin.carnets.index')
-                ->with('success', "Carnet " . $carnet->numero . " créé avec succès.");
+                ->with('success', "Carnet n° " . $carnet->numero . " créé avec succès.");
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erreur : ' . $e->getMessage()], 500);
+            dd($e->getMessage());
+            return back()->withInput()->with('error', 'Erreur : ' . $e->getMessage());
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
         $carnet = Carnet::findOrFail($id);
 
@@ -110,9 +134,11 @@ class CarnetController extends Controller
             'date_debut'          => 'required|date',
             'category_tontine_id' => 'required_if:type,tontine',
             'parent_id'           => 'nullable|exists:carnets,id',
+            'agent_id'            => 'required|exists:agents,id',
         ], [
             'client_id.required'              => 'Le client est obligatoire.',
             'category_tontine_id.required_if' => 'Veuillez choisir une catégorie pour la tontine.',
+            'agent_id.required'               => 'L\'agent est obligatoire.',
         ]);
 
         DB::beginTransaction();
@@ -142,7 +168,7 @@ class CarnetController extends Controller
         }
     }
 
-    public function show($id)
+    public function show(string $ulid)
     {
         $carnet = Carnet::with([
             'client',
@@ -151,13 +177,12 @@ class CarnetController extends Controller
             'cycles.retraits.admin',
             'depots.user',
             'retraits.admin',
-            'credits'
-        ])->findOrFail($id);
+            'credits',
+        ])->where('ulid', $ulid)->firstOrFail();
 
         return view('admin.carnets.show', compact('carnet'));
     }
-
-    public function getTontinesByClient($clientId)
+    public function getTontinesByClient(int $clientId)
     {
         $tontines = Carnet::where('client_id', (int) $clientId)
             ->where('type', 'tontine')
@@ -167,27 +192,39 @@ class CarnetController extends Controller
         return response()->json($tontines);
     }
 
-    public function getCarnetsByClient($clientId)
+    public function getAvailableCarnetNumbers(int $clientId)
+    {
+        $typeCarnet = request()->get('type', 'tontine');
+
+        $carnetNumbers = ClientCarnetNumber::where('client_id', $clientId)
+            ->where('type_carnet', $typeCarnet)
+            ->where('statut', 'disponible')
+            ->get(['id', 'numero', 'type_carnet']);
+
+        return response()->json($carnetNumbers);
+    }
+
+    public function getCarnetsByClient(int $clientId)
     {
         try {
-            // 1. Eager loading : on charge uniquement le nécessaire
+            // Eager loading : on charge uniquement le nécessaire
             $carnets = Carnet::with([
                 'categoryTontine',
-                'cycles' => function($q) { $q->whereNull('retire_at')->with('collectes'); },
+                'cycles'  => function ($q) {$q->whereNull('retire_at')->with('collectes');},
                 'depots',
                 'retraits',
-                'credits' => function($q) { $q->where('statut', 'active'); }
+                'credits' => function ($q) {$q->where('statut', 'active');},
             ])
-            ->where('client_id', (int) $clientId)
-            ->where('statut', 'actif')
-            ->get();
+                ->where('client_id', (int) $clientId)
+                ->where('statut', 'actif')
+                ->get();
 
             // 2. Transformation : on délègue les calculs au modèle
             $formattedCarnets = $carnets->map(function (Carnet $carnet) {
-                
+
                 // Logique conditionnelle basée sur le type
-                $solde = ($carnet->type === 'compte') 
-                    ? $carnet->solde_disponible 
+                $solde = ($carnet->type === 'compte')
+                    ? $carnet->solde_disponible
                     : $carnet->activeCycleSavings();
 
                 // On récupère le montant de la mise via le cycle en cours ou la catégorie
@@ -203,15 +240,15 @@ class CarnetController extends Controller
                     'solde_bloque'       => $carnet->credits->sum('montant_demande'),
                     'mise'               => $mise,
                     'total_pointages'    => $carnet->totalPointages(),
-                    'required_pointages' => $carnet->categoryTontine?->minimumPointagesRequired() ?? 0,
-                    'date_fin_cycle'     => null, 
+                    'required_pointages' => $carnet->categoryTontine ? $carnet->categoryTontine->minimumPointagesRequired() : 0,
+                    'date_fin_cycle'     => null,
                 ];
             });
 
             return response()->json($formattedCarnets);
-                
+
         } catch (\Exception $e) {
-            \Log::error('getCarnetsByClient Error: ' . $e->getMessage());
+
             return response()->json(['error' => 'Une erreur est survenue lors de la récupération des carnets.'], 500);
         }
     }
@@ -250,7 +287,6 @@ class CarnetController extends Controller
             return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
-            \Log::error("Erreur Dépôt: " . $e->getMessage());
 
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -279,14 +315,14 @@ class CarnetController extends Controller
         try {
             $result = DB::transaction(function () use ($request) {
 
-                $carnet          = Carnet::findOrFail($request->carnet_id);
-                $montantNetSaisi = (float) $request->montant_total;
+                $carnet              = Carnet::findOrFail($request->carnet_id);
+                $montantNetSaisi     = (float) $request->montant_total;
                 $commissionAppliquee = 0;
                 $soldeDisponible     = 0;
                 $cycle               = null;
 
                 if ($carnet->type === 'tontine') {
-                    if (!$request->cycle_id) {
+                    if (! $request->cycle_id) {
                         throw new \Exception("Veuillez sélectionner un cycle pour un carnet de tontine.");
                     }
 
@@ -325,10 +361,10 @@ class CarnetController extends Controller
 
                 // Clôture automatique du cycle (tontine uniquement)
                 if ($carnet->type === 'tontine' && $cycle) {
-                    $commissionFixe  = (float) ($cycle->montant_journalier ?? 0);
-                    $totalCollecte   = (float) $cycle->collectes->sum('montant');
-                    $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
-                    $netTotalAttendu = $totalCollecte - $commissionFixe;
+                    $commissionFixe   = (float) ($cycle->montant_journalier ?? 0);
+                    $totalCollecte    = (float) $cycle->collectes->sum('montant');
+                    $totalDejaRetire  = (float) $cycle->retraits->sum('montant_net');
+                    $netTotalAttendu  = $totalCollecte - $commissionFixe;
                     $cumulRetraitsNet = $totalDejaRetire + $montantNetSaisi;
 
                     if ($request->type_retrait === 'total' || $cumulRetraitsNet >= ($netTotalAttendu - 5)) {
@@ -348,7 +384,6 @@ class CarnetController extends Controller
             return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
-            \Log::error("Erreur Retrait: " . $e->getMessage());
 
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -357,4 +392,42 @@ class CarnetController extends Controller
             return redirect()->back()->with('error', "Échec : " . $e->getMessage())->withInput();
         }
     }
+
+    public function reassign(Request $request, string $ulid)
+    {
+        $request->validate([
+            'new_agent_ulid' => 'required|exists:agents,ulid',
+        ]);
+
+        DB::transaction(function () use ($request, $ulid) {
+            $currentHistory = CarnetAgentHistory::where('ulid', $ulid)->firstOrFail();
+            $carnet         = Carnet::findOrFail($currentHistory->carnet_id);
+            $newAgent       = Agent::where('ulid', $request->new_agent_ulid)->firstOrFail();
+
+            // 1. Clôturer toutes les lignes ouvertes de ce carnet pour éviter les doublons actifs
+            CarnetAgentHistory::where('carnet_id', $carnet->id)
+                ->whereNull('unassigned_at')
+                ->update(['unassigned_at' => now()]);
+
+            // 2. Créer la nouvelle entrée d'historique
+            CarnetAgentHistory::create([
+                'ulid'          => (string) Str::ulid(),
+                'agent_id'      => $newAgent->id,
+                'carnet_id'     => $carnet->id,
+                'assigned_at'   => now(),
+                'unassigned_at' => null,
+            ]);
+
+            // 3. Mettre à jour l'agent principal sur le carnet (optimisation des requêtes)
+            $carnet->update([
+                'agent_id' => $newAgent->id,
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Carnet réattribué avec succès.',
+        ]);
+    }
+
 }

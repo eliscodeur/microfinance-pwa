@@ -1,63 +1,55 @@
 <?php
-
 namespace Database\Seeders;
 
-use App\Models\Client;
+use App\Models\Agent;
 use App\Models\Carnet;
+use App\Models\CarnetAgentHistory;
+use App\Models\ClientCarnetNumber;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CarnetSeeder extends Seeder
 {
     public function run(): void
     {
-        $clients = Client::all();
+        // On récupère uniquement les numéros disponibles de type 'tontine'
+        $availableNumbers = ClientCarnetNumber::where('statut', 'disponible')
+            ->where('type_carnet', 'tontine')
+            ->get();
 
-        if ($clients->isEmpty()) {
-            $this->command->error("Aucun client trouvé !");
+        $agents = Agent::all();
+
+        if ($availableNumbers->isEmpty() || $agents->isEmpty()) {
             return;
         }
 
-        foreach ($clients as $client) {
-            DB::transaction(function () use ($client) {
-                
-                // --- 1. CRÉATION DES TONTINES (Les Parents potentiels) ---
-                $tontinesIds = [];
-                $nbTontines = rand(0, 3);
-                
-                for ($i = 0; $i < $nbTontines; $i++) {
-                    $tontine = Carnet::create([
-                        'client_id'           => $client->id,
-                        'type'                => 'tontine',
-                        'date_debut'          => now()->subDays(rand(1, 15)),
-                        'statut'              => 'actif',
-                        'category_tontine_id' => rand(1, 2),
-                        'parent_id'           => null,
-                    ]);
-                    $tontinesIds[] = $tontine->id;
-                }
+        foreach ($availableNumbers as $carnetNumber) {
+            $randomAgent = $agents->random();
 
-                // --- 2. CRÉATION DES COMPTES (Les Enfants qui peuvent être liés) ---
-                $nbComptes = rand(1, 2);
-                for ($j = 0; $j < $nbComptes; $j++) {
-                    
-                    // Logique de rattachement : 40% de chance d'être lié à l'une des tontines du client
-                    $parentId = null;
-                    if (!empty($tontinesIds) && rand(1, 2) <= 1) { // 50% de chance de rattacher à une tontine existante
-                        $parentId = $tontinesIds[array_rand($tontinesIds)];
-                    }
+            $carnet = Carnet::create([
+                'ulid'                => strtolower((string) Str::ulid()),
+                'client_id'           => $carnetNumber->client_id,
+                'type'                => 'tontine',
+                'category_tontine_id' => 1,    // ID de la catégorie de tontine par défaut
+                'parent_id'           => null, // Une tontine n'a pas de parent
+                'agent_id'            => $randomAgent->id,
+                'numero'              => $carnetNumber->numero,
+                'statut'              => 'actif',
+                'date_debut'          => now()->toDateString(),
+                'created_by'          => 1,
+            ]);
 
-                    Carnet::create([
-                        'client_id'  => $client->id,
-                        'type'       => 'compte',
-                        'date_debut' => now()->subMonths(rand(1, 6)),
-                        'statut'     => 'actif',
-                        'parent_id'  => $parentId, // Le compte est lié à la tontine ou reste indépendant
-                    ]);
-                }
-            });
+            CarnetAgentHistory::create([
+                'ulid'        => strtolower((string) Str::ulid()),
+                'carnet_id'   => $carnet->id,
+                'agent_id'    => $randomAgent->id,
+                'assigned_at' => now(),
+            ]);
+
+            $carnetNumber->update([
+                'statut'  => 'utilise',
+                'used_at' => now(),
+            ]);
         }
-
-        $this->command->info('Seed terminé : Carnets de comptes rattachés (ou non) aux tontines.');
     }
 }

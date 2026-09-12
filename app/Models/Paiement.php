@@ -1,33 +1,46 @@
 <?php
-
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Paiement extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUlids;
 
     protected $fillable = [
-        'agent_id', 
-        'montant_total', 
-        'type',        // 'deboursement' ou 'rejet'
-        'reference', 
-        'validated_by' // ID de l'admin qui a validé
+        'ulid',
+        'agent_id',
+        'montant_total',
+        'type',
+        'reference',
+        'validated_by',
+        'inclus_dans_salaire_at',
     ];
 
     /**
      * Cast des attributs pour standardiser les types de données envoyés à la PWA.
      */
     protected $casts = [
-        'montant_total' => 'decimal:2',
-        'created_at' => 'datetime:Y-m-d H:i:s',
-        'updated_at' => 'datetime:Y-m-d H:i:s',
+        'montant_total'          => 'decimal:2',
+        'created_at'             => 'datetime:Y-m-d H:i:s',
+        'updated_at'             => 'datetime:Y-m-d H:i:s',
+        'inclus_dans_salaire_at' => 'datetime:Y-m-d H:i:s',
     ];
 
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
+
+    public function uniqueIds(): array
+    {
+        return ['ulid'];
+    }
+
     /**
-     * Force le formatage de toutes les dates en chaînes de caractères pures 
+     * Force le formatage de toutes les dates en chaînes de caractères pures
      * lors de la conversion en JSON (via toArray()). Crucial pour IndexedDB / Dexie.
      */
     protected function serializeDate(\DateTimeInterface $date)

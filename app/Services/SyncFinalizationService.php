@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services;
 
 use App\Models\Agent;
@@ -19,7 +18,9 @@ class SyncFinalizationService
      */
     public function handle(SyncBatch $batch, int $adminId): void
     {
-        if ($batch->status !== 'pending_review') return;
+        if ($batch->status !== 'pending_review') {
+            return;
+        }
 
         DB::transaction(function () use ($batch, $adminId) {
             $mappedCycleIds = $this->updateAgentPins($batch);
@@ -37,7 +38,9 @@ class SyncFinalizationService
     {
         $agents = $batch->agents;
 
-        if (empty($agents) || !is_array($agents)) return [];
+        if (empty($agents) || ! is_array($agents)) {
+            return [];
+        }
 
         foreach ($agents as $agentData) {
             $id   = data_get($agentData, 'id');
@@ -60,14 +63,18 @@ class SyncFinalizationService
      */
     private function processCycles(SyncBatch $batch, array $mappedCycleIds): array
     {
-        // ✅ On lit depuis la relation DB, pas depuis le JSON du batch
+        // On lit depuis la relation DB, pas depuis le JSON du batch
         $batchCycles = $batch->syncBatchCycles;
 
-        if ($batchCycles->isEmpty()) return $mappedCycleIds;
+        if ($batchCycles->isEmpty()) {
+            return $mappedCycleIds;
+        }
 
         foreach ($batchCycles as $bCycle) {
             $cycleUid = $bCycle->cycle_uid;
-            if (!$cycleUid) continue;
+            if (! $cycleUid) {
+                continue;
+            }
 
             $cycle = Cycle::updateOrCreate(
                 ['cycle_uid' => $cycleUid],
@@ -89,8 +96,6 @@ class SyncFinalizationService
             );
 
             $mappedCycleIds[$cycleUid] = $cycle->id;
-
-            $this->handleCommission($cycle);
         }
 
         return $mappedCycleIds;
@@ -101,28 +106,31 @@ class SyncFinalizationService
      */
     private function processCollectes(SyncBatch $batch, array $mappedCycleIds): void
     {
-        // ✅ On lit depuis la relation DB
         $batchCollectes = $batch->syncBatchCollectes;
 
-        if ($batchCollectes->isEmpty()) return;
+        if ($batchCollectes->isEmpty()) {
+            return;
+        }
 
-        $insertData = [];
-        $now = now();
+        $insertData      = [];
+        $now             = now();
+        $touchedCycleIds = [];
 
         foreach ($batchCollectes as $bCol) {
             $cycleUid = $bCol->cycle_uid;
 
-            // Cherche d'abord dans la map, puis en DB si nécessaire
-            $cycleId = $mappedCycleIds[$cycleUid]
-                ?? Cycle::where('cycle_uid', $cycleUid)->value('id');
+            $cycleId = $mappedCycleIds[$cycleUid] ?? Cycle::where('cycle_uid', $cycleUid)->value('id');
 
-            if (!$cycleId) {
+            if (! $cycleId) {
                 Log::warning("SyncFinalization: Cycle introuvable pour UID [{$cycleUid}] — collecte ignorée.", [
                     'collecte_uid'  => $bCol->collecte_uid,
                     'sync_batch_id' => $batch->id,
                 ]);
                 continue;
             }
+
+            // Mémoriser l'ID du cycle touché
+            $touchedCycleIds[$cycleId] = $cycleId;
 
             $insertData[] = [
                 'collecte_uid' => $bCol->collecte_uid,
@@ -139,12 +147,21 @@ class SyncFinalizationService
             ];
         }
 
-        if (!empty($insertData)) {
+        if (! empty($insertData)) {
+            // Insertion groupée des collectes
             Collecte::upsert(
                 $insertData,
                 ['collecte_uid'],
                 ['montant', 'pointage', 'updated_at']
             );
+
+            // Traitement de la commission de première collecte pour les cycles impactés
+            foreach ($touchedCycleIds as $cycleId) {
+                $cycle = Cycle::find($cycleId);
+                if ($cycle) {
+                    $this->handleCommission($cycle);
+                }
+            }
         }
     }
 
@@ -154,23 +171,47 @@ class SyncFinalizationService
      */
     private function handleCommission(Cycle $cycle): void
     {
-        if ($cycle->statut !== 'termine' || $cycle->commission_genere) return;
+        DB::transaction(function () use ($cycle) {
+            // Verrouiller la ligne pour éviter les conflits en cas de double synchro simultanée
+            $lockedCycle = Cycle::where('id', $cycle->id)->lockForUpdate()->first();
 
-        $cycle->loadMissing('carnet');
+            // Double sécurité 1 : Vérifier si un bonus a déjà été attribué pour ce cycle
+            if (Bonus::where('cycle_id', $lockedCycle->id)->exists()) {
+                return;
+            }
 
-        if (!$cycle->carnet) return;
+            // Double sécurité 2 : Si commission_genere est déjà renseigné (> 0)
+            if ($lockedCycle->commission_genere > 0) {
+                return;
+            }
 
-        Bonus::create([
-            'agent_id'          => $cycle->agent_id,
-            'cycle_id'          => $cycle->id,
-            'montant'           => $cycle->calculerCommission(), // ✅ Logique dans le Model
-            'statut'            => 'en_attente',
-            'motif'             => "Commission automatique — Cycle #{$cycle->id}",
-            'date_attribution'  => now(),
-            'commission_genere' => false,
-        ]);
+            // S'assurer qu'il y a au moins une collecte pour ce cycle
+            if ($lockedCycle->collectes()->count() === 0) {
+                return;
+            }
 
-        $cycle->update(['commission_genere' => true]);
+            $lockedCycle->loadMissing('carnet');
+            if (! $lockedCycle->carnet) {
+                return;
+            }
+
+            // Calculer le montant de la commission
+            $montantCommission = $lockedCycle->calculerCommission();
+
+            // Créer le bonus pour l'agent
+            Bonus::create([
+                'agent_id' => $lockedCycle->agent_id,
+                'cycle_id' => $lockedCycle->id,
+                'montant'  => $montantCommission,
+                'statut'   => 'en_attente',
+                'motif'    => "Commission collecte — Cycle #{$lockedCycle->id}",
+                'date_attribution' => now(),
+            ]);
+
+            $lockedCycle->update([
+                'commission_genere' => $montantCommission,
+            ]);
+        });
     }
 
     /**
@@ -184,12 +225,13 @@ class SyncFinalizationService
             'nb_collectes'  => $batch->nb_collectes,
             'nb_cycles'     => $batch->nb_cycles,
             'total_montant' => $batch->total_montant,
+            'user_id'       => Auth()->id() ?? null,
             'status'        => 'success',
         ]);
     }
 
     /**
-     * Étape 5 — Marque le batch comme approuvé et réactive l'agent.
+     * Étape 5 — Marque le batch comme approuvé.
      */
     private function finalizeBatch(SyncBatch $batch, int $adminId): void
     {
@@ -200,6 +242,6 @@ class SyncFinalizationService
         ]);
 
         // Réactive l'agent pour sa prochaine synchronisation
-        optional($batch->agent)->update(['can_sync' => true]);
+        // optional($batch->agent)->update(['can_sync' => true]);
     }
 }

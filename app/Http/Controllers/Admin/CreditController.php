@@ -1,18 +1,15 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
-use Illuminate\Validation\ValidationException;
+
 use App\Http\Controllers\Controller;
-use App\Models\Credit;
-use App\Models\CreditPayment;
-use App\Models\CreditProduct;
 use App\Models\Carnet;
 use App\Models\Client;
-use App\Models\Retrait;
-use App\Models\Cycle;
-use App\Models\Collecte;
-use App\Models\Depot;
+use App\Models\Credit;
 use App\Models\CreditGuarantor;
+use App\Models\CreditPayment;
+use App\Models\CreditProduct;
+use App\Models\Cycle;
+use App\Models\Retrait;
 use App\Services\CreditCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -20,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class CreditController extends Controller
@@ -46,63 +44,63 @@ class CreditController extends Controller
         $clients = Client::with([
             'carnets' => function ($query) {
                 $query->where('statut', 'actif')
-                    ->whereDoesntHave('credits', function($q) {
+                    ->whereDoesntHave('credits', function ($q) {
                         $q->where('statut', 'active');
                     })
-                    // --- AJOUT DU FILTRAGE TONTINE ---
-                    ->when('tontine', function($q) { // Si c'est une tontine
-                        $q->where(function($sub) {
+                                                  // --- AJOUT DU FILTRAGE TONTINE ---
+                    ->when('tontine', function ($q) { // Si c'est une tontine
+                        $q->where(function ($sub) {
                             $sub->where('type', '!=', 'tontine') // Garde les comptes normaux
-                                ->orWhereHas('cycles', function($c) {
+                                ->orWhereHas('cycles', function ($c) {
                                     $c->where('statut', 'en_cours')
-                                    ->orWhere(function($cc) {
-                                        $cc->where('statut', 'termine')->whereNull('retire_at');
-                                    });
+                                        ->orWhere(function ($cc) {
+                                            $cc->where('statut', 'termine')->whereNull('retire_at');
+                                        });
                                 });
                         });
                     })
-                    // --------------------------------
+                // --------------------------------
                     ->with([
                         'categoryTontine',
-                        'cycles' => function($q) { $q->whereNull('retire_at')->with('collectes'); },
+                        'cycles' => function ($q) {$q->whereNull('retire_at')->with('collectes');},
                         'depots',
                         'retraits',
-                        'credits' 
+                        'credits',
                     ]);
-            }
+            },
         ])
-        ->orderBy('nom')
-        ->orderBy('prenom')
-        ->get()
-        ->map(function ($client) {
-            $client->carnets = $client->carnets->map(function ($carnet) {
-                  return [
-                    'id'                 => $carnet->id,
-                    'numero'             => $carnet->numero,
-                    'type'               => $carnet->type,
-                    'category'           => $carnet->categoryTontine?->libelle,
-                    'solde'              => ($carnet->type === 'compte') ? $carnet->solde_disponible : $carnet->activeCycleSavings(),
-                    'solde_bloque'       => $carnet->credits->sum('montant_demande'),
-                    'solde_tontine' => $carnet->solde_tontine_non_retire,
-                    'mise'               => $carnet->cycles->first()?->montant_journalier ?? 0,
-                    'total_pointages'    => $carnet->totalPointages(),
-                    'required_pointages' => $carnet->categoryTontine?->minimumPointagesRequired() ?? 0,
-                ];
+            ->orderBy('nom')
+            ->orderBy('prenom')
+            ->get()
+            ->map(function ($client) {
+                $client->carnets = $client->carnets->map(function ($carnet) {
+                    return [
+                        'id'                 => $carnet->id,
+                        'numero'             => $carnet->numero,
+                        'type'               => $carnet->type,
+                        'category'           => $carnet->categoryTontine->libelle,
+                        'solde'              => ($carnet->type === 'compte') ? $carnet->solde_disponible : $carnet->activeCycleSavings(),
+                        'solde_bloque'       => $carnet->credits->sum('montant_demande'),
+                        'solde_tontine'      => $carnet->solde_tontine_non_retire,
+                        'mise'               => $carnet->cycles->first()->montant_journalier ?? 0,
+                        'total_pointages'    => $carnet->totalPointages(),
+                        'required_pointages' => $carnet->categoryTontine->minimumPointagesRequired() ?? 0,
+                    ];
+                });
+
+                return $client;
             });
-           
-            return $client;
-        });
 
         return Inertia::render('Credits/Create', [
-            'clients' => $clients,
-            'creditProducts' => CreditProduct::with('creditObjects')->get()
+            'clients'        => $clients,
+            'creditProducts' => CreditProduct::with('creditObjects')->get(),
         ]);
     }
 
     public function store(Request $request)
     {
         $today = now()->toDateString();
-        
+
         // 0. Anticipation : On cherche s'il existe déjà un brouillon "pending" pour ce carnet
         $existingPendingCredit = null;
         if ($request->filled('carnet_id')) {
@@ -113,43 +111,43 @@ class CreditController extends Controller
 
         // 1. Validation stricte alignée sur ta nouvelle structure et le formulaire
         $request->validate([
-            'client_id' => 'required|exists:clients,id',
+            'client_id'         => 'required|exists:clients,id',
             'credit_product_id' => 'required|exists:credit_products,id',
-            'credit_object_id' => 'nullable|exists:credit_objects,id',
-            'cycle_id' => 'nullable', 
-            'type_support' => 'required|string|in:compte,tontine',
-            
-            'carnet_id' => [
+            'credit_object_id'  => 'nullable|exists:credit_objects,id',
+            'cycle_id'          => 'nullable',
+            'type_support'      => 'required|string|in:compte,tontine',
+
+            'carnet_id'         => [
                 Rule::requiredIf(in_array($request->input('type_support'), ['compte', 'tontine'])),
                 'nullable',
                 'exists:carnets,id',
             ],
-            
-            'montant_demande' => 'required|numeric|min:1000',
-            'mode' => 'required|string|in:fixe,degressif',
-            'periodicite' => 'required|string|in:journaliere,hebdomadaire,quinzaine,mensuelle',
-            'nombre_echeances' => 'required|integer|min:1|max:60',
-            'differe' => 'required|integer|min:0|max:12',
-            'frais_dossier' => 'required|numeric|min:0',
-            'taux' => 'required|numeric|min:0|max:100',
-            'taux_manuel' => 'nullable|numeric|min:0|max:100',
-            'date_debut' => "required|date|after_or_equal:{$today}",
+
+            'montant_demande'   => 'required|numeric|min:1000',
+            'mode'              => 'required|string|in:fixe,degressif',
+            'periodicite'       => 'required|string|in:journaliere,hebdomadaire,quinzaine,mensuelle',
+            'nombre_echeances'  => 'required|integer|min:1|max:60',
+            'differe'           => 'required|integer|min:0|max:12',
+            'frais_dossier'     => 'required|numeric|min:0',
+            'taux'              => 'required|numeric|min:0|max:100',
+            'taux_manuel'       => 'nullable|numeric|min:0|max:100',
+            'date_debut'        => "required|date|after_or_equal:{$today}",
 
             // Validation du bloc garant
-            'nom_prenom' => 'required|string|max:255',
-            'telephone' => 'required|string|max:50',
-            'profession' => 'nullable|string|max:255',
-            'adresse' => 'nullable|string|max:255',
+            'nom_prenom'          => 'required|string|max:255',
+            'telephone'           => 'required|string|max:50',
+            'profession'          => 'nullable|string|max:255',
+            'adresse'             => 'nullable|string|max:255',
             // La pièce est requise UNIQUEMENT si c'est une création (pas de brouillon)
-            'piece_identite' => [
-                $existingPendingCredit ? 'nullable' : 'required', 
-                'file', 'mimes:jpeg,png,jpg,pdf', 'max:4096'
+            'piece_identite'      => [
+                $existingPendingCredit ? 'nullable' : 'required',
+                'file', 'mimes:jpeg,png,jpg,pdf', 'max:4096',
             ],
             'justificatif_revenu' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:4096',
         ], [
-            'carnet_id.required' => 'Un carnet est obligatoire pour ce type de support.',
+            'carnet_id.required'        => 'Un carnet est obligatoire pour ce type de support.',
             'date_debut.after_or_equal' => 'La date de début doit être aujourd’hui ou ultérieure.',
-            'piece_identite.required' => 'La pièce d’identité du garant est obligatoire.',
+            'piece_identite.required'   => 'La pièce d’identité du garant est obligatoire.',
         ]);
 
         $guaranteeBase = 0;
@@ -161,19 +159,19 @@ class CreditController extends Controller
                 'cycles.collectes',
                 'depots',
                 'retraits',
-                'credits' => function($q) {
+                'credits' => function ($q) {
                     $q->where('statut', 'active');
-                }
+                },
             ])
-            ->where('id', $request->carnet_id)
-            ->where('client_id', $request->client_id)
-            ->where('statut', 'actif')
-            ->first();
+                ->where('id', $request->carnet_id)
+                ->where('client_id', $request->client_id)
+                ->where('statut', 'actif')
+                ->first();
 
-            if (!$carnet) {
+            if (! $carnet) {
                 throw ValidationException::withMessages(['carnet_id' => 'Le carnet sélectionné est invalide.']);
             }
-            
+
             // On vérifie s'il y a un crédit ACTIF ou APPROUVÉ (On exclut 'pending' de cette vérification)
             $carnetHasActiveCredit = Credit::where('carnet_id', $request->carnet_id)
                 ->whereIn('statut', ['approved', 'active', 'in_arrears'])
@@ -190,7 +188,7 @@ class CreditController extends Controller
                     })
                     ->exists();
 
-                if (!$hasValidCycle) {
+                if (! $hasValidCycle) {
                     throw ValidationException::withMessages(['type_support' => 'Pour un crédit tontine, un cycle en cours ou non retiré est requis.']);
                 }
             }
@@ -210,7 +208,7 @@ class CreditController extends Controller
             // Seuil recommandé
             if ($carnet->type === 'tontine' && $category = $carnet->categoryTontine) {
                 $requiredPointages = $category->minimumPointagesRequired();
-                $currentPointages = $carnet->totalPointages();
+                $currentPointages  = $carnet->totalPointages();
 
                 if ($currentPointages < $requiredPointages) {
                     session()->flash('warning', "Le carnet ne respecte pas encore le seuil recommandé ({$currentPointages}/{$requiredPointages} pointages). L'admin peut tout de même enregistrer le crédit.");
@@ -243,52 +241,52 @@ class CreditController extends Controller
         DB::beginTransaction();
         try {
             $data = $request->only([
-                'client_id', 'carnet_id', 'montant_demande', 'mode', 
-                'periodicite', 'nombre_echeances', 'taux', 'taux_manuel', 'date_debut', 'differe'
+                'client_id', 'carnet_id', 'montant_demande', 'mode',
+                'periodicite', 'nombre_echeances', 'taux', 'taux_manuel', 'date_debut', 'differe',
             ]);
 
             $scheduleArray = CreditCalculator::buildSchedule($data);
-            $schedule = collect($scheduleArray);
+            $schedule      = collect($scheduleArray);
 
-            $interestTotal = CreditCalculator::totalInterest($scheduleArray);
+            $interestTotal  = CreditCalculator::totalInterest($scheduleArray);
             $montantAccorde = $request->montant_demande;
-            $dateFin = $schedule->last()['date'] ?? $request->date_debut;
-            $blockedAmount = (float) $guaranteeBase;
+            $dateFin        = $schedule->last()['date'] ?? $request->date_debut;
+            $blockedAmount  = (float) $guaranteeBase;
 
             $echeanceDiffere = $schedule->firstWhere('is_differe', true);
-            $montantDiffere = $echeanceDiffere ? $echeanceDiffere['total'] : 0;
+            $montantDiffere  = $echeanceDiffere ? $echeanceDiffere['total'] : 0;
             $echeanceNormale = $schedule->firstWhere('is_differe', false) ?? $schedule->first();
-            $montantNormal = $echeanceNormale ? $echeanceNormale['total'] : 0;
+            $montantNormal   = $echeanceNormale ? $echeanceNormale['total'] : 0;
 
             // Préparation du Payload Crédit
             $creditPayload = [
-                'client_id' => $data['client_id'],
-                'carnet_id' => $data['carnet_id'] ?? null,
-                'cycle_id' => $request->cycle_id ?? null,
-                'admin_id' => auth()->id() ?? null,
-                'credit_product_id' => $request->credit_product_id,
-                'credit_object_id' => $request->credit_object_id,
-                'type_support' => $request->type_support,
-                'montant_demande' => $data['montant_demande'],
-                'montant_accorde' => $montantAccorde,
-                'taux' => $data['taux'], 
-                'taux_manuel' => $data['taux_manuel'],
-                'mode' => $data['mode'],
-                'periodicite' => $data['periodicite'],
-                'nombre_echeances' => $data['nombre_echeances'],
-                'differe' => $request->differe,
-                'frais_dossier' => $request->frais_dossier,
+                'client_id'                => $data['client_id'],
+                'carnet_id'                => $data['carnet_id'] ?? null,
+                'cycle_id'                 => $request->cycle_id ?? null,
+                'admin_id'                 => auth()->id() ?? null,
+                'credit_product_id'        => $request->credit_product_id,
+                'credit_object_id'         => $request->credit_object_id,
+                'type_support'             => $request->type_support,
+                'montant_demande'          => $data['montant_demande'],
+                'montant_accorde'          => $montantAccorde,
+                'taux'                     => $data['taux'],
+                'taux_manuel'              => $data['taux_manuel'],
+                'mode'                     => $data['mode'],
+                'periodicite'              => $data['periodicite'],
+                'nombre_echeances'         => $data['nombre_echeances'],
+                'differe'                  => $request->differe,
+                'frais_dossier'            => $request->frais_dossier,
                 'montant_echeance_differe' => $montantDiffere,
-                'montant_echeance' => $montantNormal,
-                'interet_total' => round($interestTotal, 0),
-                'montant_rembourse' => 0,
-                'blocked_amount' => $blockedAmount,
-                'statut' => 'pending',
-                'date_demande' => now()->toDateString(),
-                'date_debut' => $data['date_debut'],
-                'date_fin_prevue' => $dateFin,
-                'metadata' => [
-                    'preview' => true,
+                'montant_echeance'         => $montantNormal,
+                'interet_total'            => round($interestTotal, 0),
+                'montant_rembourse'        => 0,
+                'blocked_amount'           => $blockedAmount,
+                'statut'                   => 'pending',
+                'date_demande'             => now()->toDateString(),
+                'date_debut'               => $data['date_debut'],
+                'date_fin_prevue'          => $dateFin,
+                'metadata'                 => [
+                    'preview'        => true,
                     'guarantee_base' => $blockedAmount,
                 ],
             ];
@@ -299,27 +297,27 @@ class CreditController extends Controller
                 $credit = $existingPendingCredit;
             } else {
                 $creditPayload['credit_uid'] = (string) Str::uuid();
-                $credit = Credit::create($creditPayload);
+                $credit                      = Credit::create($creditPayload);
             }
 
             // Étape B : Gestion des fichiers et Enregistrement du Garant
-            $pathPiece = $existingPendingCredit ? $existingPendingCredit->creditGuarantor?->piece_identite : null;
+            $pathPiece = $existingPendingCredit ? $existingPendingCredit->creditGuarantor->piece_identite : null;
             if ($request->hasFile('piece_identite')) {
                 $pathPiece = $request->file('piece_identite')->store('guarantors/pieces', 'public');
             }
 
-            $pathRevenu = $existingPendingCredit ? $existingPendingCredit->creditGuarantor?->justificatif_revenu : null;
+            $pathRevenu = $existingPendingCredit ? $existingPendingCredit->creditGuarantor->justificatif_revenu : null;
             if ($request->hasFile('justificatif_revenu')) {
                 $pathRevenu = $request->file('justificatif_revenu')->store('guarantors/revenus', 'public');
             }
 
             $guarantorPayload = [
-                'credit_id' => $credit->id,
-                'nom_prenom' => $request->nom_prenom,
-                'telephone' => $request->telephone,
-                'profession' => $request->profession,
-                'adresse' => $request->adresse,
-                'piece_identite' => $pathPiece,
+                'credit_id'           => $credit->id,
+                'nom_prenom'          => $request->nom_prenom,
+                'telephone'           => $request->telephone,
+                'profession'          => $request->profession,
+                'adresse'             => $request->adresse,
+                'piece_identite'      => $pathPiece,
                 'justificatif_revenu' => $pathRevenu,
             ];
 
@@ -336,26 +334,26 @@ class CreditController extends Controller
 
             foreach ($scheduleArray as $item) {
                 CreditPayment::create([
-                    'credit_id' => $credit->id,
-                    'echeance' => $item['numero'],
-                    'due_date' => $item['date'],
+                    'credit_id'         => $credit->id,
+                    'echeance'          => $item['numero'],
+                    'due_date'          => $item['date'],
                     'montant_principal' => round($item['principal'], 0),
-                    'montant_interets' => round($item['interest'], 0),
-                    'montant_total' => round($item['total'], 0),
-                    'status' => 'pending',
-                    'admin_id' => auth()->id() ?? null,
+                    'montant_interets'  => round($item['interest'], 0),
+                    'montant_total'     => round($item['total'], 0),
+                    'status'            => 'pending',
+                    'admin_id'          => auth()->id() ?? null,
                 ]);
             }
 
             DB::commit();
-            
+
             // Message dynamique selon l'action effectuée
-            $successMessage = $existingPendingCredit 
-                ? 'Brouillon de crédit mis à jour avec succès.' 
+            $successMessage = $existingPendingCredit
+                ? 'Brouillon de crédit mis à jour avec succès.'
                 : 'Demande de crédit enregistrée avec succès.';
 
             return redirect()->route('admin.credits.index')->with('success', $successMessage);
-            
+
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Erreur crédit: ' . $e->getMessage());
@@ -367,37 +365,36 @@ class CreditController extends Controller
      * Récupère les détails complets d'un carnet
      * Retourne différentes informations selon le type de carnet
      */
-    public function getCarnetDetails(Carnet $carnet)
+    public function getCarnetDetails(int $id)
     {
+        $carnet = Carnet::findOrFail($id);
         try {
-            $carnet->load(['cycles.collectes', 'depots', 'retraits']);
-
+            $carnet->load(['cycles.collectes', 'cycles.retraits', 'depots', 'retraits']);
             if ($carnet->type === 'tontine') {
                 // === CARNET TONTINE ===
                 $cycles = $carnet->cycles->map(function (Cycle $cycle) {
-                    $totalCollectes = (float) $cycle->collectes->sum('montant');
+                    $totalCollectes  = (float) $cycle->collectes->sum('montant');
                     $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
-                    $commission = (float) ($cycle->montant_journalier ?? 0);
-                    
+                    $commission      = (float) ($cycle->montant_journalier ?? 0);
+
                     $nombrePointages = (int) $cycle->collectes->sum('pointage');
-                    
+
                     // Calcul du retard :
-                    // En retard si : statut !== 'termine' ET (pointages < jours écoulés OU date actuelle dépasse date_fin_prevue)
-                    $today = Carbon::today();
-                    $daysElapsed = $cycle->date_debut ? $cycle->date_debut->diffInDays($today) : 0;
+                    $today         = Carbon::today();
+                    $daysElapsed   = $cycle->date_debut ? $cycle->date_debut->diffInDays($today) : 0;
                     $isPastDueDate = $cycle->date_fin_prevue && $today->gt($cycle->date_fin_prevue);
-                    
-                    $enRetard = ($cycle->statut !== 'termine') && 
-                               ($nombrePointages < $daysElapsed || $isPastDueDate);
-                    
+
+                    $enRetard = ($cycle->statut !== 'termine') &&
+                        ($nombrePointages < $daysElapsed || $isPastDueDate);
+
                     return [
                         'id'                  => $cycle->id,
-                        'date_debut'          => $cycle->date_debut?->format('d/m/Y'),
-                        'date_fin_prevue'     => $cycle->date_fin_prevue?->format('d/m/Y'),
-                        'date_cloture_reelle' => $cycle->date_cloture_reelle?->format('d/m/Y'),
+                        'date_debut'          => optional($cycle->date_debut)->format('d/m/Y'),
+                        'date_fin_prevue'     => optional($cycle->date_fin_prevue)->format('d/m/Y'),
+                        'date_cloture_reelle' => optional($cycle->date_cloture_reelle)->format('d/m/Y'),
                         'mise'                => (int) $commission,
                         'statut'              => $cycle->statut,
-                        'total_pointages'    => $nombrePointages,
+                        'total_pointages'     => $nombrePointages,
                         'en_retard'           => $enRetard,
                         'total_collectes'     => (int) $totalCollectes,
                         'total_deja_retire'   => (int) $totalDejaRetire,
@@ -413,30 +410,30 @@ class CreditController extends Controller
             } else {
                 // === CARNET COMPTE ÉPARGNE ===
                 $solde = (float) $carnet->solde_disponible;
-                
+
                 // Fusion et tri des dépôts et retraits (10 derniers mouvements)
                 $movements = collect();
-                
+
                 // Ajouter les dépôts
                 foreach ($carnet->depots as $depot) {
                     $movements->push([
                         'type_transaction' => 'Dépôt',
                         'montant'          => (int) $depot->montant,
-                        'date'             => $depot->date_depot?->format('d/m/Y H:i'),
-                        'date_ts'          => $depot->date_depot?->timestamp ?? 0,
+                        'date'             => optional($depot->date_depot)->format('d/m/Y H:i'),
+                        'date_ts'          => optional($depot->date_depot)->timestamp ?? 0,
                     ]);
                 }
-                
+
                 // Ajouter les retraits
                 foreach ($carnet->retraits as $retrait) {
                     $movements->push([
                         'type_transaction' => 'Retrait',
                         'montant'          => (int) $retrait->montant_net,
-                        'date'             => $retrait->date_retrait?->format('d/m/Y H:i'),
-                        'date_ts'          => $retrait->date_retrait?->timestamp ?? 0,
+                        'date'             => optional($retrait->date_retrait)->format('d/m/Y H:i'),
+                        'date_ts'          => optional($retrait->date_retrait)->timestamp ?? 0,
                     ]);
                 }
-                
+
                 // Tri par date décroissante et limite aux 10 derniers
                 $movements = $movements
                     ->sortByDesc('date_ts')
@@ -447,20 +444,19 @@ class CreditController extends Controller
                         return $item;
                     })
                     ->toArray();
-                
+
                 return response()->json([
-                    'success'   => true,
-                    'type'      => 'compte',
-                    'solde'     => (int) $solde,
+                    'success'    => true,
+                    'type'       => 'compte',
+                    'solde'      => (int) $solde,
                     'historique' => $movements,
                 ]);
             }
 
         } catch (\Exception $e) {
-            Log::error('getCarnetDetails Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'error'   => 'Impossible de récupérer les détails du carnet.',
+                'error'   => $e->getMessage() . ' à la ligne ' . $e->getLine(),
             ], 500);
         }
     }
@@ -482,22 +478,22 @@ class CreditController extends Controller
             if ($credit->admin_id !== $currentUser->id) {
                 return response()->json([
                     'brouillon_bloque' => true,
-                    'message' => "Ce brouillon a été initié par un autre agent. Vous ne pouvez pas le modifier."
+                    'message'          => "Ce brouillon a été initié par un autre agent. Vous ne pouvez pas le modifier.",
                 ]);
             }
         }
 
         // 3. Si c'est le bon admin (ou s'il n'y a pas de brouillon), on retourne les données normalement
-        return response()->json($credit); 
+        return response()->json($credit);
     }
 
     public function show(Credit $credit)
     {
         $credit->load(['client', 'carnet.parent', 'carnet.enfants']);
 
-        $today = Carbon::today();
-        $totalPenalty = 0;
-        $latePaymentFound = false;
+        $today                = Carbon::today();
+        $totalPenalty         = 0;
+        $latePaymentFound     = false;
         $emergencyWithdrawals = [];
 
         if ($credit->statut === 'active') {
@@ -532,26 +528,26 @@ class CreditController extends Controller
             ->appends(request()->query());
 
         $payments->setCollection($payments->getCollection()->map(function (CreditPayment $payment) use ($today, &$totalPenalty, &$latePaymentFound, $credit) {
-            $isLate = $payment->status !== 'paid' && $payment->due_date->lt($today);
+            $isLate           = $payment->status !== 'paid' && $payment->due_date->lt($today);
             $automaticPenalty = 0;
 
             if ($isLate) {
-                $daysLate = $payment->due_date->diffInDays($today);
+                $daysLate         = $payment->due_date->diffInDays($today);
                 $automaticPenalty = CreditCalculator::calculatePenalty((float) $payment->montant_total, $daysLate);
                 $latePaymentFound = true;
             }
 
-            $displayPenalty = $payment->penalite > 0 ? (float) $payment->penalite : $automaticPenalty;
+            $displayPenalty            = $payment->penalite > 0 ? (float) $payment->penalite : $automaticPenalty;
             $payment->computed_penalty = round($displayPenalty, 0); // Spécificité XAF
-            $payment->display_status = $payment->status === 'paid'
+            $payment->display_status   = $payment->status === 'paid'
                 ? 'paid'
                 : ($payment->status === 'partiel' ? 'partiel' : ($isLate ? 'late' : 'pending'));
-            
-            $payment->can_pay = !$credit->payments()
+
+            $payment->can_pay = ! $credit->payments()
                 ->where('echeance', '<', $payment->echeance)
                 ->whereIn('status', ['pending', 'partiel'])
                 ->exists();
-                
+
             $totalPenalty += $displayPenalty;
 
             return $payment;
@@ -561,8 +557,8 @@ class CreditController extends Controller
             $credit->update(['statut' => 'in_arrears']);
         }
 
-        $credit->penalty_amount = round($totalPenalty, 0);
-        $credit->payments = $payments;
+        $credit->penalty_amount               = round($totalPenalty, 0);
+        $credit->payments                     = $payments;
         $credit->emergency_withdrawal_summary = $emergencyWithdrawals;
 
         return Inertia::render('Credits/Show', [
@@ -582,12 +578,12 @@ class CreditController extends Controller
         }
 
         $carnet = $credit->carnet;
-        if (!$carnet) {
+        if (! $carnet) {
             return null;
         }
 
         $withdrawn = 0.0;
-        
+
         DB::beginTransaction();
         try {
             foreach ($carnet->allLinkedCarnets() as $linkedCarnet) {
@@ -600,23 +596,23 @@ class CreditController extends Controller
 
                 foreach ($cycles as $cycle) {
                     $totalCollectes = (float) $cycle->collectes()->sum('montant');
-                    $commission = (float) ($cycle->montant_journalier ?? 0);
-                    $net = max(0, $totalCollectes - $commission);
+                    $commission     = (float) ($cycle->montant_journalier ?? 0);
+                    $net            = max(0, $totalCollectes - $commission);
 
                     if ($net <= 0) {
                         continue;
                     }
 
                     Retrait::create([
-                        'cycle_id' => $cycle->id,
-                        'client_id' => $cycle->client_id,
-                        'carnet_id' => $cycle->carnet_id,
-                        'admin_id' => auth()->id(),
+                        'cycle_id'      => $cycle->id,
+                        'client_id'     => $cycle->client_id,
+                        'carnet_id'     => $cycle->carnet_id,
+                        'admin_id'      => auth()->id(),
                         'montant_total' => $totalCollectes,
-                        'commission' => $commission,
-                        'montant_net' => $net,
-                        'date_retrait' => now(),
-                        'note' => 'Prélèvement de secours automatique pour échéance en défaut',
+                        'commission'    => $commission,
+                        'montant_net'   => $net,
+                        'date_retrait'  => now(),
+                        'note'          => 'Prélèvement de secours automatique pour échéance en défaut',
                     ]);
 
                     $cycle->update(['retire_at' => now()]);
@@ -634,14 +630,14 @@ class CreditController extends Controller
             }
 
             $paidBefore = (float) $payment->montant_paye;
-            $newPaid = min($paidBefore + $withdrawn, (float) $payment->montant_total + (float) $payment->penalite);
-            $paidDiff = $newPaid - $paidBefore;
+            $newPaid    = min($paidBefore + $withdrawn, (float) $payment->montant_total + (float) $payment->penalite);
+            $paidDiff   = $newPaid - $paidBefore;
 
             $payment->update([
                 'montant_paye' => round($newPaid, 0),
-                'status' => $newPaid >= ((float) $payment->montant_total + (float) $payment->penalite) ? 'paid' : 'partiel',
-                'date_paye' => $newPaid >= ((float) $payment->montant_total + (float) $payment->penalite) ? now() : null,
-                'admin_id' => auth()->id(),
+                'status'       => $newPaid >= ((float) $payment->montant_total + (float) $payment->penalite) ? 'paid' : 'partiel',
+                'date_paye'    => $newPaid >= ((float) $payment->montant_total + (float) $payment->penalite) ? now() : null,
+                'admin_id'     => auth()->id(),
             ]);
 
             if ($paidDiff > 0) {
@@ -651,11 +647,11 @@ class CreditController extends Controller
             DB::commit();
 
             return [
-                'payment_id' => $payment->id,
-                'echeance' => $payment->echeance,
+                'payment_id'       => $payment->id,
+                'echeance'         => $payment->echeance,
                 'amount_withdrawn' => round($withdrawn, 0),
-                'amount_applied' => round($paidDiff, 0),
-                'note' => 'Prélèvement de secours automatique pour échéance en défaut',
+                'amount_applied'   => round($paidDiff, 0),
+                'note'             => 'Prélèvement de secours automatique pour échéance en défaut',
             ];
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -671,16 +667,16 @@ class CreditController extends Controller
         }
 
         $request->validate([
-            'penalite' => 'nullable|numeric|min:0',
+            'penalite'     => 'nullable|numeric|min:0',
             'montant_paye' => 'nullable|numeric|min:0',
         ], [
-            'penalite.min' => 'La pénalité ne peut pas être négative.',
+            'penalite.min'     => 'La pénalité ne peut pas être négative.',
             'montant_paye.min' => 'Le montant payé ne peut pas être négatif.',
         ]);
 
         // Utilisation d'une transaction globale avec lock direct en écriture pour éviter le double clic au guichet
         return DB::transaction(function () use ($request, $credit, $payment) {
-            
+
             // Verrouiller la ligne de paiement pour empêcher une modification parallèle
             $payment = CreditPayment::where('id', $payment->id)->lockForUpdate()->first();
 
@@ -688,7 +684,7 @@ class CreditController extends Controller
                 return back()->with('error', 'Action annulée : cette échéance a déjà été encaissée ou soldée entre-temps.');
             }
 
-            $updates = [];
+            $updates        = [];
             $successMessage = 'Échéance mise à jour.';
 
             // 1. Traitement des pénalités forcées manuellement
@@ -698,12 +694,12 @@ class CreditController extends Controller
 
             // 2. Traitement d'un versement financier au guichet
             if ($request->filled('montant_paye')) {
-                $amountPaye = round((float) $request->input('montant_paye'), 0);
+                $amountPaye  = round((float) $request->input('montant_paye'), 0);
                 $currentPaid = (float) $payment->montant_paye;
-                
+
                 // Prendre la nouvelle pénalité soumise ou celle déjà présente en base
-                $penalite = array_key_exists('penalite', $updates) ? $updates['penalite'] : (float) $payment->penalite;
-                $totalDue = (float) $payment->montant_total + $penalite;
+                $penalite     = array_key_exists('penalite', $updates) ? $updates['penalite'] : (float) $payment->penalite;
+                $totalDue     = (float) $payment->montant_total + $penalite;
                 $remainingDue = round($totalDue - $currentPaid, 0);
 
                 // Contrôle strict de l'ordre d'amortissement
@@ -724,18 +720,18 @@ class CreditController extends Controller
                     return back()->with('error', 'Le montant saisi excède le reste exigible de cette échéance.');
                 }
 
-                $newPaid = round($currentPaid + $amountPaye, 0);
+                $newPaid                 = round($currentPaid + $amountPaye, 0);
                 $updates['montant_paye'] = $newPaid;
 
                 if ($newPaid >= $totalDue) {
-                    $updates['status'] = 'paid';
+                    $updates['status']    = 'paid';
                     $updates['date_paye'] = now();
-                    $successMessage = "Encaissement de " . number_format($amountPaye, 0, ',', ' ') . " FCFA effectué. Échéance entièrement réglée.";
+                    $successMessage       = "Encaissement de " . number_format($amountPaye, 0, ',', ' ') . " FCFA effectué. Échéance entièrement réglée.";
                 } else {
-                    $updates['status'] = 'partiel';
+                    $updates['status']    = 'partiel';
                     $updates['date_paye'] = null;
-                    $remaining = number_format($totalDue - $newPaid, 0, ',', ' ');
-                    $successMessage = "Encaissement partiel de " . number_format($amountPaye, 0, ',', ' ') . " FCFA enregistré. Reste à payer : {$remaining} FCFA.";
+                    $remaining            = number_format($totalDue - $newPaid, 0, ',', ' ');
+                    $successMessage       = "Encaissement partiel de " . number_format($amountPaye, 0, ',', ' ') . " FCFA enregistré. Reste à payer : {$remaining} FCFA.";
                 }
 
                 // Ajuster le cumulatif global remboursé sur la fiche de crédit principale
@@ -746,11 +742,11 @@ class CreditController extends Controller
             $payment->update($updates);
 
             // 3. Vérification de clôture finale du dossier crédit
-            $creditIsSettled = !$credit->payments()->where('status', '!=', 'paid')->exists();
+            $creditIsSettled = ! $credit->payments()->where('status', '!=', 'paid')->exists();
 
             if ($creditIsSettled) {
                 $credit->update([
-                    'statut' => 'solder',
+                    'statut'         => 'solder',
                     'blocked_amount' => 0,
                 ]);
                 $successMessage .= ' Le dossier de crédit est désormais entièrement soldé.';
@@ -767,8 +763,8 @@ class CreditController extends Controller
         }
 
         $credit->update([
-            'statut' => 'active',
-            'admin_id' => auth()->id(),
+            'statut'      => 'active',
+            'admin_id'    => auth()->id(),
             'approved_at' => now(),
         ]);
 
@@ -780,9 +776,9 @@ class CreditController extends Controller
         $result = \App\Services\CreditSettlementService::settleCreditWithAvailableFunds($credit);
 
         $messageType = $result['success'] ? 'success' : 'warning';
-        $message = $result['message'];
+        $message     = $result['message'];
 
-        if (!empty($result['cycles_used'])) {
+        if (! empty($result['cycles_used'])) {
             $message .= ' - Fonds utilisés : ' . number_format($result['amount_used'], 0, ',', ' ') . ' FCFA de ' . count($result['cycles_used']) . ' cycle(s).';
         }
 

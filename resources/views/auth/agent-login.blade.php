@@ -1,72 +1,120 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Connexion Agent - NANA Eco Consulting</title>
-    
+
     <link rel="manifest" href="/pwa/manifest.json">
     <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bootstrap-icons.css') }}">
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/crypto-js.min.js') }}"></script>
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}" defer></script>
-   
+
     <style>
-        :root { --nna-blue: #0d6efd; --nna-bg: #f8f9fa; }
-        body { background-color: var(--nna-bg); min-height: 100vh; display: flex; align-items: center; }
-        
-        .login-card { border: none; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); transition: transform 0.2s; }
-        
-        .logo-icon { 
-            width: 75px; height: 75px; background: var(--nna-blue); color: white; 
-            border-radius: 22px; display: flex; align-items: center; justify-content: center; 
-            margin: 0 auto 20px; font-size: 2.2rem;
+        :root {
+            --nna-blue: #0d6efd;
+            --nna-bg: #f8f9fa;
         }
 
-        .form-control { 
-            border-radius: 14px; padding: 12px; border: 2px solid #edf0f5; 
-            background-color: #fcfdfe; transition: all 0.3s;
+        body {
+            background-color: var(--nna-bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
         }
-        .form-control:focus { border-color: var(--nna-blue); box-shadow: none; background-color: #fff; }
 
-        .input-group-text { border-radius: 14px; border: 2px solid #edf0f5; background-color: #fcfdfe; }
-
-        .btn-login { 
-            background-color: var(--nna-blue); border: none; border-radius: 14px; 
-            padding: 14px; font-weight: 700; transition: all 0.2s;
+        .login-card {
+            border: none;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s;
         }
-        .btn-login:active { transform: scale(0.96); }
+
+        .logo-icon {
+            width: 75px;
+            height: 75px;
+            background: var(--nna-blue);
+            color: white;
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2.2rem;
+        }
+
+        .form-control {
+            border-radius: 14px;
+            padding: 12px;
+            border: 2px solid #edf0f5;
+            background-color: #fcfdfe;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--nna-blue);
+            box-shadow: none;
+            background-color: #fff;
+        }
+
+        .input-group-text {
+            border-radius: 14px;
+            border: 2px solid #edf0f5;
+            background-color: #fcfdfe;
+        }
+
+        .btn-login {
+            background-color: var(--nna-blue);
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .btn-login:active {
+            transform: scale(0.96);
+        }
 
         #install-banner {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 1050;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1050;
             background: linear-gradient(90deg, #1a56a6, #0d6efd);
-            color: white; padding: 12px; font-size: 0.85rem;
-            display: none; align-items: center; justify-content: center;
+            color: white;
+            padding: 12px;
+            font-size: 0.85rem;
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
 
-        .password-toggle { cursor: pointer; border-left: none !important; }
+        .password-toggle {
+            cursor: pointer;
+            border-left: none !important;
+        }
 
         @media (max-height: 650px) {
-            body { align-items: flex-start; padding-top: 30px; }
+            body {
+                align-items: flex-start;
+                padding-top: 30px;
+            }
         }
     </style>
 </head>
+
 <body>
-
-    <!-- Bannière d'installation PWA -->
-    <!-- <div id="install-banner" class="shadow-sm">
-        <i class="bi bi-cloud-arrow-down-fill me-2"></i>
-        <span>Accéder au mode hors-ligne</span>
-        <button id="btn-install-now" class="btn btn-light btn-sm fw-bold ms-3" style="border-radius: 8px;">Installer</button>
-    </div> -->
-
     <div class="container my-auto" id="my-app-container">
         <div class="row justify-content-center">
             <div class="col-12 col-sm-10 col-md-6 col-lg-4">
-                
+
                 <div class="text-center mb-4">
                     <div class="logo-icon shadow-lg">
                         <i class="bi bi-person-badge"></i>
@@ -83,28 +131,28 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Matricule Agent</label>
                             <div class="input-group">
-                                <span class="input-group-text border-end-0 text-primary"><i class="bi bi-hash"></i></span>
-                                <input type="text" id="username" name="username" 
-                                       class="form-control border-start-0" 
-                                       placeholder="Ex: NEC-00001" 
-                                       inputmode="text" required autofocus>
+                                <span class="input-group-text border-end-0 text-primary"><i
+                                        class="bi bi-hash"></i></span>
+                                <input type="text" id="username" name="username" class="form-control border-start-0"
+                                    placeholder="Ex: NEC-00001" inputmode="text" required autofocus>
                             </div>
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-secondary">Mot de passe</label>
                             <div class="input-group">
-                                <span class="input-group-text border-end-0 text-primary"><i class="bi bi-lock"></i></span>
-                                <input type="password" id="password" name="password" 
-                                       class="form-control border-start-0 border-end-0" 
-                                       placeholder="••••••••" required>
+                                <span class="input-group-text border-end-0 text-primary"><i
+                                        class="bi bi-lock"></i></span>
+                                <input type="password" id="password" name="password"
+                                    class="form-control border-start-0 border-end-0" placeholder="••••••••" required>
                                 <span class="input-group-text bg-white password-toggle" onclick="togglePassword()">
                                     <i id="toggle-icon" class="bi bi-eye text-muted"></i>
                                 </span>
                             </div>
                         </div>
 
-                        <button type="submit" id="btn-submit" class="btn btn-primary btn-login w-100 shadow d-flex justify-content-center align-items-center gap-2">
+                        <button type="submit" id="btn-submit"
+                            class="btn btn-primary btn-login w-100 shadow d-flex justify-content-center align-items-center gap-2">
                             <span id="btn-text">Se connecter</span>
                             <div id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></div>
                             <i id="btn-icon" class="bi bi-arrow-right"></i>
@@ -126,15 +174,15 @@
                     <i class="bi bi-shield-lock text-primary fs-1 mb-3"></i>
                     <h5 class="fw-bold">Sécurisez votre accès</h5>
                     <p class="text-muted small">Créez un code PIN à 4 chiffres pour vos collectes sur le terrain.</p>
-                    
+
                     <div class="mb-4">
-                        <input type="password" id="new-pin" class="form-control form-control-lg text-center fw-bold" 
-                            placeholder="0 0 0 0" maxlength="4" inputmode="numeric" 
+                        <input type="password" id="new-pin" class="form-control form-control-lg text-center fw-bold"
+                            placeholder="0 0 0 0" maxlength="4" inputmode="numeric"
                             style="letter-spacing: 1rem; border-radius: 12px; border: 2px solid #eee;">
                     </div>
 
-                    <button type="button" id="confirm-pin-btn" class="btn btn-primary w-100 py-3 fw-bold" 
-                            style="border-radius: 12px;">
+                    <button type="button" id="confirm-pin-btn" class="btn btn-primary w-100 py-3 fw-bold"
+                        style="border-radius: 12px;">
                         Confirmer et Synchroniser
                     </button>
                 </div>
@@ -143,13 +191,14 @@
     </div>
     <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
 </body>
+
 </html>
 <script>
     // Force l'état initial dans l'historique dès le chargement de la page de connexion
-    window.onload = function () {
+    window.onload = function() {
         window.history.pushState(null, null, window.location.href);
-        
-        window.onpopstate = function () {
+
+        window.onpopstate = function() {
             // Si l'agent tente de reculer, on le pousse de force un coup en avant
             window.history.go(1);
         };
@@ -173,7 +222,9 @@
 <script src="{{ asset('js/dexie.js') }}"></script>
 
 <script type="module">
-    import { getAgentDB } from '/js/db-manager.js';
+    import {
+        getAgentDB
+    } from '/js/db-manager.js';
 
     // Sel de sécurité pour le hachage
     const PIN_SALT = "NANA_SYSTEM_SECURE_2026";
@@ -183,7 +234,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         const modalEl = document.getElementById('pinModal');
-        
+
         if (modalEl && typeof bootstrap !== 'undefined') {
             pinModalInstance = new bootstrap.Modal(modalEl, {
                 backdrop: 'static', // Empêche de fermer en cliquant à côté
@@ -247,24 +298,26 @@
             };
 
             try {
-                if (typeof CryptoJS === 'undefined') throw new Error("Erreur : Bibliothèque de sécurité manquante.");
+                if (typeof CryptoJS === 'undefined') throw new Error(
+                    "Erreur : Bibliothèque de sécurité manquante.");
 
                 const agentKey = `auth_v1_${elements.matricule}`;
                 const localAuth = JSON.parse(localStorage.getItem(agentKey));
 
                 // --- CAS 1 : CONNEXION OFFLINE (Local) ---
                 if (localAuth && localAuth.pin_hash) {
-                    const inputHash = CryptoJS.SHA256(elements.password + elements.matricule + PIN_SALT).toString();
+                    const inputHash = CryptoJS.SHA256(elements.password + elements.matricule + PIN_SALT)
+                        .toString();
 
                     if (inputHash === localAuth.pin_hash) {
                         if (navigator.onLine) {
-                           checkStatus(elements.matricule);
+                            checkStatus(elements.matricule);
                         }
                         setUIState(true, "Accès autorisé...");
                         localStorage.setItem('current_agent_matricule', elements.matricule);
                         localStorage.setItem('session_active', true);
                         window.location.href = "/pwa/dashboard";
-                        return; 
+                        return;
                     } else {
                         throw new Error("Code PIN incorrect pour ce compte.");
                     }
@@ -274,48 +327,59 @@
                 if (!navigator.onLine) throw new Error("Internet requis pour configurer cet appareil.");
 
                 setUIState(true, "Vérification serveur...");
-                
+
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 const response = await fetch("{{ route('agent.login.submit') }}", {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken 
+                        'X-CSRF-TOKEN': csrfToken
                     },
-                    body: JSON.stringify({ username: elements.matricule, password: elements.password })
+                    body: JSON.stringify({
+                        username: elements.matricule,
+                        password: elements.password
+                    })
                 });
 
                 const data = await response.json();
-       
+
                 if (!response.ok) throw new Error(data.message || "Identifiants invalides.");
-                if(data.agent.actif == false) throw new Error("Votre compte a été révoqué");
-                if(data.agent.sync == false) throw new Error("Votre compte n'est pas autorisé à synchroniser les données");
-                
-                const serverPinHash = data.agent.pin_hash; 
-                
+                if (data.agent.actif == false) throw new Error("Votre compte a été révoqué");
+                if (data.agent.sync == false) throw new Error(
+                    "Votre compte n'est pas autorisé à synchroniser les données");
+
+                const serverPinHash = data.agent.pin_hash;
+
                 setUIState(false, "Se connecter");
 
                 if (serverPinHash) {
                     // --- ÉTAPE : VÉRIFICATION DU PIN EXISTANT (Recovery) ---
-                    const { value: pinSaisi } = await Swal.fire({
+                    const {
+                        value: pinSaisi
+                    } = await Swal.fire({
                         title: 'Vérification du code PIN',
                         text: 'Entrez votre PIN à 4 chiffres pour valider cet appareil.',
                         input: 'password',
-                        inputAttributes: { maxlength: 4, inputmode: 'numeric', pattern: '[0-9]*' },
+                        inputAttributes: {
+                            maxlength: 4,
+                            inputmode: 'numeric',
+                            pattern: '[0-9]*'
+                        },
                         showCancelButton: true,
                         confirmButtonText: 'Valider',
                         cancelButtonText: 'Annuler',
                         allowOutsideClick: false
                     });
 
-                    if (!pinSaisi) return; 
+                    if (!pinSaisi) return;
 
                     const inputHash = CryptoJS.SHA256(pinSaisi + elements.matricule + PIN_SALT).toString();
 
                     if (inputHash === serverPinHash) {
                         setUIState(true, "Initialisation...");
-                        return finalizeLogin(null, data.agent, elements.matricule, data.token, true, serverPinHash);
+                        return finalizeLogin(null, data.agent, elements.matricule, data.token, true,
+                            serverPinHash);
                     } else {
                         await Swal.fire({
                             icon: 'error',
@@ -323,19 +387,22 @@
                             text: 'Le code saisi ne correspond pas à celui enregistré sur votre compte.',
                             confirmButtonText: 'Réessayer'
                         });
-                        return; 
+                        return;
                     }
 
                 } else {
                     // --- ÉTAPE : CRÉATION DU PREMIER PIN ---
-                    const { value: newPin, isDismissed } = await Swal.fire({
+                    const {
+                        value: newPin,
+                        isDismissed
+                    } = await Swal.fire({
                         title: 'Nouveau Code PIN',
                         text: 'Choisissez 4 chiffres pour sécuriser vos collectes offline.',
                         input: 'password',
-                        inputAttributes: { 
-                            maxlength: 4, 
-                            inputmode: 'numeric', 
-                            pattern: '[0-9]*', 
+                        inputAttributes: {
+                            maxlength: 4,
+                            inputmode: 'numeric',
+                            pattern: '[0-9]*',
                             autocomplete: 'new-password'
                         },
                         showCancelButton: true,
@@ -343,10 +410,11 @@
                         cancelButtonText: 'Annuler',
                         confirmButtonColor: '#3085d6',
                         cancelButtonColor: '#6c757d',
-                        allowOutsideClick: false, 
+                        allowOutsideClick: false,
                         preConfirm: (v) => {
                             if (!/^\d{4}$/.test(v)) {
-                                return Swal.showValidationMessage('Veuillez saisir exactement 4 chiffres');
+                                return Swal.showValidationMessage(
+                                    'Veuillez saisir exactement 4 chiffres');
                             }
                             return v;
                         }
@@ -354,7 +422,7 @@
 
                     if (isDismissed) {
                         console.log("L'agent a annulé le changement de PIN.");
-                        return; 
+                        return;
                     }
 
                     if (newPin) {
@@ -378,7 +446,7 @@
 
     async function finalizeLogin(pin, authObj, matricule, token, isRecovery = false, existingHash = null) {
         const agentKey = `auth_v1_${matricule}`;
-        let finalHash = existingHash; 
+        let finalHash = existingHash;
 
         if (!isRecovery) {
             finalHash = CryptoJS.SHA256(pin + matricule + PIN_SALT).toString();
@@ -391,7 +459,10 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ matricule: matricule, pin_hash: finalHash })
+                    body: JSON.stringify({
+                        matricule: matricule,
+                        pin_hash: finalHash
+                    })
                 });
             } catch (error) {
                 console.warn("Échec synchro serveur, on continue en local.");
@@ -403,17 +474,19 @@
         localStorage.setItem(agentKey, JSON.stringify(authObj));
         localStorage.setItem('current_agent_matricule', matricule);
         localStorage.setItem('session_active', 'true');
-        
+
         if (token) {
             localStorage.setItem('auth_token', token);
         }
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ action: 'cachePrivatePages' });
+            navigator.serviceWorker.controller.postMessage({
+                action: 'cachePrivatePages'
+            });
         }
         window.location.href = "/pwa/sync";
     }
-        
-    async function checkStatus(matricule){
+
+    async function checkStatus(matricule) {
         try {
             const check = await fetch(`/pwa/check-status/${matricule}`, {
                 credentials: 'same-origin'
@@ -424,7 +497,7 @@
                 localStorage.removeItem(agentKey);
                 throw new Error("Compte désactivé par l'admin.");
             }
-        } catch (e) { }
+        } catch (e) {}
     }
 
     let deferredPrompt;
@@ -439,14 +512,16 @@
     async function showInstallPromotion() {
         if (isPromoting) return; // Empêche l'affichage multiple
         isPromoting = true;
-        const { isConfirmed } = await Swal.fire({
+        const {
+            isConfirmed
+        } = await Swal.fire({
             title: 'Installation Requise',
             text: "Pour utiliser l'outil de collecte en mode sécurisé et hors-ligne, vous devez l'installer sur votre écran d'accueil.",
             icon: 'info',
             showCancelButton: false,
             confirmButtonText: 'Installer maintenant',
             confirmButtonColor: '#3085d6',
-            allowOutsideClick: false, 
+            allowOutsideClick: false,
             allowEscapeKey: false
         });
 
@@ -454,17 +529,19 @@
             // 1. On sauvegarde l'instance localement et on VIDE immédiatement la variable globale
             // Cela empêche toute autre fonction ou événement de ré-utiliser le même prompt
             const promptEvent = deferredPrompt;
-            deferredPrompt = null; 
+            deferredPrompt = null;
 
             // 2. Déclencher le prompt natif
             promptEvent.prompt();
 
             // 3. Attendre le choix de l'agent
-            const { outcome } = await promptEvent.userChoice;
-            
+            const {
+                outcome
+            } = await promptEvent.userChoice;
+
             if (outcome === 'accepted') {
                 console.log('L\'agent a installé la PWA');
-                
+
                 // SweetAlert de succès indiquant la marche à suivre
                 Swal.fire({
                     title: 'Parfait !',
@@ -489,10 +566,11 @@
 
     window.addEventListener('appinstalled', (evt) => {
         // L'application a été installée avec succès !
-        
+
         deferredPrompt = null;
         // Option 1 : Modifier le DOM pour afficher un message d'instruction clair
-        const container = document.getElementById('my-app-container'); // Assurez-vous d'avoir un conteneur principal avec cet ID
+        const container = document.getElementById(
+        'my-app-container'); // Assurez-vous d'avoir un conteneur principal avec cet ID
         if (container) {
             container.innerHTML = `
                 <div class="text-center py-5 px-3">
@@ -512,4 +590,5 @@
     });
 </script>
 </body>
+
 </html>

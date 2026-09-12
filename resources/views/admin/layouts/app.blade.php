@@ -1,23 +1,39 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Nana Eco Consulting - Admin</title>
     <link rel="icon" type="image/png" href="{{ asset('icons/icon-192x192.png') }}">
-    <!-- Styles -->
+    <!-- Styles Bootstrap & Icônes -->
     <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4/bootstrap-4.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Styles DataTables & Buttons -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.0.2/css/buttons.bootstrap5.min.css">
+
+    <!-- jQuery & DataTables Core (Chargés ici pour être disponibles partout immédiatement) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- Scripts globaux (SweetAlert2) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .swal2-popup {
-            border-radius: 1rem !important; /* Arrondit toutes les boîtes SweetAlert2 de ton app */
+            border-radius: 1rem !important;
+            /* Arrondit toutes les boîtes SweetAlert2 de ton app */
         }
+
         .swal2-styled {
-            border-radius: 0.5rem !important; /* Arrondit tous les boutons SweetAlert2 */
+            border-radius: 0.5rem !important;
+            /* Arrondit tous les boutons SweetAlert2 */
         }
+
         :root {
             --sidebar-width: 260px;
             --sidebar-mini-width: 75px;
@@ -27,12 +43,19 @@
             --accent-color: #638afd;
         }
 
-        body { background-color: #f7f9fc; margin: 0; overflow-x: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            background-color: #f7f9fc;
+            margin: 0;
+            overflow-x: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
         /* TOPBAR */
         .admin-topbar {
             position: fixed;
-            top: 0; left: 0; right: 0;
+            top: 0;
+            left: 0;
+            right: 0;
             height: var(--topbar-height);
             background: white;
             border-bottom: 1px solid #eef2f7;
@@ -45,11 +68,14 @@
         .hamburger-btn {
             background: #f1f3f9;
             border: none;
-            width: 45px; height: 45px;
+            width: 45px;
+            height: 45px;
             border-radius: 10px;
             color: var(--primary-bg);
             cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* CONTENT AREA */
@@ -59,14 +85,20 @@
             transition: margin-left 0.3s ease;
             min-height: 100vh;
         }
-        .content.expanded { margin-left: var(--sidebar-mini-width); }
+
+        .content.expanded {
+            margin-left: var(--sidebar-mini-width);
+        }
 
         @media (max-width: 991px) {
-            .content { margin-left: 0 !important; }
+            .content {
+                margin-left: 0 !important;
+            }
         }
     </style>
     @stack('styles')
 </head>
+
 <body>
 
     <!-- Topbar -->
@@ -78,15 +110,17 @@
             <img src="{{ asset('icons/icon-192x192.png') }}" alt="Logo" style="height: 35px;" class="me-2">
             <span class="fw-bold d-none d-sm-inline">NANA ECO CONSULTING</span>
         </div>
-        
+
         <div class="d-flex align-items-center">
             <div class="dropdown">
-                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
+                    id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="text-end me-2 d-none d-md-block">
                         <div class="fw-bold mb-0 lh-1" style="font-size: 0.9rem;">{{ Auth::user()->name }}</div>
                         <small class="text-muted" style="font-size: 0.75rem;">Administrateur</small>
                     </div>
-                    <div class="avatar-circle bg-dark text-white d-flex align-items-center justify-content-center rounded-circle" style="width: 35px; height: 35px;">
+                    <div class="avatar-circle bg-dark text-white d-flex align-items-center justify-content-center rounded-circle"
+                        style="width: 35px; height: 35px;">
                         <i class="bi bi-person-fill"></i>
                     </div>
                 </a>
@@ -96,7 +130,9 @@
                             <i class="bi bi-person me-2"></i> Mon Profil
                         </a>
                     </li>
-                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
                     <li>
                         <form action="{{ route('logout') }}" method="POST" id="logout-form">
                             @csrf
@@ -121,9 +157,25 @@
             </div>
         </div>
     </main>
-
     <!-- Scripts -->
+    <!-- 1. jQuery en premier (obligatoire pour DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- 2. Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 3. DataTables Core & Bootstrap 5 JS -->
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- 4. DataTables Buttons & Extensions d'export (INDISPENSABLE pour voir les boutons) -->
+    <script src="https://cdn.datatables.net/buttons/3.0.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.print.min.js"></script>
+
+    <!-- 5. Script global de l'application -->
     <script src="{{ mix('js/app.js') }}"></script>
     <script>
         const btn = document.getElementById('hamburgerBtn');
@@ -147,6 +199,8 @@
             }
         });
     </script>
+
     @stack('scripts')
 </body>
+
 </html>

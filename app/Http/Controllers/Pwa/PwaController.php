@@ -1,20 +1,19 @@
 <?php
-
 namespace App\Http\Controllers\Pwa;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; 
-use App\Models\User;               
-use App\Models\Client;               
-use App\Models\Carnet;               
-use App\Models\Agent;               
-use App\Models\Cycle;
-use App\Models\SyncBatch;
-use App\Models\Collecte;
+use App\Models\Agent;
 use App\Models\Bonus;
+use App\Models\Carnet;
+use App\Models\Client;
+use App\Models\Cycle;
 use App\Models\Paiement;
+use App\Models\SyncBatch;
 use App\Models\SyncHistory;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PwaController extends Controller
 {
@@ -22,7 +21,7 @@ class PwaController extends Controller
     public function index()
     {
         return response()
-            ->view('pwa.index') 
+            ->view('pwa.index')
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
@@ -43,37 +42,40 @@ class PwaController extends Controller
     }
 
     // API de synchronisation initiale
-    public function getInitialData() 
+    public function getInitialData()
     {
         try {
-            $user = Auth::user();
-            $agent = $user->agent; 
+            /** @var \App\Models\User $user */
+            $user  = Auth::user();
+            $agent = $user?->agent;
 
-            if (!$agent) {
+            if (! $agent) {
                 return response()->json(['error' => 'Profil agent non trouvé'], 404);
             }
 
             // 1. VERIFICATION ADMIN
-            if (!$agent->can_sync) {
+            if (! $agent->can_sync) {
                 return response()->json([
-                    'error' => 'Synchronisation non autorisée.',
-                    'message' => 'Veuillez demander l\'activation à votre administrateur.'
+                    'error'   => 'Synchronisation non autorisée.',
+                    'message' => 'Veuillez demander l\'activation à votre administrateur.',
                 ], 403);
             }
 
             // 2. Récupération des clients (uniquement tontine active)
-            $clients = Client::where('agent_id', $agent->id)
-                ->whereHas('carnets', function($query) {
-                    $query->where('type', 'tontine')->where('statut', 'actif');
-                })->get();
-            
+            $clients = Client::whereHas('carnets', function ($query) use ($agent) {
+                $query->where('agent_id', $agent->id)
+                    ->where('type', 'tontine')
+                    ->where('statut', 'actif');
+            })->get();
+
             $clientIds = $clients->pluck('id');
 
             // 3. Récupération des carnets actifs
             $carnets = Carnet::whereIn('client_id', $clientIds)
+                ->where('agent_id', $agent->id)
                 ->where('statut', 'actif')
                 ->where('type', 'tontine')
-                ->with('categoryTontine') 
+                ->with('categoryTontine')
                 ->withCount(['cycles as total_cycles_termines' => fn($q) => $q->where('statut', 'termine')])
                 ->get()
                 ->map(function ($carnet) {
@@ -82,10 +84,10 @@ class PwaController extends Controller
                         $data['nombre_cycles'] = $carnet->categoryTontine->nombre_cycles;
                         $data['nom_categorie'] = $carnet->categoryTontine->libelle;
                     }
-                    
+
                     return $data;
                 });
-            
+
             $carnetIds = $carnets->pluck('id');
 
             // 4. Récupération des cycles avec calcul du solde restant net
@@ -96,18 +98,18 @@ class PwaController extends Controller
                 ->get()
                 ->map(function ($cycle) {
                     $cycle->cycle_uid = $cycle->cycle_uid ?: (string) $cycle->id;
-                    
+
                     // Calcul du solde net (Collectes - Commission - Retraits)
-                    $totalColl = (float) $cycle->collectes->sum('montant');
-                    $totalRetr = (float) $cycle->retraits->sum('montant_net');
+                    $totalColl  = (float) $cycle->collectes->sum('montant');
+                    $totalRetr  = (float) $cycle->retraits->sum('montant_net');
                     $commission = (float) ($cycle->montant_journalier ?? 0);
-                    
+
                     $cycle->solde_restant_net = max(0, $totalColl - $commission - $totalRetr);
-                    
+
                     // On injecte le cycle_uid dans les retraits pour Dexie
-                    $cycle->retraits->each(function($r) use ($cycle) {
+                    $cycle->retraits->each(function ($r) use ($cycle) {
                         $r->cycle_uid = $cycle->cycle_uid;
-                        $r->synced = 1;
+                        $r->synced    = 1;
                     });
 
                     return $cycle;
@@ -118,11 +120,11 @@ class PwaController extends Controller
 
             $collectes = $cycles->pluck('collectes')->flatten()->map(function ($c) use ($cycleUidMap) {
                 $c->cycle_id = (string) ($cycleUidMap[$c->cycle_id] ?? $c->cycle_id);
-                $c->synced = 1;
+                $c->synced   = 1;
                 return $c;
             });
 
-            $retraits = $cycles->pluck('retraits')->flatten();
+            $retraits       = $cycles->pluck('retraits')->flatten();
             $bonusEnAttente = Bonus::where('agent_id', $agent->id)
                 ->where('statut', 'en_attente')
                 ->orderBy('date_attribution', 'desc')
@@ -135,34 +137,31 @@ class PwaController extends Controller
                 ->limit(10)
                 ->get();
 
-            // 📊 Calcul des statistiques historiques pour la courbe
-            $historiqueVolumeMensuel = \DB::table('collectes')
+            // 📊 Calcul des statistiques historiques pour la courbe (CORRIGÉ)
+            $historiqueVolumeMensuel = DB::table('collectes')
                 ->join('cycles', 'collectes.cycle_id', '=', 'cycles.id')
                 ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
-                ->join('clients', 'carnets.client_id', '=', 'clients.id')
-                ->where('clients.agent_id', $agent->id)
+                ->where('carnets.agent_id', $agent->id) // CORRIGÉ : Passage direct par carnets.agent_id
                 ->where('collectes.created_at', '>=', now()->subMonths(6)->startOfMonth())
                 ->select(
-                    \DB::raw("DATE_FORMAT(collectes.created_at, '%Y-%m') as mois"),
-                    \DB::raw("SUM(collectes.montant) as total_volume")
+                    DB::raw("DATE_FORMAT(collectes.created_at, '%Y-%m') as mois"),
+                    DB::raw("SUM(collectes.montant) as total_volume")
                 )
                 ->groupBy('mois')
                 ->orderBy('mois', 'asc')
                 ->get();
 
-            // Volume total brassé par l'agent depuis ses débuts
-            $volumeHistoriqueGlobal = \DB::table('collectes')
+            // Volume total brassé par l'agent depuis ses débuts (CORRIGÉ)
+            $volumeHistoriqueGlobal = DB::table('collectes')
                 ->join('cycles', 'collectes.cycle_id', '=', 'cycles.id')
                 ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
-                ->join('clients', 'carnets.client_id', '=', 'clients.id')
-                ->where('clients.agent_id', $agent->id)
+                ->where('carnets.agent_id', $agent->id) // CORRIGÉ
                 ->sum('collectes.montant');
 
-            // Compteur cumulé des cycles clôturés à 100% dans sa carrière
-            $totalHistoriqueCyclesTermines = \DB::table('cycles')
+            // Compteur cumulé des cycles clôturés à 100% dans sa carrière (CORRIGÉ)
+            $totalHistoriqueCyclesTermines = DB::table('cycles')
                 ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
-                ->join('clients', 'carnets.client_id', '=', 'clients.id')
-                ->where('clients.agent_id', $agent->id)
+                ->where('carnets.agent_id', $agent->id) // CORRIGÉ
                 ->where('cycles.statut', 'termine')
                 ->count();
 
@@ -171,15 +170,15 @@ class PwaController extends Controller
                 ->where('sync_uuid', 'like', 'initial-sync-' . $agent->id . '-%')
                 ->exists();
 
-            if (!$existingSync) {
+            if (! $existingSync) {
                 SyncHistory::create([
-                    'agent_id' => $agent->id,
-                    'sync_uuid' => 'initial-sync-' . $agent->id . '-' . now()->timestamp,
-                    'nb_collectes' => $collectes->count(),
-                    'nb_cycles' => $cycles->count(),
+                    'agent_id'      => $agent->id,
+                    'sync_uuid'     => 'initial-sync-' . $agent->id . '-' . now()->timestamp,
+                    'nb_collectes'  => $collectes->count(),
+                    'nb_cycles'     => $cycles->count(),
                     'total_montant' => 0,
-                    'status' => 'success',
-                    'ip_address' => request()->ip(),
+                    'status'        => 'success',
+                    'ip_address'    => request()->ip(),
                 ]);
             }
 
@@ -187,40 +186,42 @@ class PwaController extends Controller
                 ->latest()
                 ->take(10)
                 ->get(['id', 'sync_uuid', 'status', 'nb_collectes', 'total_montant', 'nb_cycles', 'created_at']);
+
             // 7. Verrouillage et réponse
-            $agent->update(['can_sync' => false]); 
+            $agent->update(['can_sync' => false]);
 
             return response()->json([
-                'success' => true,
-                'agent' => [
-                    'id' => $agent->id,
-                    'nom' => $agent->nom ?? $user->name,
+                'success'              => true,
+                'agent'                => [
+                    'id'        => $agent->id,
+                    'nom'       => $agent->nom ?? $user->name,
                     'matricule' => $user->username,
-                    'pin_hash' => $agent->pin_hash, // CRITIQUE pour le mode offline
-                    'photo' => $agent->image ? (filter_var($agent->image, FILTER_VALIDATE_URL) ? $agent->image : asset('storage/' . $agent->image)) : null,
+                    'pin_hash'  => $agent->pin_hash, // CRITIQUE pour le mode offline
+                    'photo'     => $agent->image ? (filter_var($agent->image, FILTER_VALIDATE_URL) ? $agent->image : asset('storage/' . $agent->image)) : null,
                 ],
-                'clients' => $clients,
-                'carnets' => $carnets,
-                'cycles' => $cycles->makeHidden(['collectes', 'retraits']), 
-                'collectes' => $collectes,
-                'retraits' => $retraits, 
-                'bonus_en_attente' => $bonusEnAttente->toArray(),
+                'clients'              => $clients,
+                'carnets'              => $carnets,
+                'cycles'               => $cycles->makeHidden(['collectes', 'retraits']),
+                'collectes'            => $collectes,
+                'retraits'             => $retraits,
+                'bonus_en_attente'     => $bonusEnAttente->toArray(),
                 'historique_paiements' => $historiquePaiements->toArray(),
-                
-                // 📊 AJOUTÉ : Transmission du bloc de données statistiques au JSON !
-                'stats_performance' => [
+
+                // 📊 Transmission du bloc de données statistiques au JSON
+                'stats_performance'    => [
                     'historique_courbe'                => $historiqueVolumeMensuel,
                     'volume_historique_global'         => (float) ($volumeHistoriqueGlobal ?? 0),
-                    'total_historique_cycles_termines' => (int) $totalHistoriqueCyclesTermines
+                    'total_historique_cycles_termines' => (int) $totalHistoriqueCyclesTermines,
                 ],
-                'sync_batches' => $syncBatches,
-                'server_date' => now()->format('Y-m-d'),
+                'sync_batches'         => $syncBatches,
+                'server_date'          => now()->format('Y-m-d'),
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                $e->getMessage(),
+                'line'    => $e->getLine(), // Optionnel pour le debug
             ], 500);
         }
     }
@@ -229,7 +230,7 @@ class PwaController extends Controller
     {
         $request->validate([
             'matricule' => 'required|string',
-            'pin_hash' => 'required|string',
+            'pin_hash'  => 'required|string',
         ]);
 
         // On cherche l'utilisateur via son matricule (champ username)
@@ -237,7 +238,7 @@ class PwaController extends Controller
 
         if ($user && $user->agent) {
             $user->agent->update([
-                'pin_hash' => $request->pin_hash
+                'pin_hash' => $request->pin_hash,
             ]);
 
             return response()->json(['success' => true]);
@@ -247,7 +248,7 @@ class PwaController extends Controller
     }
     public function lockSync(Request $request)
     {
-        $user = Auth::user();
+        $user  = Auth::user();
         $agent = $user->agent;
 
         if ($agent) {
@@ -259,16 +260,15 @@ class PwaController extends Controller
         return response()->json(['error' => 'Agent non trouvé'], 404);
     }
 
-
-        /**
+    /**
      * Affiche la page de pointage pour un carnet spécifique
      * * @param int $carnetId
      */
-    public function pointage($carnetId)
+    public function pointage(int $carnetId)
     {
         // 1. On récupère le carnet avec ses relations pour l'affichage initial (si en ligne)
         // Sinon, Blade affichera une structure vide que JS remplira via Dexie
-        $carnet = Carnet::with(['client', 'cycles' => function($q) {
+        $carnet = Carnet::with(['client', 'cycles' => function ($q) {
             $q->visibleForAgentSync();
         }])->find($carnetId);
 
@@ -277,7 +277,7 @@ class PwaController extends Controller
         return response()
             ->view('pwa.pointage', [
                 'carnetId' => $carnetId,
-                'carnet'   => $carnet // Optionnel : utile pour le premier chargement en ligne
+                'carnet'   => $carnet, // Optionnel : utile pour le premier chargement en ligne
             ])
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
             ->header('Pragma', 'no-cache')
@@ -289,45 +289,45 @@ class PwaController extends Controller
         // Le JS récupérera le carnet_id dans l'URL et chargera Dexie.
         return response()
             ->view('pwa.pointage', [
-                'carnetId' => null, 
-                'carnet'   => null 
+                'carnetId' => null,
+                'carnet'   => null,
             ])
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
     }
-    
+
     public function showSyncPage()
     {
-        return view('pwa.sync'); 
+        return view('pwa.sync');
     }
     public function cyclesList()
-    { 
-        return view('pwa.cycles-list'); 
+    {
+        return view('pwa.cycles-list');
     }
     public function collectesList()
-    { 
-        return view('pwa.collectes-list'); 
+    {
+        return view('pwa.collectes-list');
     }
 
-    public function checkAgentStatus($matricule)
+    public function checkAgentStatus(string $matricule)
     {
         try {
             // On cherche l'agent par son matricule
             $agent = Agent::where('code_agent', $matricule)->first();
 
-            if (!$agent) {
+            if (! $agent) {
                 return response()->json([
-                    'actif' => false,
-                    'message' => 'Agent introuvable.'
+                    'actif'   => false,
+                    'message' => 'Agent introuvable.',
                 ], 404);
             }
 
             // On retourne l'état de la colonne 'is_active' ou 'status'
             // Adapte 'statut' selon le nom de ta colonne en base de données
             return response()->json([
-                'actif' => (bool) $agent->actif, 
-                'nom' => $agent->nom
+                'actif' => (bool) $agent->actif,
+                'nom'   => $agent->nom,
             ]);
 
         } catch (\Exception $e) {
@@ -335,8 +335,7 @@ class PwaController extends Controller
         }
     }
 
-
-    public function checkSyncPermission(Request $request) 
+    public function checkSyncPermission(Request $request)
     {
         // 1. Récupération du matricule depuis la query string (?matricule=...)
         $matricule = $request->query('matricule');
@@ -346,12 +345,12 @@ class PwaController extends Controller
         // 3. Retour de la réponse au format JSON attendu par la PWA
         return response()->json([
             'can_sync' => $agent && (bool) $agent->can_sync,
-            'debug' => [
+            'debug'    => [
                 'matricule_recu' => $matricule ?? 'non_fourni',
                 'agent_id'       => $agent ? $agent->id : null,
                 'value_in_db'    => $agent ? $agent->can_sync : null,
             ],
-            'time' => now()->timestamp 
+            'time'     => now()->timestamp,
         ]);
     }
 
@@ -368,5 +367,5 @@ class PwaController extends Controller
     {
         return view('pwa.pin');
     }
-    
+
 }

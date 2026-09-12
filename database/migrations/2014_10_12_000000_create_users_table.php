@@ -8,18 +8,18 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     *
-     * @return void
      */
-    public function up()
+    public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->ulid('ulid')->unique(); // Identifiant ULID (sécurité/URL/API)
             $table->string('name');
             $table->string('email')->unique();
             $table->string('username')->unique()->nullable();
+            $table->string('type')->default('admin'); // Type d'utilisateur (admin, super_admin, etc.)
             $table->string('password');
-            $table->foreignId('role_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('role_id')->nullable()->constrained()->nullOnDelete();
             $table->boolean('is_active')->default(true);
             $table->rememberToken();
             $table->timestamps();
@@ -28,14 +28,9 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
-    public function down()
+    public function down(): void
     {
-            Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['role_id']); // Supprime la contrainte
-            $table->dropColumn('role_id');    // Supprime la colonne
-        });
+        Schema::dropIfExists('users');
     }
 };
