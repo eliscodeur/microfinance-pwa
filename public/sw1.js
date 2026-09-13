@@ -106,16 +106,14 @@ self.addEventListener("message", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-    // 1. Ignorer les requêtes non-GET, l'espace Admin et les API de données
+    // 1. Ignorer les requêtes non-GET et les appels API/Data
     if (event.request.method !== "GET") return;
     const url = new URL(event.request.url);
-
     if (
-        url.pathname.startsWith("/admin") ||
         url.pathname.includes("/pwa/get-initial-data") ||
         url.pathname.includes("/api/")
     ) {
-        return; // Laisse passer le trafic directement vers Alwaysdata sans interférence
+        return;
     }
 
     // Fonction pour renvoyer une page de secours HTML
@@ -135,42 +133,51 @@ self.addEventListener("fetch", (event) => {
         );
     };
 
-    // 2. GESTION DE LA NAVIGATION : Stratégie Réseau d'abord (Network First)
+    // 2. GESTION DE LA NAVIGATION (Pages HTML, Vues Blade)
     if (event.request.mode === "navigate") {
         event.respondWith(
             (async () => {
                 const cache = await caches.open(CACHE_NAME);
+                const exactCache = await caches.match(event.request);
 
-                try {
-                    // On essaie TOUJOURS d'aller chercher la vraie page fraîche sur le serveur
-                    const networkResponse = await fetch(event.request);
-                    if (networkResponse && networkResponse.ok) {
-                        await safeCachePut(
-                            cache,
-                            event.request,
-                            networkResponse.clone(),
-                        );
-                        return networkResponse;
-                    }
-                } catch (err) {
-                    // En cas de panne réseau (hors-ligne), on bascule sur le cache exact
-                    const exactCache = await caches.match(event.request);
-                    if (exactCache) {
-                        return exactCache;
-                    }
-
-                    // Sinon on cherche l'App Shell générique
-                    const basePath = PRIVATE_PAGES.includes(url.pathname)
-                        ? url.pathname
-                        : null;
-                    if (basePath) {
-                        const baseCache = await caches.match(basePath);
-                        if (baseCache) {
-                            return baseCache;
+                const networkPromise = fetch(event.request)
+                    .then(async (networkResponse) => {
+                        if (networkResponse && networkResponse.ok) {
+                            await safeCachePut(
+                                cache,
+                                event.request,
+                                networkResponse.clone(),
+                            );
                         }
+                        return networkResponse;
+                    })
+                    .catch(() => null);
+
+                // Si on a l'URL exacte en cache, on la sert tout de suite (ultra rapide)
+                if (exactCache) {
+                    networkPromise.catch(() => {}); // Laisse le réseau mettre à jour en fond
+                    return exactCache;
+                }
+
+                // Sinon on attend le réseau
+                const networkResponse = await networkPromise;
+                if (networkResponse) {
+                    return networkResponse;
+                }
+
+                // Si hors-ligne et pas de match exact (ex: url avec paramètres ?id=12)
+                // On cherche l'App Shell générique dans le cache
+                const basePath = PRIVATE_PAGES.includes(url.pathname)
+                    ? url.pathname
+                    : null;
+                if (basePath) {
+                    const baseCache = await caches.match(basePath);
+                    if (baseCache) {
+                        return baseCache;
                     }
                 }
 
+                // Ultime secours HTML si rien ne marche
                 return respondWithFallbackHTML();
             })(),
         );
@@ -178,15 +185,19 @@ self.addEventListener("fetch", (event) => {
     }
 
     // 3. GESTION DES ASSETS STATIQUES (JS, CSS, Polices, Images)
+    // Stratégie : Cache First (Le cache d'abord, réseau ensuite, SANS TIMEOUT)
     event.respondWith(
         (async () => {
+            // On cherche d'abord dans le cache
             const cachedResponse = await caches.match(event.request);
             if (cachedResponse) {
                 return cachedResponse;
             }
 
             try {
+                // Si l'asset n'est pas en cache, on va sur le réseau (sans timeout brutal)
                 const networkResponse = await fetch(event.request);
+
                 if (networkResponse && networkResponse.status === 200) {
                     const cache = await caches.open(CACHE_NAME);
                     await safeCachePut(
@@ -197,6 +208,12 @@ self.addEventListener("fetch", (event) => {
                 }
                 return networkResponse;
             } catch (err) {
+                // CRUCIAL : Ne JAMAIS renvoyer une page HTML de fallback pour un fichier CSS ou WOFF2 !
+                console.warn(
+                    `Réseau indisponible pour l'asset : ${event.request.url}`,
+                );
+
+                // On renvoie une réponse vide propre pour ne pas corrompre le navigateur
                 return new Response("", {
                     status: 404,
                     statusText: "Offline Asset Not Found",

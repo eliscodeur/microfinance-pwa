@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Models\Agent;
+use App\Models\Carnet;
 use App\Models\SalaryGrid;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +31,7 @@ class PayrollService
             ->pluck('carnet_id');
         // dd($carnetsIds);
         // 2. Récupérer les carnets et calculer le total collecté
-        $carnets = \App\Models\Carnet::with('categoryTontine')
+        $carnets = Carnet::with('categoryTontine')
             ->whereIn('id', $carnetsIds)
             ->get();
 
