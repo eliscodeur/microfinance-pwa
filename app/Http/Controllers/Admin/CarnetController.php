@@ -7,7 +7,7 @@ use App\Models\Carnet;
 use App\Models\CarnetAgentHistory;
 use App\Models\CategoryTontine;
 use App\Models\Client;
-use App\Models\clientCarnetNumber;
+use App\Models\ClientCarnetNumber;
 use App\Models\Cycle;
 use App\Models\Depot;
 use App\Models\Retrait;
