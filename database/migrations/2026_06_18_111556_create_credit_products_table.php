@@ -17,13 +17,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('credit_type_id')->constrained('credit_types')->onDelete('cascade');
             $table->decimal('frais_dossier_defaut', 15, 2)->default(0);
-            $table->string('nom'); 
+            $table->string('nom');
             $table->string('type_carnet_requis');
-            $table->string('code')->unique(); // Ex: CRE-TONT
+            $table->string('code')->unique();             // Ex: CRE-TONT
             $table->decimal('taux_interet_defaut', 5, 2); // Ex: 1.50
             $table->integer('duree_max_mois')->default(12);
             $table->boolean('is_active')->default(true);
-            
+
             $table->timestamps();
         });
     }

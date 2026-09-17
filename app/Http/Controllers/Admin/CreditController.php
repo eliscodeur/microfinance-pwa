@@ -9,6 +9,7 @@ use App\Models\CreditGuarantor;
 use App\Models\CreditPayment;
 use App\Models\CreditProduct;
 use App\Models\Cycle;
+use App\Models\PaymentTransaction;
 use App\Models\Retrait;
 use App\Services\CreditCalculator;
 use Carbon\Carbon;
@@ -660,21 +661,124 @@ class CreditController extends Controller
         }
     }
 
+    // public function updatePayment(Request $request, Credit $credit, CreditPayment $payment)
+    // {
+    //     if ($payment->credit_id !== $credit->id) {
+    //         abort(404);
+    //     }
+
+    //     $request->validate([
+    //         'penalite'     => 'nullable|numeric|min:0',
+    //         'montant_paye' => 'nullable|numeric|min:0',
+    //     ], [
+    //         'penalite.min'     => 'La pénalité ne peut pas être négative.',
+    //         'montant_paye.min' => 'Le montant payé ne peut pas être négatif.',
+    //     ]);
+
+    //     // Utilisation d'une transaction globale avec lock direct en écriture pour éviter le double clic au guichet
+    //     return DB::transaction(function () use ($request, $credit, $payment) {
+
+    //         // Verrouiller la ligne de paiement pour empêcher une modification parallèle
+    //         $payment = CreditPayment::where('id', $payment->id)->lockForUpdate()->first();
+
+    //         if ($payment->status === 'paid') {
+    //             return back()->with('error', 'Action annulée : cette échéance a déjà été encaissée ou soldée entre-temps.');
+    //         }
+
+    //         $updates        = [];
+    //         $successMessage = 'Échéance mise à jour.';
+
+    //         // 1. Traitement des pénalités forcées manuellement
+    //         if ($request->has('penalite')) {
+    //             $updates['penalite'] = round($request->input('penalite'), 0);
+    //         }
+
+    //         // 2. Traitement d'un versement financier au guichet
+    //         if ($request->filled('montant_paye')) {
+    //             $amountPaye  = round((float) $request->input('montant_paye'), 0);
+    //             $currentPaid = (float) $payment->montant_paye;
+
+    //             // Prendre la nouvelle pénalité soumise ou celle déjà présente en base
+    //             $penalite     = array_key_exists('penalite', $updates) ? $updates['penalite'] : (float) $payment->penalite;
+    //             $totalDue     = (float) $payment->montant_total + $penalite;
+    //             $remainingDue = round($totalDue - $currentPaid, 0);
+
+    //             // Contrôle strict de l'ordre d'amortissement
+    //             $previousUnpaidExists = $credit->payments()
+    //                 ->where('echeance', '<', $payment->echeance)
+    //                 ->whereIn('status', ['pending', 'partiel'])
+    //                 ->exists();
+
+    //             if ($previousUnpaidExists) {
+    //                 return back()->with('error', 'Opération impossible : des échéances antérieures ne sont pas encore soldées.');
+    //             }
+
+    //             if ($amountPaye <= 0) {
+    //                 return back()->with('error', 'Le montant à encaisser doit être supérieur à zéro.');
+    //             }
+
+    //             if ($amountPaye > $remainingDue) {
+    //                 return back()->with('error', 'Le montant saisi excède le reste exigible de cette échéance.');
+    //             }
+
+    //             $newPaid                 = round($currentPaid + $amountPaye, 0);
+    //             $updates['montant_paye'] = $newPaid;
+
+    //             if ($newPaid >= $totalDue) {
+    //                 $updates['status']    = 'paid';
+    //                 $updates['date_paye'] = now();
+    //                 $successMessage       = "Encaissement de " . number_format($amountPaye, 0, ',', ' ') . " FCFA effectué. Échéance entièrement réglée.";
+    //             } else {
+    //                 $updates['status']    = 'partiel';
+    //                 $updates['date_paye'] = null;
+    //                 $remaining            = number_format($totalDue - $newPaid, 0, ',', ' ');
+    //                 $successMessage       = "Encaissement partiel de " . number_format($amountPaye, 0, ',', ' ') . " FCFA enregistré. Reste à payer : {$remaining} FCFA.";
+    //             }
+
+    //             // Ajuster le cumulatif global remboursé sur la fiche de crédit principale
+    //             $credit->increment('montant_rembourse', $amountPaye);
+    //         }
+
+    //         $updates['admin_id'] = auth()->id();
+    //         $payment->update($updates);
+
+    //         // 3. Vérification de clôture finale du dossier crédit
+    //         $creditIsSettled = ! $credit->payments()->where('status', '!=', 'paid')->exists();
+
+    //         if ($creditIsSettled) {
+    //             $credit->update([
+    //                 'statut'         => 'solder',
+    //                 'blocked_amount' => 0,
+    //             ]);
+    //             $successMessage .= ' Le dossier de crédit est désormais entièrement soldé.';
+    //         }
+
+    //         return back()->with('success', $successMessage);
+    //     });
+    // }
+
     public function updatePayment(Request $request, Credit $credit, CreditPayment $payment)
     {
         if ($payment->credit_id !== $credit->id) {
             abort(404);
         }
 
+        // Validation avec intégration des champs de la transaction et des tiers payeurs
         $request->validate([
-            'penalite'     => 'nullable|numeric|min:0',
-            'montant_paye' => 'nullable|numeric|min:0',
+            'penalite'          => 'nullable|numeric|min:0',
+            'montant_paye'      => 'nullable|numeric|min:0',
+            'mode_paiement'     => 'nullable|string|max:50',
+            'reference_externe' => 'nullable|string|max:100',
+            'payer_name'        => 'nullable|string|max:150',
+            'payer_phone'       => 'nullable|string|max:30',
+            'payer_relation'    => 'nullable|string|max:50',
+            'notes'             => 'nullable|string|max:500',
         ], [
             'penalite.min'     => 'La pénalité ne peut pas être négative.',
             'montant_paye.min' => 'Le montant payé ne peut pas être négatif.',
         ]);
 
-        // Utilisation d'une transaction globale avec lock direct en écriture pour éviter le double clic au guichet
+        // Transaction globale avec lock direct en écriture
         return DB::transaction(function () use ($request, $credit, $payment) {
 
             // Verrouiller la ligne de paiement pour empêcher une modification parallèle
@@ -687,7 +791,7 @@ class CreditController extends Controller
             $updates        = [];
             $successMessage = 'Échéance mise à jour.';
 
-            // 1. Traitement des pénalités forcées manuellement
+            // 1. Traitement des pénalités
             if ($request->has('penalite')) {
                 $updates['penalite'] = round($request->input('penalite'), 0);
             }
@@ -697,7 +801,6 @@ class CreditController extends Controller
                 $amountPaye  = round((float) $request->input('montant_paye'), 0);
                 $currentPaid = (float) $payment->montant_paye;
 
-                // Prendre la nouvelle pénalité soumise ou celle déjà présente en base
                 $penalite     = array_key_exists('penalite', $updates) ? $updates['penalite'] : (float) $payment->penalite;
                 $totalDue     = (float) $payment->montant_total + $penalite;
                 $remainingDue = round($totalDue - $currentPaid, 0);
@@ -734,7 +837,21 @@ class CreditController extends Controller
                     $successMessage       = "Encaissement partiel de " . number_format($amountPaye, 0, ',', ' ') . " FCFA enregistré. Reste à payer : {$remaining} FCFA.";
                 }
 
-                // Ajuster le cumulatif global remboursé sur la fiche de crédit principale
+                // --- CRÉATION DE LA TRANSACTION D'ENCAISSEMENT ---
+                PaymentTransaction::create([
+                    'credit_payment_id' => $payment->id,
+                    'credit_id'         => $credit->id,
+                    'agent_id'          => auth()->id(),
+                    'montant'           => $amountPaye,
+                    'mode_paiement'     => $request->input('mode_paiement', 'especes'),
+                    'reference_externe' => $request->input('reference_externe'),
+                    'payer_name'        => $request->input('payer_name'),
+                    'payer_phone'       => $request->input('payer_phone'),
+                    'payer_relation'    => $request->input('payer_relation'),
+                    'notes'             => $request->input('notes'),
+                ]);
+
+                // Ajuster le cumulatif global remboursé sur le dossier de crédit
                 $credit->increment('montant_rembourse', $amountPaye);
             }
 

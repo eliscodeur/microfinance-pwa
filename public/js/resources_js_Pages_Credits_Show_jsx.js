@@ -69,63 +69,63 @@ var MySwal = sweetalert2_react_content__WEBPACK_IMPORTED_MODULE_4___default()((s
 // Nomenclature institutionnelle — Tons neutres et professionnels
 var CREDIT_STATUS_CONFIG = {
   pending: {
-    label: 'En attente d\'instruction',
-    "class": 'badge bg-light text-secondary border border-secondary-subtle'
+    label: "En attente d'instruction",
+    "class": "badge bg-light text-secondary border border-secondary-subtle"
   },
   approved: {
-    label: 'Approuvé (Non décaissé)',
-    "class": 'badge bg-light text-info border border-info-subtle'
+    label: "Approuvé (Non décaissé)",
+    "class": "badge bg-light text-info border border-info-subtle"
   },
   active: {
-    label: 'Sain / En cours',
-    "class": 'badge bg-light text-success border border-success-subtle'
+    label: "Sain / En cours",
+    "class": "badge bg-light text-success border border-success-subtle"
   },
   in_arrears: {
-    label: 'En Souffrance / Impayé',
-    "class": 'badge bg-light text-danger border border-danger-subtle'
+    label: "En Souffrance / Impayé",
+    "class": "badge bg-light text-danger border border-danger-subtle"
   },
   solder: {
-    label: 'Soldé',
-    "class": 'badge bg-light text-dark border'
+    label: "Soldé",
+    "class": "badge bg-light text-dark border"
   },
   solde: {
-    label: 'Soldé',
-    "class": 'badge bg-light text-dark border'
+    label: "Soldé",
+    "class": "badge bg-light text-dark border"
   },
   closed: {
-    label: 'Clôturé',
-    "class": 'badge bg-light text-muted border'
+    label: "Clôturé",
+    "class": "badge bg-light text-muted border"
   },
   rejected: {
-    label: 'Rejeté',
-    "class": 'badge bg-light text-danger border border-danger-subtle'
+    label: "Rejeté",
+    "class": "badge bg-light text-danger border border-danger-subtle"
   }
 };
 var PAYMENT_STATUS_CONFIG = {
   pending: {
-    label: 'À échoir',
-    "class": 'badge bg-light text-muted border border-secondary-subtle'
+    label: "À échoir",
+    "class": "badge bg-light text-muted border border-secondary-subtle"
   },
   partiel: {
-    label: 'Impayé Partiel',
-    "class": 'badge bg-light text-info border border-info-subtle'
+    label: "Impayé Partiel",
+    "class": "badge bg-light text-info border border-info-subtle"
   },
   late: {
-    label: 'En Souffrance',
-    "class": 'badge bg-light text-danger border border-danger-subtle'
+    label: "En Souffrance",
+    "class": "badge bg-light text-danger border border-danger-subtle"
   },
   paid: {
-    label: 'Réglé',
-    "class": 'badge bg-light text-success border border-success-subtle'
+    label: "Réglé",
+    "class": "badge bg-light text-success border border-success-subtle"
   }
 };
 var LABELS_MAPPING = {
-  compte: 'Prélèvement sur compte Épargne',
-  cash: 'Versement Espèces (Caisse)',
-  digital: 'Collecte Mobile Money / Numérique',
-  quinzaine: 'Quinzomadaire',
-  mensuel: 'Mensuelle',
-  mensuelle: 'Mensuelle'
+  compte: "Prélèvement sur compte Épargne",
+  cash: "Versement Espèces (Caisse)",
+  digital: "Collecte Mobile Money / Numérique",
+  quinzaine: "Quinzomadaire",
+  mensuel: "Mensuelle",
+  mensuelle: "Mensuelle"
 };
 function Show(_ref) {
   var _credit$payments2, _credit$client, _credit$client2, _credit$client$code_c, _credit$client3, _credit$interet_total2, _credit$emergency_wit;
@@ -155,9 +155,9 @@ function Show(_ref) {
     setPenalties(initialPenalties);
   }, [payments]);
   var formatCurrency = function formatCurrency(value) {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'XAF',
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "XAF",
       maximumFractionDigits: 0
     }).format(value);
   };
@@ -170,7 +170,7 @@ function Show(_ref) {
     var totalRembourse = Number((_credit$montant_rembo = credit.montant_rembourse) !== null && _credit$montant_rembo !== void 0 ? _credit$montant_rembo : 0);
     var resteARecouvrer = Math.max(0, totalAttenduGlobal - totalRembourse);
     var encoursEnRetard = payments.filter(function (p) {
-      return p.status !== 'paid' && new Date(p.due_date) < new Date();
+      return p.status !== "paid" && new Date(p.due_date) < new Date();
     }).reduce(function (sum, p) {
       var _p$penalite, _p$montant_paye;
       return sum + (Number(p.montant_total) + Number((_p$penalite = p.penalite) !== null && _p$penalite !== void 0 ? _p$penalite : 0) - Number((_p$montant_paye = p.montant_paye) !== null && _p$montant_paye !== void 0 ? _p$montant_paye : 0));
@@ -186,18 +186,18 @@ function Show(_ref) {
     };
   }, [credit, payments]);
   var allPaymentsPaid = payments.length > 0 && payments.every(function (p) {
-    return p.status === 'paid';
+    return p.status === "paid";
   });
-  var displayedCreditStatus = allPaymentsPaid ? 'solder' : credit.statut;
+  var displayedCreditStatus = allPaymentsPaid ? "solder" : credit.statut;
   var canPayInstallment = function canPayInstallment(payment) {
     if (isProcessing) return false;
-    if (!['active', 'in_arrears'].includes(displayedCreditStatus)) return false;
-    if (payment.status === 'paid') return false;
+    if (!["active", "in_arrears"].includes(displayedCreditStatus)) return false;
+    if (payment.status === "paid") return false;
     if (payment.can_pay !== undefined) return payment.can_pay;
     return payments.filter(function (p) {
       return p.echeance < payment.echeance;
     }).every(function (p) {
-      return p.status === 'paid';
+      return p.status === "paid";
     });
   };
   var savePenalty = function savePenalty(payment) {
@@ -205,14 +205,14 @@ function Show(_ref) {
     var amount = Math.round(Number((_penalties$payment$id = penalties[payment.id]) !== null && _penalties$payment$id !== void 0 ? _penalties$payment$id : 0));
     if (Number.isNaN(amount) || amount < 0) {
       sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
-        title: 'Erreur',
-        text: 'Montant de pénalité invalide.',
-        icon: 'error'
+        title: "Erreur",
+        text: "Montant de pénalité invalide.",
+        icon: "error"
       });
       return;
     }
     setIsProcessing(true);
-    _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.patch("/admin/credits/".concat(credit.id, "/payments/").concat(payment.id), {
+    _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.patch("/admin/credits/".concat(credit.credit_uid, "/payments/").concat(payment.id), {
       penalite: amount
     }, {
       preserveScroll: true,
@@ -224,9 +224,9 @@ function Show(_ref) {
       },
       onSuccess: function onSuccess() {
         sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
-          title: 'Mis à jour',
-          text: 'Pénalité enregistrée.',
-          icon: 'success',
+          title: "Mis à jour",
+          text: "Pénalité enregistrée.",
+          icon: "success",
           timer: 1300,
           showConfirmButton: false
         });
@@ -234,43 +234,92 @@ function Show(_ref) {
     });
   };
   var triggerPaymentModal = function triggerPaymentModal(payment, remaining) {
-    var _penalties$payment$id2, _payment$montant_paye;
+    var _payment$transactions, _penalties$payment$id2, _payment$montant_paye;
     var cleanRemaining = Math.max(0, Math.round(remaining));
+    var transactions = (_payment$transactions = payment.transactions) !== null && _payment$transactions !== void 0 ? _payment$transactions : [];
     MySwal.fire({
       title: "Guichet d'Encaissement \u2014 \xC9ch\xE9ance #".concat(payment.echeance),
-      html: "\n                <div style=\"text-align: left; font-size: 0.85rem; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.25rem; margin-bottom: 15px;\">\n                    <div style=\"display: flex; justify-content: space-between; margin-bottom: 4px;\"><span>\xC9ch\xE9ance Nue :</span> <strong>".concat(formatCurrency(payment.montant_total), "</strong></div>\n                    <div style=\"display: flex; justify-content: space-between; margin-bottom: 4px;\"><span>P\xE9nalit\xE9s appliqu\xE9es :</span> <strong>").concat(formatCurrency((_penalties$payment$id2 = penalties[payment.id]) !== null && _penalties$payment$id2 !== void 0 ? _penalties$payment$id2 : 0), "</strong></div>\n                    <div style=\"display: flex; justify-content: space-between; margin-bottom: 4px; color: #6c757d;\"><span>D\xE9j\xE0 per\xE7u :</span> <strong>").concat(formatCurrency((_payment$montant_paye = payment.montant_paye) !== null && _payment$montant_paye !== void 0 ? _payment$montant_paye : 0), "</strong></div>\n                    <hr style=\"margin: 8px 0; border: 0; border-top: 1px solid #dee2e6;\"/>\n                    <div style=\"display: flex; justify-content: space-between; color: #212529; font-weight: bold;\"><span>Reste Exigible :</span> <span>").concat(formatCurrency(cleanRemaining), "</span></div>\n                </div>\n                <div style=\"text-align: left;\">\n                    <label for=\"swal-input-amount\" style=\"font-weight: bold; font-size: 0.85rem; display: block; margin-bottom: 5px;\">Montant \xE0 encaisser (FCFA) :</label>\n                    <input \n                        id=\"swal-input-amount\" \n                        type=\"number\" \n                        class=\"form-control\" \n                        style=\"text-align: right; font-weight: bold;\"\n                        value=\"").concat(cleanRemaining, "\"\n                        min=\"1\" \n                        max=\"").concat(cleanRemaining, "\"\n                        step=\"1\"\n                    />\n                </div>\n            "),
+      html: "\n            <div style=\"text-align: left; font-size: 0.85rem;\">\n                <!-- R\xE9sum\xE9 Financier Global (\xE9pur\xE9) -->\n                <div style=\"display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: 0.25rem; margin-bottom: 12px; text-align: center;\">\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">Nue</span>\n                        <strong>".concat(formatCurrency(payment.montant_total), "</strong>\n                    </div>\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">P\xE9nalit\xE9s</span>\n                        <strong>").concat(formatCurrency((_penalties$payment$id2 = penalties[payment.id]) !== null && _penalties$payment$id2 !== void 0 ? _penalties$payment$id2 : 0), "</strong>\n                    </div>\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">D\xE9j\xE0 per\xE7u</span>\n                        <strong>").concat(formatCurrency((_payment$montant_paye = payment.montant_paye) !== null && _payment$montant_paye !== void 0 ? _payment$montant_paye : 0), "</strong>\n                    </div>\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">Reste Exigible</span>\n                        <strong style=\"color: #d9534f; font-size: 0.95rem;\">").concat(formatCurrency(cleanRemaining), "</strong>\n                    </div>\n                </div>\n\n                <!-- Syst\xE8me d'Onglets sobre -->\n                <div style=\"display: flex; border-bottom: 1px solid #ced4da; margin-bottom: 12px;\">\n                    <button type=\"button\" id=\"tab-btn-pay\" class=\"swal-tab-btn active\" style=\"flex: 1; padding: 8px; background: none; border: none; font-weight: bold; cursor: pointer; border-bottom: 2px solid #333; color: #333;\">\uD83D\uDCB5 Nouvel Encaissement</button>\n                    <button type=\"button\" id=\"tab-btn-history\" class=\"swal-tab-btn\" style=\"flex: 1; padding: 8px; background: none; border: none; font-weight: bold; cursor: pointer; color: #6c757d;\">\uD83D\uDCCB Historique (").concat(transactions.length, ")</button>\n                </div>\n\n                <!-- ONGLET 1 : FORMULAIRE -->\n                <div id=\"tab-content-pay\">\n                    <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;\">\n                        <div>\n                            <label for=\"swal-input-amount\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">Montant per\xE7u (FCFA) *</label>\n                            <input \n                                id=\"swal-input-amount\" \n                                type=\"number\" \n                                class=\"form-control\" \n                                style=\"text-align: right; font-weight: bold; font-size: 1.1rem;\"\n                                value=\"").concat(cleanRemaining, "\"\n                                min=\"1\" \n                                step=\"1\"\n                            />\n                        </div>\n                        <div>\n                            <label for=\"swal-input-mode\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">Mode de r\xE8glement</label>\n                            <select id=\"swal-input-mode\" class=\"form-control\">\n                                <option value=\"especes\">Esp\xE8ces (Guichet)</option>\n                                <option value=\"mobile_money\">Mobile Money (T-Money / Flooz)</option>\n                                <option value=\"virement\">Virement Bancaire</option>\n                            </select>\n                        </div>\n                    </div>\n\n                    <!-- R\xE9f\xE9rence externe (Masqu\xE9e par d\xE9faut) -->\n                    <div class=\"mb-3\" id=\"swal-ref-container\" style=\"display: none;\">\n                        <label for=\"swal-input-ref\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">R\xE9f\xE9rence / ID Transaction</label>\n                        <input id=\"swal-input-ref\" type=\"text\" class=\"form-control\" placeholder=\"Ex: TXN-98475621\" />\n                    </div>\n\n                    <!-- Bloc Tiers Payeur r\xE9ajust\xE9 (Nom plus large) -->\n                    <div style=\"background-color: #f8f9fa; border: 1px solid #ced4da; padding: 10px; border-radius: 0.25rem; margin-bottom: 12px;\">\n                        <span style=\"font-weight: bold; color: #495057; display: block; margin-bottom: 6px; font-size: 0.8rem;\">Paiement par un tiers (Optionnel)</span>\n                        <div style=\"display: grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 6px;\">\n                            <input id=\"swal-payer-name\" type=\"text\" class=\"form-control form-control-sm\" placeholder=\"Nom du payeur\" />\n                            <input id=\"swal-payer-phone\" type=\"text\" class=\"form-control form-control-sm\" placeholder=\"T\xE9l\xE9phone\" />\n                            <select id=\"swal-payer-relation\" class=\"form-control form-control-sm\">\n                                <option value=\"\">-- Lien --</option>\n                                <option value=\"garant\">Garant</option>\n                                <option value=\"conjoint\">Conjoint(e)</option>\n                                <option value=\"parent\">Parent</option>\n                                <option value=\"agent\">Agent</option>\n                                <option value=\"autre\">Autre</option>\n                            </select>\n                        </div>\n                    </div>\n\n                    <!-- Notes / Commentaires -->\n                    <div>\n                        <label for=\"swal-input-notes\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">Commentaire guichet</label>\n                        <input id=\"swal-input-notes\" type=\"text\" class=\"form-control form-control-sm\" placeholder=\"Ex: Paiement arrang\xE9...\" />\n                    </div>\n                </div>\n\n                <!-- ONGLET 2 : HISTORIQUE -->\n                <div id=\"tab-content-history\" style=\"display: none; max-height: 220px; overflow-y: auto;\">\n                    ").concat(transactions.length === 0 ? "\n                        <div style=\"text-align: center; padding: 25px; color: #6c757d; font-style: italic;\">\n                            Aucune transaction enregistr\xE9e pour le moment sur cette \xE9ch\xE9ance.\n                        </div>\n                    " : "\n                        <table style=\"width: 100%; font-size: 0.8rem; border-collapse: collapse;\">\n                            <thead>\n                                <tr style=\"background-color: #f1f3f5; text-align: left;\">\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Date</th>\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Montant</th>\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Mode</th>\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Agent</th>\n                                </tr>\n                            </thead>\n                            <tbody>\n                                ".concat(transactions.map(function (tx) {
+        var _tx$created_at, _tx$agent$name, _tx$agent;
+        return "\n                                    <tr>\n                                        <td style=\"padding: 6px; border-bottom: 1px solid #f8f9fa;\">".concat((_tx$created_at = tx.created_at) !== null && _tx$created_at !== void 0 ? _tx$created_at : "N/A", "</td>\n                                        <td style=\"padding: 6px; border-bottom: 1px solid #f8f9fa; font-weight: bold; color: #28a745;\">+ ").concat(formatCurrency(tx.montant), "</td>\n                                        <td style=\"padding: 6px; border-bottom: 1px solid #f8f9fa; text-transform: uppercase;\">").concat(tx.mode_paiement, "</td>\n                                        <td style=\"padding: 6px; border-bottom: 1px solid #f8f9fa;\">").concat((_tx$agent$name = (_tx$agent = tx.agent) === null || _tx$agent === void 0 ? void 0 : _tx$agent.name) !== null && _tx$agent$name !== void 0 ? _tx$agent$name : "Guichet", "</td>\n                                    </tr>\n                                ");
+      }).join(""), "\n                            </tbody>\n                        </table>\n                    "), "\n                </div>\n            </div>\n        "),
+      width: "720px",
       showCancelButton: true,
-      confirmButtonText: 'Valider',
-      cancelButtonText: 'Annuler',
-      confirmButtonColor: '#4f5d73',
-      cancelButtonColor: '#6c757d',
+      confirmButtonText: "Valider l'encaissement",
+      cancelButtonText: "Fermer",
+      confirmButtonColor: "#4f5d73",
+      // Design sobre et neutre
+      cancelButtonColor: "#6c757d",
       focusConfirm: true,
       didOpen: function didOpen() {
-        // Focus automatique et sélection complète du montant pour saisie instantanée
-        var input = document.getElementById('swal-input-amount');
+        var input = document.getElementById("swal-input-amount");
         if (input) {
           input.focus();
           input.select();
         }
+        var tabBtnPay = document.getElementById("tab-btn-pay");
+        var tabBtnHistory = document.getElementById("tab-btn-history");
+        var tabContentPay = document.getElementById("tab-content-pay");
+        var tabContentHistory = document.getElementById("tab-content-history");
+        tabBtnPay.addEventListener("click", function () {
+          tabContentPay.style.display = "block";
+          tabContentHistory.style.display = "none";
+          tabBtnPay.style.borderBottom = "2px solid #333";
+          tabBtnPay.style.color = "#333";
+          tabBtnHistory.style.borderBottom = "none";
+          tabBtnHistory.style.color = "#6c757d";
+        });
+        tabBtnHistory.addEventListener("click", function () {
+          tabContentPay.style.display = "none";
+          tabContentHistory.style.display = "block";
+          tabBtnHistory.style.borderBottom = "2px solid #333";
+          tabBtnHistory.style.color = "#333";
+          tabBtnPay.style.borderBottom = "none";
+          tabBtnPay.style.color = "#6c757d";
+        });
+        var modeSelect = document.getElementById("swal-input-mode");
+        var refContainer = document.getElementById("swal-ref-container");
+        modeSelect.addEventListener("change", function (e) {
+          if (e.target.value === "mobile_money" || e.target.value === "virement") {
+            refContainer.style.display = "block";
+          } else {
+            refContainer.style.display = "none";
+          }
+        });
       },
       preConfirm: function preConfirm() {
-        var inputElement = document.getElementById('swal-input-amount');
-        var amount = Math.round(Number(inputElement.value));
+        var amount = Math.round(Number(document.getElementById("swal-input-amount").value));
+        var modePaiement = document.getElementById("swal-input-mode").value;
+        var referenceExterne = document.getElementById("swal-input-ref").value;
+        var payerName = document.getElementById("swal-payer-name").value;
+        var payerPhone = document.getElementById("swal-payer-phone").value;
+        var payerRelation = document.getElementById("swal-payer-relation").value;
+        var notes = document.getElementById("swal-input-notes").value;
         if (!amount || Number.isNaN(amount) || amount <= 0) {
-          sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().showValidationMessage('Veuillez saisir un montant valide.');
+          sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().showValidationMessage("Veuillez saisir un montant valide.");
           return false;
         }
         if (amount > cleanRemaining) {
-          sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().showValidationMessage("Le montant saisi exc\xE8de le reste d\xFB.");
+          sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().showValidationMessage("Le montant saisi excède le reste dû de cette échéance.");
           return false;
         }
-        return amount;
+        if (payerName.trim() !== "" && !payerRelation) {
+          sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().showValidationMessage("Veuillez préciser le lien du tiers payeur avec le client.");
+          return false;
+        }
+        return {
+          montant_paye: amount,
+          mode_paiement: modePaiement,
+          reference_externe: referenceExterne,
+          payer_name: payerName,
+          payer_phone: payerPhone,
+          payer_relation: payerRelation,
+          notes: notes
+        };
       }
     }).then(function (result) {
       if (result.isConfirmed && result.value) {
-        _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.patch("/admin/credits/".concat(credit.id, "/payments/").concat(payment.id), {
-          montant_paye: result.value
-        }, {
+        _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.patch("/admin/credits/".concat(credit.credit_uid, "/payments/").concat(payment.id), result.value, {
           preserveScroll: true,
           onStart: function onStart() {
             return setIsProcessing(true);
@@ -280,9 +329,9 @@ function Show(_ref) {
           },
           onSuccess: function onSuccess() {
             sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
-              title: 'Succès',
-              text: 'Encaissement enregistré.',
-              icon: 'success',
+              title: "Succès",
+              text: "Encaissement enregistré avec succès.",
+              icon: "success",
               timer: 1500,
               showConfirmButton: false
             });
@@ -295,7 +344,7 @@ function Show(_ref) {
     children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
       className: "container-fluid px-0",
       style: {
-        color: '#2c3e50'
+        color: "#2c3e50"
       },
       children: [flash.success && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
         className: "alert alert-success d-flex align-items-center mb-3 small shadow-sm",
@@ -308,10 +357,10 @@ function Show(_ref) {
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
           children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
             className: "text-uppercase text-muted fs-8 fw-semibold tracking-wider",
-            children: "SIG \u2014 Portefeuille Cr\xE9dits"
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("h1", {
+            children: "Syst\xE8me d'Information de Gestion \u2014 Portefeuille Cr\xE9dits"
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h1", {
             className: "fs-5 text-dark fw-bold mb-0",
-            children: ["Dossier de Pr\xEAt #CR-", credit.id]
+            children: "Dossier de Pr\xEAt"
           })]
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
@@ -334,7 +383,7 @@ function Show(_ref) {
               children: formatCurrency(financialSummary.totalAttenduGlobal)
             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
               className: "fs-8 text-muted border-top pt-1 mt-1",
-              children: "Capital + Int. + P\xE9n."
+              children: "Capital + Int\xE8r\xEAt + P\xE9nalit\xE9."
             })]
           })
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
@@ -349,7 +398,7 @@ function Show(_ref) {
               children: formatCurrency(financialSummary.totalRembourse)
             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
               className: "fs-8 text-muted border-top pt-1 mt-1",
-              children: ["Amorti \xE0 : ", financialSummary.totalAttenduGlobal > 0 ? Math.round(financialSummary.totalRembourse / financialSummary.totalAttenduGlobal * 100) : 0, "%"]
+              children: ["Amorti \xE0 :", " ", financialSummary.totalAttenduGlobal > 0 ? Math.round(financialSummary.totalRembourse / financialSummary.totalAttenduGlobal * 100) : 0, "%"]
             })]
           })
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
@@ -370,16 +419,16 @@ function Show(_ref) {
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
           className: "col-md-3",
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-            className: "card h-100 border bg-white shadow-sm p-3 ".concat(financialSummary.encoursEnRetard > 0 ? 'border-start border-danger border-3' : ''),
+            className: "card h-100 border bg-white shadow-sm p-3 ".concat(financialSummary.encoursEnRetard > 0 ? "border-start border-danger border-3" : ""),
             children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
               className: "text-uppercase text-muted fs-8 fw-bold",
               children: "Portefeuille \xE0 Risque"
             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h4", {
-              className: "fw-bold my-1 ".concat(financialSummary.encoursEnRetard > 0 ? 'text-danger' : 'text-dark'),
+              className: "fw-bold my-1 ".concat(financialSummary.encoursEnRetard > 0 ? "text-danger" : "text-dark"),
               children: formatCurrency(financialSummary.encoursEnRetard)
             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
               className: "fs-8 text-muted border-top pt-1 mt-1",
-              children: financialSummary.encoursEnRetard > 0 ? '⚠️ Arriérés échus' : 'Aucun retard'
+              children: financialSummary.encoursEnRetard > 0 ? "⚠️ Arriérés échus" : "Aucun retard"
             })]
           })
         })]
@@ -425,7 +474,7 @@ function Show(_ref) {
                       children: "Compte \xC9pargne :"
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
                       className: "text-end fw-semibold text-monospace",
-                      children: (_credit$client$code_c = (_credit$client3 = credit.client) === null || _credit$client3 === void 0 ? void 0 : _credit$client3.code_compte) !== null && _credit$client$code_c !== void 0 ? _credit$client$code_c : 'N/A'
+                      children: (_credit$client$code_c = (_credit$client3 = credit.client) === null || _credit$client3 === void 0 ? void 0 : _credit$client3.code_compte) !== null && _credit$client$code_c !== void 0 ? _credit$client$code_c : "N/A"
                     })]
                   })]
                 })
@@ -505,7 +554,7 @@ function Show(_ref) {
                       children: "Taux Contractuel :"
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("td", {
                       className: "text-end fw-semibold",
-                      children: [credit.taux, "%"]
+                      children: [credit.taux_manuel ? credit.taux_manuel : credit.taux, "%"]
                     })]
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
@@ -540,7 +589,7 @@ function Show(_ref) {
                   className: "p-2 rounded bg-light border fs-8 text-dark",
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("strong", {
                     children: ["\xC9ch\xE9ance #", item.echeance, " :"]
-                  }), " Retrait de ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
+                  }), " ", "Retrait de", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                     className: "fw-bold",
                     children: formatCurrency(item.amount_withdrawn)
                   }), "."]
@@ -569,7 +618,7 @@ function Show(_ref) {
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                     className: "text-center bg-white",
                     style: {
-                      width: '40px'
+                      width: "40px"
                     },
                     children: "N\xB0"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
@@ -587,7 +636,7 @@ function Show(_ref) {
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                     className: "text-center bg-white",
                     style: {
-                      width: '140px'
+                      width: "140px"
                     },
                     children: "P\xE9nalit\xE9s (XAF)"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
@@ -596,13 +645,13 @@ function Show(_ref) {
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                     className: "text-end bg-white text-dark fw-bold",
                     style: {
-                      backgroundColor: '#fdfefe'
+                      backgroundColor: "#fdfefe"
                     },
                     children: "Reste \xC0 Payer (RAP)"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("th", {
                     className: "ps-3 bg-white",
                     style: {
-                      width: '200px'
+                      width: "200px"
                     },
                     children: "Guichet / Statut"
                   })]
@@ -615,18 +664,18 @@ function Show(_ref) {
                   var paidAmount = Number((_payment$montant_paye2 = payment.montant_paye) !== null && _payment$montant_paye2 !== void 0 ? _payment$montant_paye2 : 0);
                   var remaining = Math.max(0, totalDue - paidAmount);
                   var isOverdue = remaining > 0 && new Date(payment.due_date) < new Date();
-                  var dynamicStatus = 'pending';
+                  var dynamicStatus = "pending";
                   if (remaining === 0) {
-                    dynamicStatus = 'paid';
+                    dynamicStatus = "paid";
                   } else if (paidAmount > 0 && remaining > 0) {
-                    dynamicStatus = 'partiel';
+                    dynamicStatus = "partiel";
                   } else if (isOverdue) {
-                    dynamicStatus = 'late';
+                    dynamicStatus = "late";
                   }
                   var statusConfig = PAYMENT_STATUS_CONFIG[dynamicStatus];
                   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tr", {
                     style: isOverdue ? {
-                      backgroundColor: '#fffdfd'
+                      backgroundColor: "#fffdfd"
                     } : {},
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
                       className: "text-center fw-bold text-muted",
@@ -644,10 +693,10 @@ function Show(_ref) {
                       children: formatCurrency(payment.montant_total)
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
                       className: "text-center",
-                      children: remaining > 0 && ['active', 'in_arrears'].includes(credit.statut) ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                      children: remaining > 0 && ["active", "in_arrears"].includes(credit.statut) ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                         className: "input-group input-group-sm mx-auto",
                         style: {
-                          maxWidth: '110px'
+                          maxWidth: "110px"
                         },
                         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("input", {
                           type: "number",
@@ -655,7 +704,7 @@ function Show(_ref) {
                           min: "0",
                           disabled: isProcessing,
                           className: "form-control text-end text-monospace fs-7 px-1 py-0",
-                          value: (_penalties$payment$id3 = penalties[payment.id]) !== null && _penalties$payment$id3 !== void 0 ? _penalties$payment$id3 : '',
+                          value: (_penalties$payment$id3 = penalties[payment.id]) !== null && _penalties$payment$id3 !== void 0 ? _penalties$payment$id3 : "",
                           onChange: function onChange(e) {
                             return setPenalties(function (prev) {
                               return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, payment.id, e.target.value));
@@ -678,16 +727,16 @@ function Show(_ref) {
                       className: "text-end text-secondary text-monospace",
                       children: formatCurrency(paidAmount)
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
-                      className: "text-end text-monospace fw-bold ".concat(remaining > 0 ? 'text-dark' : 'text-success'),
+                      className: "text-end text-monospace fw-bold ".concat(remaining > 0 ? "text-dark" : "text-success"),
                       style: {
-                        backgroundColor: '#fafbfc'
+                        backgroundColor: "#fafbfc"
                       },
                       children: formatCurrency(remaining)
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("td", {
                       className: "ps-3",
                       children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                         className: "d-flex align-items-center gap-2",
-                        children: [remaining > 0 && ['active', 'in_arrears'].includes(credit.statut) ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
+                        children: [remaining > 0 && ["active", "in_arrears"].includes(credit.statut) ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
                           className: "btn btn-xs btn-outline-dark px-2 py-0 fs-8 fw-semibold",
                           type: "button",
                           onClick: function onClick() {
@@ -695,18 +744,18 @@ function Show(_ref) {
                           },
                           disabled: !canPayInstallment(payment) || isProcessing,
                           style: {
-                            borderRadius: '3px'
+                            borderRadius: "3px"
                           },
                           children: "Encaisser"
                         }) : null, /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                           className: statusConfig["class"],
                           style: {
-                            fontSize: '11px',
-                            padding: '3px 6px'
+                            fontSize: "11px",
+                            padding: "3px 6px"
                           },
                           children: statusConfig.label
                         })]
-                      }), !canPayInstallment(payment) && remaining > 0 && ['active', 'in_arrears'].includes(credit.statut) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                      }), !canPayInstallment(payment) && remaining > 0 && ["active", "in_arrears"].includes(credit.statut) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                         className: "fs-9 text-muted mt-1",
                         children: "\uD83D\uDD12 Attente \xE9ch\xE9ance pr\xE9c\xE9dente"
                       })]

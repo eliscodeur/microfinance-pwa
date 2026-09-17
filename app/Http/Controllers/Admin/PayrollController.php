@@ -31,24 +31,31 @@ class PayrollController extends Controller
         $annee = ! empty($annee) ? $annee : now()->subMonth()->year;
 
         // Déduction des dates de début et de fin du mois sélectionné
-
         $dateDebut = Carbon::createFromDate($annee, $mois, 1)->startOfMonth();
         $dateFin   = Carbon::createFromDate($annee, $mois, 1)->endOfMonth();
 
-        $agents = Agent::all();
-        // dd($agents);
+        $agents   = Agent::all();
         $payrolls = [];
 
         // Calcul ou récupération automatique pour tous les agents sur ce mois
         foreach ($agents as $agent) {
             // Récupération des données du service (qui retourne un tableau)
             $calculs = $this->payrollService->calculerCommissionGlobaleCarnets($agent, $dateDebut->toDateString(), $dateFin->toDateString());
-            // dd($calculs);
+
             $salaireBase       = $calculs['salaire_base'] ?? ($agent->salaire_base ?? 0);
             $commissionTravail = $calculs['commission_travail'] ?? 0;
             $commissionCarnet  = $calculs['montant_commission_carnet'] ?? 0;
             $commissionCycle   = $calculs['montant_total_commission_cycle'] ?? 0;
             $bonus             = $calculs['montant_total_bonus'] ?? 0;
+
+            // --- GESTION DES AVANCES SUR SALAIRE (Étalement) ---
+            // On récupère les avances en cours de l'agent pour cette période
+            $avancesEnCours = \App\Models\SalaryAdvance::where('agent_id', $agent->id)
+                ->where('statut', 'en_cours')
+                ->get();
+
+            // On somme les tranches mensuelles à déduire ce mois-ci
+            $totalAvanceDeduite = $avancesEnCours->sum('montant_mensuel');
 
             // Vérifier si un enregistrement existe déjà dans la table 'salaires' pour ce mois
             $salaireEnregistré = DB::table('salaires')
@@ -57,8 +64,9 @@ class PayrollController extends Controller
                 ->where('annee', $dateDebut->year)
                 ->first();
 
-            // Calcul du salaire net global en additionnant toutes les composantes
-            $salaireNet = $salaireBase + $commissionTravail + $commissionCycle + $bonus + $commissionCarnet;
+            // Calcul du salaire net global en additionnant les gains et en soustrayant l'avance étalée
+            $salaireBrut = $salaireBase + $commissionTravail + $commissionCycle + $bonus + $commissionCarnet;
+            $salaireNet  = max(0, $salaireBrut - $totalAvanceDeduite); // Évite un net négatif par sécurité
 
             $payrolls[] = (object) [
                 'agent'              => $agent,
@@ -67,14 +75,14 @@ class PayrollController extends Controller
                 'commission_carnet'  => $commissionCarnet,
                 'commission_cycle'   => $commissionCycle,
                 'bonus'              => $bonus,
+                'avance_deduite'     => $totalAvanceDeduite, // Pour affichage éventuel sur le bulletin
+                'avances_concernes'  => $avancesEnCours,     // Pour le suivi
                 'salaire_net'        => $salaireNet,
                 'statut'             => $salaireEnregistré ? ucfirst($salaireEnregistré->statut) : 'En attente',
-
             ];
         }
-        // dd($payrolls);
 
-        return view('admin.payroll.index', compact('payrolls', 'mois', 'annee'));
+        return view('admin.payrolls.index', compact('payrolls', 'mois', 'annee'));
     }
 
     public function store(Request $request)
@@ -234,7 +242,21 @@ class PayrollController extends Controller
         $commissionCycle   = $calculs['montant_total_commission_cycle'] ?? 0;
         $bonus             = $calculs['montant_total_bonus'] ?? 0;
         $tauxCarnet        = $calculs['taux_carnet'] ?? 25; // Récupère le taux dynamique ou valeur par défaut
-        $montantNet        = $salaireBase + $commissionTravail + $commissionCycle + $bonus + $commissionCarnet;
+
+        // 1. Récupérer les avances sur salaire validées ou applicables du mois
+        $avancesList = \App\Models\SalaryAdvance::where('agent_id', $agent->id)
+            ->whereMonth('created_at', $mois)
+            ->whereYear('created_at', $annee)
+            ->get();
+
+                                                                                 // Calcul du total des avances à déduire
+        $totalAvances = $avancesList->where('statut', 'valide')->sum('montant'); // ou 'accordee' selon votre nomenclature
+
+        // Salaire Brut / Total avant déductions
+        $salaireBrut = $salaireBase + $commissionTravail + $commissionCycle + $bonus + $commissionCarnet;
+
+        // Salaire Net après déduction des avances
+        $montantNet = $salaireBrut - $totalAvances;
 
         // Utilisation d'un objet stdClass pour contourner les restrictions Eloquent et injecter toutes les propriétés d'affichage
         $salaire                     = new \stdClass();
@@ -249,6 +271,7 @@ class PayrollController extends Controller
         $salaire->commission_cycle   = $commissionCycle;
         $salaire->bonus              = $bonus;
         $salaire->motif_bonus        = $calculs['motif_bonus'] ?? null;
+        $salaire->total_avances      = $totalAvances; // Ajouté pour la vue
         $salaire->montant_net        = $montantNet;
         $salaire->taux_carnet        = $tauxCarnet;
         $salaire->statut             = 'En attente';
@@ -290,7 +313,6 @@ class PayrollController extends Controller
                 $carnet->assigned_at        = $carnetsData[$carnet->id]->assigned_at ?? null;
                 $carnet->prix_category      = $prixCategory;
                 $carnet->commission_generee = ($prixCategory * $tauxCarnet) / 100;
-                // $carnet->montant_cotise_mois = $carnet->depots()->whereMonth('created_at', $mois)->whereYear('created_at', $annee)->sum('montant');
 
                 return $carnet;
             });
@@ -303,18 +325,15 @@ class PayrollController extends Controller
                 'collectes' => function ($query) use ($mois, $annee) {
                     $query->whereMonth('created_at', $mois)->whereYear('created_at', $annee);
                 },
-                // Charger le bonus/commission lié au cycle avec son paiement et son validateur
                 'bonuses.paiement',
                 'bonuses.validator',
             ])
             ->get()
             ->map(function ($cycle) {
-                // 1. Calculs des pointages et de la mise
                 $cycle->nombre_pointages = $cycle->collectes->sum('pointage');
                 $cycle->mise             = $cycle->montant_journalier;
 
-                                                   // 2. Récupérer le bonus/commission associé à ce cycle
-                $bonus = $cycle->bonuses->first(); // ou filtrer si l'agent peut en avoir plusieurs par mois
+                $bonus = $cycle->bonuses->first();
 
                 if ($bonus && $bonus->paiement_id) {
                     $cycle->statut_paiement = 'Validé';
@@ -336,6 +355,7 @@ class PayrollController extends Controller
             ->with(['admin', 'validator'])
             ->get();
 
-        return view('admin.payroll.show', compact('salaire', 'carnets', 'cycles', 'bonusManuels'));
+        // On transmet aussi la liste des avances à la vue si vous souhaitez afficher un tableau dédié
+        return view('admin.payrolls.show', compact('salaire', 'carnets', 'cycles', 'bonusManuels', 'avancesList'));
     }
 }

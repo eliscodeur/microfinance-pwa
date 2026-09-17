@@ -1,9 +1,9 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Credit extends Model
 {
@@ -16,20 +16,20 @@ class Credit extends Model
         'cycle_id',
         'agent_id',
         'admin_id',
-        'credit_product_id', 
-        'credit_object_id',  
-        'type_support',     
+        'credit_product_id',
+        'credit_object_id',
+        'type_support',
         'montant_demande',
         'montant_accorde',
         'taux',
-        'taux_manuel',      
+        'taux_manuel',
         'mode',
         'periodicite',
         'nombre_echeances',
         'differe',
-        'frais_dossier',    
+        'frais_dossier',
         'montant_echeance',
-        'montant_echeance_differe', 
+        'montant_echeance_differe',
         'interet_total',
         'montant_rembourse',
         'blocked_amount',
@@ -63,7 +63,20 @@ class Credit extends Model
         'taux'                     => 'decimal:4',
         'taux_manuel'              => 'decimal:4',
     ];
+    protected static function boot()
+    {
+        parent::boot();
 
+        static::creating(function ($model) {
+            if (empty($model->credit_uid)) {
+                $model->credit_uid = strtolower((string) Str::ulid());
+            }
+        });
+    }
+    public function getRouteKeyName()
+    {
+        return 'credit_uid';
+    }
     /* -------------------------------------------------------------------------
      * RELATIONS
      * ------------------------------------------------------------------------- */
@@ -94,7 +107,7 @@ class Credit extends Model
     }
 
     // --- NOUVELLES RELATIONS ---
-    
+
     public function creditProduct()
     {
         return $this->belongsTo(CreditProduct::class);
@@ -105,8 +118,7 @@ class Credit extends Model
         return $this->belongsTo(CreditObject::class);
     }
 
-    
-    public function creditGuarantor() 
+    public function creditGuarantor()
     {
         return $this->hasOne(CreditGuarantor::class, 'credit_id');
     }
@@ -133,12 +145,12 @@ class Credit extends Model
 
     public function getIsInDiffereAttribute(): bool
     {
-        if (!$this->differe || $this->differe <= 0) {
+        if (! $this->differe || $this->differe <= 0) {
             return false;
         }
 
         $paidSchedulesCount = $this->schedules()->where('statut', 'paye')->count();
-        
+
         return $paidSchedulesCount < $this->differe;
     }
 }

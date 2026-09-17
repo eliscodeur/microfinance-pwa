@@ -76,7 +76,6 @@
                 </div>
             </div>
         </div>
-        {{-- @dump($salaire) --}}
 
         <!-- Récapitulatif Financier Global -->
         <div class="card border-0 shadow-sm mb-4">
@@ -138,11 +137,18 @@
                             <!-- Bonus Exceptionnels -->
                             <tr>
                                 <td class="fw-bold">Bonus Exceptionnels</td>
-                                <td colspan="2">
-                                    {{-- <span class="text-muted fst-italic">{{ $salaire->motif_bonus ?? 'Aucun motif renseigné' }}</span> --}}
-                                </td>
+                                <td colspan="2"></td>
                                 <td class="text-end font-monospace">
                                     {{ number_format($salaire->bonus ?? 0, 0, ',', ' ') }}
+                                </td>
+                            </tr>
+
+                            <!-- Avances sur Salaire (Déduction) -->
+                            <tr class="table-danger-subtle">
+                                <td class="fw-bold text-danger">Avances sur Salaire</td>
+                                <td colspan="2">Prélèvements validés sur la période</td>
+                                <td class="text-end font-monospace text-danger">
+                                    - {{ number_format($salaire->total_avances ?? 0, 0, ',', ' ') }}
                                 </td>
                             </tr>
                         </tbody>
@@ -159,7 +165,7 @@
             </div>
         </div>
 
-        <!-- Sections Détaillées : Carnets, Cycles et Audit -->
+        <!-- Sections Détaillées : Carnets, Cycles, Bonus et Avances -->
         <div class="row g-4">
             <!-- A. Journal Détaillé des Carnets -->
             <div class="col-12">
@@ -177,7 +183,6 @@
                                     <tr>
                                         <th>Numéro du Carnet</th>
                                         <th>Nom / Propriétaire</th>
-                                        {{-- <th>Montant Total Cotisé (Mois)</th> --}}
                                         <th>Commission Générée</th>
                                         <th>Date d'assignation</th>
                                         <th>Statut du Carnet</th>
@@ -189,16 +194,11 @@
                                             <td class="font-monospace fw-bold">{{ $carnet->numero }}</td>
                                             <td>{{ $carnet->client->nom ?? '---' }} {{ $carnet->client->prenom ?? '' }}
                                             </td>
-                                            {{-- <td class="font-monospace">
-                                                {{ number_format($carnet->montant_cotise_mois, 0, ',', ' ') }} FCFA</td> --}}
                                             <td class="font-monospace text-success fw-bold">
                                                 {{ number_format($carnet->commission_generee, 0, ',', ' ') }} FCFA</td>
-
-                                            <!-- Affichage de la date d'assignation -->
                                             <td class="font-monospace">
                                                 {{ $carnet->assigned_at ? \Carbon\Carbon::parse($carnet->assigned_at)->format('d/m/Y') : '---' }}
                                             </td>
-
                                             <td>
                                                 <span
                                                     class="badge {{ $carnet->statut === 'actif' ? 'bg-success' : 'bg-secondary' }}">
@@ -220,9 +220,6 @@
             </div>
 
             <!-- B. Historique des Cycles de Tontine -->
-            @php
-                // var_dump($cycles);
-            @endphp
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white py-3">
@@ -244,7 +241,7 @@
                                         <th>Pointages</th>
                                         <th>Montant global géré</th>
                                         <th>Part de commission agent</th>
-                                        <th>Validé par</th> <!-- Nouvelle colonne -->
+                                        <th>Validé par</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -267,8 +264,6 @@
                                             <td class="font-monospace text-success fw-bold text-end">
                                                 {{ number_format($cycle->commission_genere ?? 0, 0, ',', ' ') }} FCFA
                                             </td>
-
-                                            <!-- Colonne Validation (Admin + Date) -->
                                             <td>
                                                 @if ($cycle->validated_at)
                                                     <span class="fw-semibold text-dark">{{ $cycle->validateur_nom }}</span>
@@ -292,6 +287,7 @@
                 </div>
             </div>
 
+            <!-- C. Bonus et gratifications du mois -->
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white py-3">
@@ -319,13 +315,7 @@
                                             <td>{{ $bonus->motif ?? '---' }}</td>
                                             <td class="font-monospace text-success fw-bold">
                                                 {{ number_format($bonus->montant, 0, ',', ' ') }} FCFA</td>
-
-                                            <!-- Créateur (admin_id) -->
-                                            <td>
-                                                {{ optional($bonus->admin)->name ?? '---' }}
-                                            </td>
-
-                                            <!-- Validateur (validated_by) -->
+                                            <td>{{ optional($bonus->admin)->name ?? '---' }}</td>
                                             <td>
                                                 @if ($bonus->validated_by)
                                                     <span
@@ -336,7 +326,6 @@
                                                     <span class="badge bg-warning text-dark">En attente</span>
                                                 @endif
                                             </td>
-
                                             <td>
                                                 <span
                                                     class="badge {{ $bonus->statut === 'valide' ? 'bg-success' : 'bg-secondary' }}">
@@ -347,8 +336,7 @@
                                     @empty
                                         <tr>
                                             <td colspan="6" class="text-center text-muted py-3">Aucun bonus manuel pour
-                                                cette période.
-                                            </td>
+                                                cette période.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -358,13 +346,12 @@
                 </div>
             </div>
 
-
-            <!-- C. Historique et Audit de Validation (Prêt pour laravel-auditing) -->
-            {{-- <div class="col-12">
-                <div class="card border-0 shadow-sm mb-4">
+            <!-- D. Historique des Avances sur Salaire -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white py-3">
-                        <h5 class="card-title h6 fw-bold mb-0 text-dark">
-                            <i class="bi bi-shield-check me-2"></i> C. Historique et Audit des Modifications
+                        <h5 class="card-title h6 fw-bold mb-0 text-danger">
+                            <i class="bi bi-wallet2 me-2"></i> D. Historique des avances sur salaire déduites
                         </h5>
                     </div>
                     <div class="card-body p-0">
@@ -372,40 +359,39 @@
                             <table class="table table-striped align-middle mb-0">
                                 <thead class="table-light fs-7">
                                     <tr>
-                                        <th>Date / Heure</th>
-                                        <th>Auteur de l'action</th>
-                                        <th>Événement</th>
-                                        <th>Détails des modifications (Audit Log)</th>
+                                        <th>Date de demande / création</th>
+                                        <th>Motif</th>
+                                        <th>Montant</th>
+                                        <th>Statut</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if (method_exists($salaire, 'audits') && $salaire->audits->count() > 0)
-                                        @foreach ($salaire->audits as $audit)
-                                            <tr>
-                                                <td>{{ $audit->created_at->format('d/m/Y à H:i') }}</td>
-                                                <td class="fw-bold">{{ optional($audit->user)->name ?? 'Système' }}</td>
-                                                <td><span
-                                                        class="badge bg-info text-dark">{{ ucfirst($audit->event) }}</span>
-                                                </td>
-                                                <td class="small text-muted">
-                                                    Modifications : {{ implode(', ', array_keys($audit->getModified())) }}
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
+                                    @forelse($avancesList ?? [] as $avance)
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-3">
-                                                <span class="fst-italic">Journal d'audit inactif ou aucune modification
-                                                    enregistrée (module laravel-auditing prêt à être branché).</span>
+                                            <td>{{ optional($avance->created_at)->format('d/m/Y') ?? '---' }}</td>
+                                            <td>{{ $avance->motif ?? 'Avance sur salaire' }}</td>
+                                            <td class="font-monospace text-danger fw-bold">
+                                                {{ number_format($avance->montant, 0, ',', ' ') }} FCFA
+                                            </td>
+                                            <td>
+                                                <span
+                                                    class="badge {{ $avance->statut === 'valide' ? 'bg-success' : 'bg-warning text-dark' }}">
+                                                    {{ ucfirst($avance->statut) }}
+                                                </span>
                                             </td>
                                         </tr>
-                                    @endif
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-3">Aucune avance sur
+                                                salaire enregistrée pour cette période.</td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-            </div> --}}
+            </div>
         </div>
     </div>
 @endsection

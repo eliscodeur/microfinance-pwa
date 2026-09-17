@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +11,7 @@ class CreditProduct extends Model
     use HasFactory;
 
     protected $fillable = [
+        'ulid',
         'credit_type_id',
         'nom',
         'code',
@@ -40,9 +40,9 @@ class CreditProduct extends Model
     public function creditObjects(): BelongsToMany
     {
         return $this->belongsToMany(
-            CreditObject::class, 
-            'credit_object_credit_product', 
-            'credit_product_id', 
+            CreditObject::class,
+            'credit_object_credit_product',
+            'credit_product_id',
             'credit_object_id'
         )->withTimestamps(); // Optionnel : si vous gérez created_at/updated_at dans le pivot (actuellement à NULL chez vous)
     }

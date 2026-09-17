@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Agent;
 use App\Models\Carnet;
 use App\Models\CarnetAgentHistory;
+use App\Models\SalaryAdvance;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -108,7 +109,7 @@ class AgentController extends Controller
      */
     public function show(string $ulid)
     {
-        $agent = Agent::where('ulid', $ulid)->firstOrFail(); // Recherche explicite par ULID
+        $agent = Agent::where('ulid', $ulid)->firstOrFail();
 
         $carnetsCount = Carnet::where('agent_id', $agent->id)->count();
         $history      = CarnetAgentHistory::with(['carnet.client'])
@@ -117,7 +118,12 @@ class AgentController extends Controller
             ->orderBy('assigned_at', 'desc')
             ->get();
 
-        return view('admin.agents.show', compact('agent', 'carnetsCount', 'history'));
+        // Variable déjà en place pour alimenter le tableau de la vue
+        $avancesList = SalaryAdvance::where('agent_id', $agent->id)
+            ->latest()
+            ->get();
+
+        return view('admin.agents.show', compact('agent', 'carnetsCount', 'history', 'avancesList'));
     }
 
     public function getAgentsExceptCurrent(string $historyUlid)

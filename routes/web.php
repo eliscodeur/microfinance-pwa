@@ -98,7 +98,6 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     // Route pour l'attribution manuelle d'un bonus
     Route::post('/bonuses/store', [BonusController::class, 'store'])->name('admin.bonuses.store')->middleware('can:Gérer Commissions');
     Route::post('/client-carnets', [ClientController::class, 'storeNumCarnet'])->name('client-carnets.store');
-    // --- NOUVELLES ROUTES POUR LA VALIDATION ---
 
     // 1. Routes personnalisées (DÉCLARER AVANT LE RESOURCE)
     Route::post('bonuses/bulk-approve', [BonusController::class, 'bulkApprove'])->name('bonuses.bulk-approve');

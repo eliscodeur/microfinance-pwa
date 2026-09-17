@@ -6,28 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
-    public function up()
+    public function up(): void
     {
         Schema::create('credit_types', function (Blueprint $table) {
             $table->id();
-            $table->string('nom'); // Ex: Prêt Amortissable, Découvert
-            $table->string('code')->unique(); // Ex: PRET_AMORT
+            $table->ulid('ulid')->unique();
+            $table->string('nom');
+            $table->string('code')->unique();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('credit_types');
     }

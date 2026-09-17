@@ -94,17 +94,18 @@
         <!-- Tableau des résultats -->
         <div class="card border-0 shadow-sm">
             <div class="table-responsive">
-                <table id="payrollsTable" class="table table-striped table-bordered dt-responsive nowrap"
+                <table id="payrollsTable" class="table table-striped table-bordered dt-responsive nowrap align-middle"
                     style="width:100%">
                     <thead class="table-light">
                         <tr>
                             <th>Agent</th>
-                            <th>Salaire de base</th>
-                            <th>Commissions sur colletes</th>
-                            <th>Commissions sur carnet</th>
-                            <th>Commissions travail</th>
-                            <th>Bonus</th>
-                            <th>Salaire Net</th>
+                            <th class="text-end">Salaire de base</th>
+                            <th class="text-end">Commissions (Cycles)</th>
+                            <th class="text-end">Commissions (Carnet)</th>
+                            <th class="text-end">Commissions (Travail)</th>
+                            <th class="text-end">Bonus</th>
+                            <th class="text-end text-danger">Avance déduite</th>
+                            <th class="text-end fw-bold">Salaire Net</th>
                             <th>Statut</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -112,51 +113,64 @@
 
                     <tbody>
                         @forelse($payrolls ?? [] as $payroll)
-                            {{-- @php dd($payroll); @endphp --}}
                             <tr>
                                 <td>
-                                    <div class="d-flex flex-column align-items-start gap-1">
-                                        <div class="fw-bold">
+                                    <div class="d-flex flex-column align-items-start">
+                                        <span class="fw-semibold text-dark">
                                             {{ $payroll->agent->nom ?? '---' }}
-                                        </div>
-                                        <!-- Affichage du numéro de l'agent dans un badge en bas -->
-                                        <span class="badge bg-secondary font-monospace" style="font-size: 0.75rem;">
+                                        </span>
+                                        <span class="text-muted font-monospace" style="font-size: 0.75rem;">
                                             N° {{ $payroll->agent->code_agent }}
                                         </span>
                                     </div>
                                 </td>
-                                <td class="text-end">{{ number_format($payroll->salaire_base ?? 0, 0, ',', ' ') }} </td>
-                                <td class="text-end">{{ number_format($payroll->commission_cycle ?? 0, 0, ',', ' ') }}
-                                </td>
+                                <td class="text-end">{{ number_format($payroll->salaire_base ?? 0, 0, ',', ' ') }}</td>
+                                <td class="text-end">{{ number_format($payroll->commission_cycle ?? 0, 0, ',', ' ') }}</td>
                                 <td class="text-end">{{ number_format($payroll->commission_carnet ?? 0, 0, ',', ' ') }}
                                 </td>
                                 <td class="text-end">{{ number_format($payroll->commission_travail ?? 0, 0, ',', ' ') }}
                                 </td>
-                                <td class="text-end">{{ number_format($payroll->bonus ?? 0, 0, ',', ' ') }} </td>
-                                <td class="fw-bold text-success text-end">
-                                    {{ number_format($payroll->salaire_net ?? 0, 0, ',', ' ') }} </td>
+                                <td class="text-end">{{ number_format($payroll->bonus ?? 0, 0, ',', ' ') }}</td>
+
+                                <!-- Colonne Avance sur salaire déduite -->
+                                <td class="text-end text-danger">
+                                    @if (($payroll->avance_deduite ?? 0) > 0)
+                                        - {{ number_format($payroll->avance_deduite, 0, ',', ' ') }}
+                                    @else
+                                        0
+                                    @endif
+                                </td>
+
+                                <td class="text-end fw-bold text-dark">
+                                    {{ number_format($payroll->salaire_net ?? 0, 0, ',', ' ') }}
+                                </td>
                                 <td>
-                                    <span class="badge bg-{{ $payroll->statut == 'Validé' ? 'success' : 'warning' }}">
+                                    @php
+                                        $statutClass = match (strtolower($payroll->statut ?? '')) {
+                                            'validé', 'valide' => 'bg-light text-dark border border-secondary',
+                                            default => 'bg-light text-muted border',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $statutClass }} fw-normal">
                                         {{ $payroll->statut ?? 'En attente' }}
                                     </span>
                                 </td>
                                 <td class="text-end">
                                     <div class="d-inline-flex gap-2">
-                                        {{-- Le bouton de visualisation est toujours accessible via l'ulid ou les paramètres de l'agent --}}
                                         <a href="{{ route('admin.payrolls.details', ['agent' => $payroll->agent->ulid, 'mois' => $mois, 'annee' => $annee]) }}"
-                                            class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-file-earmark-text me-1"></i> Voir les détails
+                                            class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-file-earmark-text me-1"></i> Détails
                                         </a>
 
                                         @if ($payroll->statut == 'En attente')
                                             @if (!$estMoisActuelOuFutur)
-                                                <button type="button" class="btn btn-sm btn-outline-success">
+                                                <button type="button" class="btn btn-sm btn-dark">
                                                     Valider
                                                 </button>
                                             @else
-                                                <span class="badge bg-secondary d-inline-flex align-items-center"
+                                                <span class="text-muted small d-inline-flex align-items-center"
                                                     title="La validation n'est possible qu'après la clôture du mois">
-                                                    <i class="bi bi-lock me-1"></i> En cours / Verrouillé
+                                                    <i class="bi bi-lock me-1"></i> Verrouillé
                                                 </span>
                                             @endif
                                         @endif

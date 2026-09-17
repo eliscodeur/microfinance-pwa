@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,13 +23,13 @@ class CreditPayment extends Model
     ];
 
     protected $casts = [
-        'due_date' => 'date',
-        'date_paye' => 'datetime',
+        'due_date'          => 'date',
+        'date_paye'         => 'datetime',
         'montant_principal' => 'decimal:2',
-        'montant_interets' => 'decimal:2',
-        'montant_total' => 'decimal:2',
-        'montant_paye' => 'decimal:2',
-        'penalite' => 'decimal:2',
+        'montant_interets'  => 'decimal:2',
+        'montant_total'     => 'decimal:2',
+        'montant_paye'      => 'decimal:2',
+        'penalite'          => 'decimal:2',
     ];
 
     public function credit()
@@ -41,5 +40,10 @@ class CreditPayment extends Model
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(PaymentTransaction::class);
     }
 }

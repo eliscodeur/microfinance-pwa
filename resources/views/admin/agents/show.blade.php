@@ -1,6 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
+    <!-- Carte d'Informations de l'Agent -->
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Agent : {{ $agent->code_agent }}</h5>
@@ -28,7 +29,7 @@
                             <p><strong>Email :</strong> {{ $agent->user->email ?? 'Pas d\'email' }}</p>
                             <p><strong>Téléphone :</strong> {{ $agent->telephone }}</p>
                             <p><strong>Actif :</strong>
-                                <span class="badge {{ $agent->actif ? 'bg-success' : 'bg-danger' }}">
+                                <span class="badge {{ $agent->actif ? 'bg-success' : 'bg-secondary' }}">
                                     {{ $agent->actif ? 'Oui' : 'Non' }}
                                 </span>
                             </p>
@@ -39,24 +40,31 @@
                             <p><strong>Mis à jour :</strong> {{ $agent->updated_at->format('d/m/Y') }}</p>
                         </div>
                     </div>
-
-                    <div class="mt-4">
-                        <button type="button" class="btn btn-outline-danger btn-sm"
-                            onclick="resetPin({{ $agent->id }})">
-                            <i class="bi bi-shield-lock"></i> Réinitialiser le code PIN
-                        </button>
-                        <p class="small text-muted mt-1">L'agent devra définir un nouveau code à sa prochaine connexion en
-                            ligne.</p>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                onclick="resetPin({{ $agent->id }})">
+                                <i class="bi bi-shield-lock"></i> Réinitialiser le code PIN
+                            </button>
+                            <span class="small text-muted ms-2">L'agent devra définir un nouveau code à sa prochaine
+                                connexion.</span>
+                        </div>
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#avanceModal">
+                                <i class="bi bi-wallet2 me-1"></i> Gérer les avances sur salaire
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Carte Gains, Collectes et Commissions (Graphique) -->
+    <!-- Carte : Performance et Évolution (Graphique) -->
     <div class="card mb-4">
-        <div class="card-header bg-success text-white d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <h5 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Performance et Évolution</h5>
+        <div class="card-header bg-light d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h5 class="mb-0 text-dark"><i class="bi bi-graph-up me-2"></i>Performance et Évolution</h5>
 
             <!-- Filtres et champs personnalisés -->
             <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -72,7 +80,7 @@
                 <div id="customDateContainer" class="d-none align-items-center gap-1">
                     <input type="date" id="startDate" class="form-control form-control-sm">
                     <input type="date" id="endDate" class="form-control form-control-sm">
-                    <button type="button" class="btn btn-light btn-sm text-primary fw-bold"
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="fetchChartData('custom')">Ok</button>
                 </div>
             </div>
@@ -82,10 +90,10 @@
         </div>
     </div>
 
-    <!-- Historique des Attributions et Désassignations de Carnets -->
+    <!-- Carte : Historique des Attributions de Carnets -->
     <div class="card mb-4">
-        <div class="card-header">
-            <strong>Historique des Attributions de Carnets</strong>
+        <div class="card-header bg-light">
+            <h5 class="mb-0 text-dark"><i class="bi bi-journal-text me-2"></i>Historique des Attributions de Carnets</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -119,8 +127,7 @@
                                     @if ($entry->unassigned_at)
                                         <span class="badge bg-secondary">Désassigné</span>
                                     @else
-                                        {{-- <span class="badge bg-success">Actif</span> --}}
-                                        <button type="button" class="btn btn-sm btn-warning btn-reassign"
+                                        <button type="button" class="btn btn-sm btn-outline-warning btn-reassign"
                                             data-ulid="{{ $entry->ulid }}" data-numero="{{ $entry->carnet->numero }}">
                                             <i class="bi bi-arrow-left-right"></i> Réattribuer
                                         </button>
@@ -135,6 +142,70 @@
         </div>
     </div>
 
+    <!-- Carte : Gestion et Historique des Avances sur Salaire -->
+    <div class="card mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-dark"><i class="bi bi-wallet2 me-2"></i>Avances sur Salaire</h5>
+            <span class="badge bg-secondary">Total validé :
+                {{ number_format($avancesList->where('statut', 'valide')->sum('montant'), 0, ',', ' ') }} FCFA
+            </span>
+        </div>
+        <div class="card-body">
+
+
+
+            <!-- Tableau de l'historique -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Montant</th>
+                            <th>Motif</th>
+                            <th>Statut</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($avancesList ?? [] as $avance)
+                            <tr>
+                                <td>{{ $avance->created_at->format('d/m/Y H:i') }}</td>
+                                <td class="fw-bold">{{ number_format($avance->montant, 0, ',', ' ') }} FCFA</td>
+                                <td>{{ $avance->motif ?? 'N/A' }}</td>
+                                <td>
+                                    @if ($avance->statut == 'valide')
+                                        <span class="badge bg-success">Validé</span>
+                                    @elseif($avance->statut == 'rejete')
+                                        <span class="badge bg-danger">Rejeté</span>
+                                    @else
+                                        <span class="badge bg-warning text-dark">En attente</span>
+                                    @endif
+                                </td>
+                                <td class="text-end">
+                                    <form action="{{ route('admin.avances.destroy', $avance->id) }}" method="POST"
+                                        class="d-inline" onsubmit="return confirm('Voulez-vous supprimer cette avance ?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Supprimer">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">Aucune avance enregistrée pour cet
+                                    agent.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Actions globales de bas de page -->
     <div class="mb-3 mt-3">
         Statut actuel :
         @if ($agent->actif)
@@ -146,7 +217,7 @@
 
     <div class="d-flex gap-2 mt-3 mb-5">
         @can('Activer/Désactiver')
-            <button type="button" class="btn {{ $agent->actif ? 'btn-warning' : 'btn-success' }}"
+            <button type="button" class="btn {{ $agent->actif ? 'btn-outline-warning' : 'btn-outline-success' }}"
                 onclick="confirmerToggleStatus({{ $agent->id }}, {{ $agent->actif ? 'true' : 'false' }})">
                 {{ $agent->actif ? 'Désactiver' : 'Activer' }} Agent
             </button>
@@ -186,6 +257,59 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+    <!-- Modal d'octroi d'avance -->
+    <div class="modal fade" id="avanceModal" tabindex="-1" aria-labelledby="avanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title" id="avanceModalLabel">
+                        <i class="bi bi-wallet2 me-2"></i> Octroyer une avance - {{ $agent->code_agent }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form id="formAvance">
+                    @csrf
+                    <input type="hidden" name="agent_id" value="{{ $agent->id }}">
+                    <div class="modal-body">
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="montant_total" class="form-label small">Montant Total (FCFA) <span
+                                        class="text-danger">*</span></label>
+                                <input type="number" step="any" class="form-control form-control-sm"
+                                    id="montant_total" name="montant_total" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="nombre_tranches" class="form-label small">Nombre de tranches <span
+                                        class="text-danger">*</span></label>
+                                <input type="number" class="form-control form-control-sm" id="nombre_tranches"
+                                    name="nombre_tranches" required value="1" min="1">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="montant_mensuel_apercu" class="form-label small">Montant mensuel
+                                    estimé</label>
+                                <input type="text" class="form-control form-control-sm bg-white"
+                                    id="montant_mensuel_apercu" readonly placeholder="Auto">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="motif" class="form-label small">Motif</label>
+                                <input type="text" class="form-control form-control-sm" id="motif"
+                                    name="motif">
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitAvance">
+                            <i class="bi bi-check-lg"></i> Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
     <!-- Scripts pour Chart.js et actions diverses -->
@@ -464,6 +588,102 @@
                         $submitBtn.prop('disabled', false).text('Enregistrer');
                     }
                 });
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const montantInput = document.getElementById('montant_total');
+            const tranchesInput = document.getElementById('nombre_tranches');
+            const apercuInput = document.getElementById('montant_mensuel_apercu');
+
+            // Calcul automatique du montant mensuel
+            function calculerMensuel() {
+                let total = parseFloat(montantInput.value) || 0;
+                let tranches = parseInt(tranchesInput.value) || 1;
+                if (tranches > 0) {
+                    let mensuel = total / tranches;
+                    apercuInput.value = mensuel.toLocaleString('fr-FR') + ' FCFA';
+                } else {
+                    apercuInput.value = '0 FCFA';
+                }
+            }
+
+            if (montantInput && tranchesInput) {
+                montantInput.addEventListener('input', calculerMensuel);
+                tranchesInput.addEventListener('input', calculerMensuel);
+            }
+
+            // Soumission du formulaire en AJAX
+            const formAvance = document.getElementById('formAvance');
+            if (formAvance) {
+                formAvance.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    let formData = new FormData(formAvance);
+                    let btn = document.getElementById('btnSubmitAvance');
+                    btn.disabled = true;
+
+                    fetch("{{ route('admin.agents.avances.store', $agent->id) }}", {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            },
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            btn.disabled = false;
+                            if (data.success) {
+                                // Fermer le modal Bootstrap proprement
+                                let modalEl = document.getElementById('avanceModal');
+                                let modalObj = bootstrap.Modal.getInstance(modalEl) || new bootstrap
+                                    .Modal(modalEl);
+                                modalObj.hide();
+
+                                // Réinitialiser le formulaire
+                                formAvance.reset();
+                                if (apercuInput) apercuInput.value = '';
+
+                                // Recharge la page pour actualiser le tableau géré par la vue
+                                location.reload();
+                            } else {
+                                alert('Erreur lors de l\'enregistrement.');
+                            }
+                        })
+                        .catch(error => {
+                            btn.disabled = false;
+                            console.error('Erreur:', error);
+                            alert('Une erreur est survenue.');
+                        });
+                });
+            }
+
+            // Suppression d'une avance en AJAX (si vous gérez aussi la suppression par AJAX)
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.btn-delete-avance')) {
+                    let btn = e.target.closest('.btn-delete-avance');
+                    let id = btn.getAttribute('data-id');
+
+                    if (confirm('Voulez-vous supprimer cette avance ?')) {
+                        fetch(`/admin/avances/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Supprime la ligne de la vue ou recharge la page
+                                    let row = document.getElementById(`row-avance-${id}`);
+                                    if (row) row.remove();
+                                    else location.reload();
+                                }
+                            })
+                            .catch(error => console.error('Erreur:', error));
+                    }
+                }
             });
         });
     </script>

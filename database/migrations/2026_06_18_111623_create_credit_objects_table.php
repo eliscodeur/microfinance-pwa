@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('credit_objects', function (Blueprint $table) {
             $table->id();
-            $table->string('nom'); // Ex: Achat de stock, Prêt scolaire
+            $table->string('nom');
             $table->string('secteur_activite')->nullable(); // Ex: Commerce, Éducation
             $table->boolean('is_active')->default(true);
             $table->timestamps();

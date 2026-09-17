@@ -1,18 +1,13 @@
 @php
     // Logique d'ouverture des menus
 $usersMenuOpen = request()->routeIs('admin.roles.*') || request()->routeIs('admin.users.*');
-
-// Séparation des variables pour les deux nouveaux blocs
 $bonusMenuOpen = request()->routeIs('admin.bonuses.*');
 $agentsMenuOpen = request()->routeIs('admin.agents.*');
-
 $clientsMenuOpen = request()->routeIs('admin.clients.*');
 $creditsMenuOpen = request()->routeIs('admin.credits.*') || request()->routeIs('admin.prets.*');
 $carnetsMenuOpen = request()->routeIs('admin.carnets.*') || request()->routeIs('admin.categories.*');
 $collecteMenuOpen = request()->routeIs('admin.sync-batches.*') || request()->routeIs('admin.cycles.*');
-
-// Nouveau : Gestion de l'ouverture du menu Salaires / Paie
-    $payrollMenuOpen = request()->routeIs('admin.payrolls.*'); // Adapte le nom de la route si besoin
+$payrollMenuOpen = request()->routeIs('admin.payrolls.*');
 @endphp
 
 <style>
@@ -123,7 +118,7 @@ $collecteMenuOpen = request()->routeIs('admin.sync-batches.*') || request()->rou
     <div class="sidebar-nav">
 
         <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-            <i class="bi bi-grid-1x2"></i> <span>Dashboard</span>
+            <i class="bi bi-grid-1x2"></i> <span>Tableau de Bord</span>
         </a>
 
         <!-- ADMINISTRATION -->
@@ -131,13 +126,13 @@ $collecteMenuOpen = request()->routeIs('admin.sync-batches.*') || request()->rou
             {{-- <div class="nav-section-title">Sécurité</div> --}}
             <a href="#usersSub" data-bs-toggle="collapse" aria-expanded="{{ $usersMenuOpen ? 'true' : 'false' }}"
                 class="menu-toggle {{ $usersMenuOpen ? 'active' : '' }}">
-                <i class="bi bi-shield-check"></i> <span>Admins</span>
+                <i class="bi bi-shield-check"></i> <span>Administrateurs</span>
             </a>
             <div class="collapse {{ $usersMenuOpen ? 'show' : '' }} submenu" id="usersSub" data-bs-parent="#sidebarNav">
                 <a href="{{ route('admin.roles.index') }}"
                     class="{{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">Rôles & Droits</a>
                 <a href="{{ route('admin.users.index') }}"
-                    class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">Liste Admins</a>
+                    class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">Liste</a>
             </div>
         @endcan
 
@@ -174,7 +169,6 @@ $collecteMenuOpen = request()->routeIs('admin.sync-batches.*') || request()->rou
 
         <!-- NOUVEAU : GESTION DES SALAIRES -->
         @can('Gérer Salaires')
-            {{-- Modifie la permission selon ta configuration --}}
             <a href="#payrollSub" data-bs-toggle="collapse" aria-expanded="{{ $payrollMenuOpen ? 'true' : 'false' }}"
                 class="menu-toggle {{ $payrollMenuOpen ? 'active' : '' }}">
                 <i class="bi bi-wallet2"></i> <span>Salaires & Paie</span>
@@ -182,9 +176,7 @@ $collecteMenuOpen = request()->routeIs('admin.sync-batches.*') || request()->rou
             <div class="collapse {{ $payrollMenuOpen ? 'show' : '' }} submenu" id="payrollSub"
                 data-bs-parent="#sidebarNav">
                 <a href="{{ route('admin.payrolls.index') }}"
-                    class="{{ request()->routeIs('admin.payroll.index') ? 'active' : '' }}">Visualiser Salaires</a>
-                {{-- <a href="{{ route('admin.payrolls.create') }}"
-                    class="{{ request()->routeIs('admin.payroll.create') ? 'active' : '' }}">Générer / Traiter</a> --}}
+                    class="{{ request()->routeIs('admin.payrolls.*') ? 'active' : '' }}">Salaires</a>
             </div>
         @endcan
 

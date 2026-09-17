@@ -44,68 +44,68 @@ __webpack_require__.r(__webpack_exports__);
 
 var STATUS_CONFIG = {
   pending: {
-    label: 'En attente',
-    "class": 'badge bg-warning text-dark'
+    label: "En attente",
+    "class": "badge bg-warning text-dark"
   },
   approved: {
-    label: 'Approuvé',
-    "class": 'badge bg-success'
+    label: "Approuvé",
+    "class": "badge bg-success"
   },
   active: {
-    label: 'Actif',
-    "class": 'badge bg-primary'
+    label: "Actif",
+    "class": "badge bg-primary"
   },
   in_arrears: {
-    label: 'En retard',
-    "class": 'badge bg-danger'
+    label: "En retard",
+    "class": "badge bg-danger"
   },
   solder: {
-    label: 'Soldé',
-    "class": 'badge bg-success'
+    label: "Soldé",
+    "class": "badge bg-success"
   },
   closed: {
-    label: 'Clôturé',
-    "class": 'badge bg-secondary'
+    label: "Clôturé",
+    "class": "badge bg-secondary"
   },
   rejected: {
-    label: 'Rejeté',
-    "class": 'badge bg-dark'
+    label: "Rejeté",
+    "class": "badge bg-dark"
   }
 };
 var TYPE_LABELS = {
-  compte: 'Sur compte',
-  quinzaine: 'Quinzaine',
-  mensuel: 'Mensuel'
+  compte: "Sur compte",
+  quinzaine: "Quinzaine",
+  mensuel: "Mensuel"
 };
 var PERIODICITE_LABELS = {
-  quinzaine: 'Quinzaine',
-  mensuelle: 'Mensuelle'
+  quinzaine: "Quinzaine",
+  mensuelle: "Mensuelle"
 };
 function Index(_ref) {
   var credits = _ref.credits;
   // Formatage monétaire strict (XAF)
   var formatCurrency = function formatCurrency(value) {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'XAF',
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "XAF",
       maximumFractionDigits: 0
     }).format(value);
   };
 
   // Formatage des dates du format ISO/DB vers le format FR
   var formatDate = function formatDate(dateString) {
-    if (!dateString) return '-';
+    if (!dateString) return "-";
     var date = new Date(dateString);
-    return isNaN(date.getTime()) ? dateString : date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+    return isNaN(date.getTime()) ? dateString : date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
     });
   };
   var getStatusBadge = function getStatusBadge(status) {
     var config = STATUS_CONFIG[status] || {
-      label: 'Inconnu',
-      "class": 'badge bg-info'
+      label: "Inconnu",
+      "class": "badge bg-info"
     };
     return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
       className: config["class"],
@@ -153,17 +153,9 @@ function Index(_ref) {
                 className: "table-light text-uppercase fs-7 text-muted",
                 children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tr", {
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
-                    className: "ps-4",
-                    style: {
-                      width: '80px'
-                    },
-                    children: "#"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
                     children: "Client"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
                     children: "Montant"
-                  }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
-                    children: "Type"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
                     children: "P\xE9riodicit\xE9"
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
@@ -175,7 +167,7 @@ function Index(_ref) {
                   }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("th", {
                     className: "pe-4 text-end",
                     style: {
-                      width: '100px'
+                      width: "100px"
                     },
                     children: "Actions"
                   })]
@@ -183,20 +175,12 @@ function Index(_ref) {
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tbody", {
                 children: [credits.data.map(function (credit) {
                   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("tr", {
-                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("td", {
-                      className: "ps-4 fw-medium text-secondary",
-                      children: ["#", credit.id]
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
+                    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
                       className: "fw-semibold text-dark",
-                      children: credit.client ? "".concat(credit.client.nom, " ").concat(credit.client.prenom) : 'Client inconnu'
+                      children: credit.client ? "".concat(credit.client.nom, " ").concat(credit.client.prenom) : "Client inconnu"
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
                       className: "fw-bold text-dark",
                       children: formatCurrency(credit.montant_demande)
-                    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
-                      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
-                        className: "text-capitalize",
-                        children: TYPE_LABELS[credit.type] || credit.type
-                      })
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
                       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("span", {
                         className: "text-capitalize",
@@ -207,7 +191,7 @@ function Index(_ref) {
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
                       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("span", {
                         className: "badge bg-light text-dark border",
-                        children: [credit.nombre_echeances, " \xE9ch\xE9ances"]
+                        children: [credit.nombre_echeances, " ", "\xE9ch\xE9ances"]
                       })
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
                       className: "text-muted",
@@ -215,7 +199,7 @@ function Index(_ref) {
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("td", {
                       className: "pe-4 text-end",
                       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
-                        href: "/admin/credits/".concat(credit.id),
+                        href: "/admin/credits/".concat(credit.credit_uid),
                         className: "btn btn-sm btn-outline-primary px-3 rounded-pill",
                         children: "Voir"
                       })
@@ -241,13 +225,13 @@ function Index(_ref) {
         className: "mt-4 d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsxs)("div", {
           className: "text-muted small",
-          children: ["Affichage de ", credits.from || 0, " \xE0 ", credits.to || 0, " sur ", credits.total, " demandes"]
+          children: ["Affichage de ", credits.from || 0, " \xE0 ", credits.to || 0, " ", "sur ", credits.total, " demandes"]
         }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("nav", {
           children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("ul", {
             className: "pagination mb-0 pagination-sm",
             children: credits.links.map(function (link, index) {
               return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("li", {
-                className: "page-item ".concat(link.active ? 'active' : '', " ").concat(!link.url ? 'disabled' : ''),
+                className: "page-item ".concat(link.active ? "active" : "", " ").concat(!link.url ? "disabled" : ""),
                 children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
                   type: "button",
                   className: "page-link",
