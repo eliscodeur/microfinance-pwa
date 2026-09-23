@@ -1,6 +1,26 @@
 @extends('admin.layouts.app')
 
 @section('content')
+    <!-- En-tête de la page : Description globale -->
+    <div class="row align-items-center mb-4 g-3">
+        <!-- Colonne Texte -->
+        <div class="col-12 col-md-9">
+            <h2 class="h3 mb-1 text-dark"><i class="bi bi-person-badge me-2"></i>Détails et Gestion de l'Agent</h2>
+            <p class="text-muted mb-0">
+                Espace centralisé de suivi : consultez les informations personnelles, analysez les performances (graphiques
+                de gains),
+                suivez l'historique des attributions de carnets et gérez les demandes d'avances sur salaire.
+            </p>
+        </div>
+
+        <!-- Colonne Bouton -->
+        {{-- <div class="col-12 col-md-3">
+            <a href="{{ route('admin.agents.index') }}" class="btn btn-outline-secondary btn-sm text-nowrap">
+                <i class="bi bi-arrow-left me-1"></i> Retour à la liste
+            </a>
+        </div> --}}
+    </div>
+
     <!-- Carte d'Informations de l'Agent -->
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
@@ -41,7 +61,7 @@
                         </div>
                     </div>
                     <div class="row mt-3">
-                        <div class="col-12">
+                        <div class="col-12 mb-2">
                             <button type="button" class="btn btn-outline-secondary btn-sm"
                                 onclick="resetPin({{ $agent->id }})">
                                 <i class="bi bi-shield-lock"></i> Réinitialiser le code PIN
@@ -49,11 +69,31 @@
                             <span class="small text-muted ms-2">L'agent devra définir un nouveau code à sa prochaine
                                 connexion.</span>
                         </div>
+
                         <div class="mb-3">
-                            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
-                                data-bs-target="#avanceModal">
-                                <i class="bi bi-wallet2 me-1"></i> Gérer les avances sur salaire
-                            </button>
+                            @php
+                                // On vérifie s'il existe une avance avec le statut 'en_attente'
+$hasPendingAdvance = collect($avancesList ?? [])->contains('statut', 'en_attente');
+
+// Optionnel : Si tu veux aussi bloquer si une avance est 'en_cours' (selon ta règle métier)
+// $hasActiveOrPending = collect($avancesList ?? [])->whereIn('statut', ['en_attente', 'en_cours'])->isNotEmpty();
+
+                            @endphp
+
+                            @if ($hasPendingAdvance)
+                                <!-- Alerte si une avance est en attente : Pas de bouton -->
+                                <div class="alert alert-warning py-2 px-3 mb-0 small d-inline-flex align-items-center">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <span>Une demande d'avance est actuellement <strong>en attente</strong>. Impossible d'en
+                                        créer une nouvelle pour l'instant.</span>
+                                </div>
+                            @else
+                                <!-- Bouton affiché s'il n'y a pas d'avance en attente bloquante -->
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
+                                    data-bs-target="#avanceModal">
+                                    <i class="bi bi-wallet2 me-1"></i> Gérer les avances sur salaire
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -145,15 +185,12 @@
     <!-- Carte : Gestion et Historique des Avances sur Salaire -->
     <div class="card mb-4">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 text-dark"><i class="bi bi-wallet2 me-2"></i>Avances sur Salaire</h5>
+            <h5 class="mb-0 text-dark"><i class="bi bi-wallet2 me-2"></i>Avances sur salaire</h5>
             <span class="badge bg-secondary">Total validé :
-                {{ number_format($avancesList->where('statut', 'valide')->sum('montant'), 0, ',', ' ') }} FCFA
+                {{ number_format($avancesList->where('statut', 'valide')->sum('montant_total'), 0, ',', ' ') }} FCFA
             </span>
         </div>
         <div class="card-body">
-
-
-
             <!-- Tableau de l'historique -->
             <div class="table-responsive">
                 <table class="table table-striped table-hover align-middle mb-0">
@@ -170,26 +207,36 @@
                         @forelse($avancesList ?? [] as $avance)
                             <tr>
                                 <td>{{ $avance->created_at->format('d/m/Y H:i') }}</td>
-                                <td class="fw-bold">{{ number_format($avance->montant, 0, ',', ' ') }} FCFA</td>
+                                <td class="fw-bold">{{ number_format($avance->montant_total, 0, ',', ' ') }} FCFA</td>
                                 <td>{{ $avance->motif ?? 'N/A' }}</td>
                                 <td>
-                                    @if ($avance->statut == 'valide')
+                                    @if ($avance->statut == 'en_cours')
                                         <span class="badge bg-success">Validé</span>
-                                    @elseif($avance->statut == 'rejete')
+                                    @elseif($avance->statut == 'rejetee')
                                         <span class="badge bg-danger">Rejeté</span>
                                     @else
                                         <span class="badge bg-warning text-dark">En attente</span>
                                     @endif
                                 </td>
                                 <td class="text-end">
-                                    <form action="{{ route('admin.avances.destroy', $avance->id) }}" method="POST"
-                                        class="d-inline" onsubmit="return confirm('Voulez-vous supprimer cette avance ?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Supprimer">
+                                    @if ($avance->statut === 'en_attente' && $avance->created_by === auth()->id())
+                                        <!-- Bouton Modifier -->
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-avance"
+                                            data-id="{{ $avance->advance_uid }}"
+                                            data-montant="{{ $avance->montant_total }}"
+                                            data-tranches="{{ $avance->nombre_tranches }}"
+                                            data-motif="{{ $avance->motif }}">Modifier
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+
+                                        <!-- Bouton Supprimer -->
+                                        <button type="button" class="btn btn-outline-danger btn-sm btn-delete-avance"
+                                            data-id="{{ $avance->advance_uid }}" title="Supprimer">Supprimer
                                             <i class="bi bi-trash"></i>
                                         </button>
-                                    </form>
+                                    @else
+                                        <span class="text-muted small">Aucune action</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -228,11 +275,12 @@
                 @method('PATCH')
             </form>
         @endcan
-        <a href="{{ route('admin.agents.index') }}" class="btn btn-secondary">Retour à la liste</a>
+        {{-- <a href="{{ route('admin.agents.index') }}" class="btn btn-secondary">Retour à la liste</a> --}}
         @can('Modifier données')
-            <a href="{{ route('admin.agents.edit', $agent->id) }}" class="btn btn-primary">Modifier</a>
+            <a href="{{ route('admin.agents.edit', $agent->id) }}" class="btn btn-primary">Modifier les info de l'agent</a>
         @endcan
     </div>
+
     <div class="modal fade" id="reassignModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <form id="reassignForm">
@@ -259,53 +307,57 @@
             </form>
         </div>
     </div>
-    <!-- Modal d'octroi d'avance -->
+    <!-- Modal d'octroi / modification d'avance -->
     <div class="modal fade" id="avanceModal" tabindex="-1" aria-labelledby="avanceModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title" id="avanceModalLabel">
-                        <i class="bi bi-wallet2 me-2"></i> Octroyer une avance - {{ $agent->code_agent }}
+                        <i class="bi bi-wallet2 me-2"></i> <span id="modal-title-text">Octroyer une avance</span> -
+                        {{ $agent->code_agent }}
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                <form id="formAvance">
+                <!-- Formulaire unique pointant par défaut vers le store -->
+                <form id="formAvance" action="{{ route('admin.agents.avances.store', $agent->id) }}" method="POST">
                     @csrf
+                    <div id="method_override_container"></div>
+                    <!-- Insérera @method('PUT') dynamiquement en mode édition -->
                     <input type="hidden" name="agent_id" value="{{ $agent->id }}">
-                    <div class="modal-body">
 
+                    <div class="modal-body">
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="montant_total" class="form-label small">Montant Total (FCFA) <span
                                         class="text-danger">*</span></label>
                                 <input type="number" step="any" class="form-control form-control-sm"
                                     id="montant_total" name="montant_total" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="nombre_tranches" class="form-label small">Nombre de tranches <span
                                         class="text-danger">*</span></label>
                                 <input type="number" class="form-control form-control-sm" id="nombre_tranches"
                                     name="nombre_tranches" required value="1" min="1">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="montant_mensuel_apercu" class="form-label small">Montant mensuel
                                     estimé</label>
                                 <input type="text" class="form-control form-control-sm bg-white"
                                     id="montant_mensuel_apercu" readonly placeholder="Auto">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="motif" class="form-label small">Motif</label>
                                 <input type="text" class="form-control form-control-sm" id="motif"
                                     name="motif">
                             </div>
                         </div>
-
                     </div>
+
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
                         <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitAvance">
-                            <i class="bi bi-check-lg"></i> Enregistrer
+                            <i class="bi bi-check-lg"></i> <span id="btn-submit-text">Enregistrer</span>
                         </button>
                     </div>
                 </form>
@@ -483,7 +535,7 @@
                 buttons: [
                     'copy', 'excel', 'csv', 'pdf', 'print'
                 ],
-                pagingType: "simple_numbers", // <-- C'est ici que tu actives l'affichage des numéros de page
+                pagingType: "simple_numbers",
                 language: {
                     processing: "Traitement en cours...",
                     search: "Rechercher&nbsp;:",
@@ -591,10 +643,13 @@
             });
         });
 
+
         document.addEventListener('DOMContentLoaded', function() {
             const montantInput = document.getElementById('montant_total');
             const tranchesInput = document.getElementById('nombre_tranches');
             const apercuInput = document.getElementById('montant_mensuel_apercu');
+            const formAvance = document.getElementById('formAvance');
+            let modalEl = document.getElementById('avanceModal');
 
             // Calcul automatique du montant mensuel
             function calculerMensuel() {
@@ -613,8 +668,69 @@
                 tranchesInput.addEventListener('input', calculerMensuel);
             }
 
-            // Soumission du formulaire en AJAX
-            const formAvance = document.getElementById('formAvance');
+            // Gestion du clic sur "Modifier" (Récupération directe via data- attributes)
+            document.addEventListener('click', function(e) {
+                let btnEdit = e.target.closest('.btn-edit-avance');
+                if (btnEdit) {
+                    let uid = btnEdit.getAttribute('data-id');
+                    let montant = btnEdit.getAttribute('data-montant');
+                    let tranches = btnEdit.getAttribute('data-tranches');
+                    let motif = btnEdit.getAttribute('data-motif');
+
+                    // 1. Changer l'action du formulaire vers la route de mise à jour avec l'UID
+                    formAvance.action = `/admin/avances/${uid}`;
+
+                    // 2. Injecter ou mettre à jour la méthode PUT
+                    let methodContainer = formAvance.querySelector('#method_override_container');
+                    if (!methodContainer) {
+                        methodContainer = document.createElement('div');
+                        methodContainer.id = 'method_override_container';
+                        formAvance.prepend(methodContainer);
+                    }
+                    methodContainer.innerHTML = '<input type="hidden" name="_method" value="PUT">';
+
+                    // 3. Pré-remplir les champs du formulaire instantanément
+                    if (montantInput) montantInput.value = montant;
+                    if (tranchesInput) tranchesInput.value = tranches;
+
+                    let motifInput = document.getElementById('motif');
+                    if (motifInput) motifInput.value = (motif !== 'null' && motif !== '') ? motif : '';
+
+                    // Recalculer l'aperçu
+                    calculerMensuel();
+
+                    // 4. Mettre à jour les textes du modal
+                    let titleEl = document.getElementById('avanceModalLabel');
+                    if (titleEl) titleEl.innerHTML =
+                        `<i class="bi bi-pencil-square me-2"></i> Modifier l'avance`;
+
+                    let btnSubmitText = document.getElementById('btn-submit-text');
+                    if (btnSubmitText) btnSubmitText.textContent = 'Mettre à jour';
+
+                    // 5. Afficher le modal Bootstrap
+                    let modalObj = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    modalObj.show();
+                }
+            });
+
+            // Réinitialiser le modal en mode "Création" lorsqu'il est fermé
+            if (modalEl) {
+                modalEl.addEventListener('hidden.bs.modal', function() {
+                    formAvance.reset();
+                    formAvance.action = "{{ route('admin.agents.avances.store', $agent->id) }}";
+                    let methodContainer = document.getElementById('method_override_container');
+                    if (methodContainer) methodContainer.innerHTML = '';
+
+                    if (apercuInput) apercuInput.value = '';
+                    let titleEl = document.getElementById('avanceModalLabel');
+                    if (titleEl) titleEl.innerHTML =
+                        `<i class="bi bi-plus-circle me-2"></i> Nouvelle avance`;
+                    let btnSubmitText = document.getElementById('btn-submit-text');
+                    if (btnSubmitText) btnSubmitText.textContent = 'Enregistrer';
+                });
+            }
+
+            // Soumission du formulaire en AJAX (Création ou Modification)
             if (formAvance) {
                 formAvance.addEventListener('submit', function(e) {
                     e.preventDefault();
@@ -622,7 +738,9 @@
                     let btn = document.getElementById('btnSubmitAvance');
                     btn.disabled = true;
 
-                    fetch("{{ route('admin.agents.avances.store', $agent->id) }}", {
+                    let urlAction = formAvance.action;
+
+                    fetch(urlAction, {
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -634,55 +752,88 @@
                         .then(data => {
                             btn.disabled = false;
                             if (data.success) {
-                                // Fermer le modal Bootstrap proprement
-                                let modalEl = document.getElementById('avanceModal');
+                                // Fermer le modal proprement
                                 let modalObj = bootstrap.Modal.getInstance(modalEl) || new bootstrap
                                     .Modal(modalEl);
                                 modalObj.hide();
 
-                                // Réinitialiser le formulaire
-                                formAvance.reset();
-                                if (apercuInput) apercuInput.value = '';
-
-                                // Recharge la page pour actualiser le tableau géré par la vue
-                                location.reload();
+                                // Afficher le SweetAlert de succès avant de recharger la page
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Succès !',
+                                    text: data.message || 'Opération effectuée avec succès.',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
                             } else {
-                                alert('Erreur lors de l\'enregistrement.');
+                                Swal.fire('Erreur', data.message || 'Erreur lors de l\'enregistrement.',
+                                    'error');
                             }
                         })
                         .catch(error => {
                             btn.disabled = false;
                             console.error('Erreur:', error);
-                            alert('Une erreur est survenue.');
+                            Swal.fire('Erreur', 'Une erreur est survenue sur le serveur.', 'error');
                         });
                 });
             }
 
-            // Suppression d'une avance en AJAX (si vous gérez aussi la suppression par AJAX)
+            // Suppression d'une avance en AJAX avec SweetAlert2
             document.addEventListener('click', function(e) {
-                if (e.target.closest('.btn-delete-avance')) {
-                    let btn = e.target.closest('.btn-delete-avance');
+                let btn = e.target.closest('.btn-delete-avance');
+                if (btn) {
                     let id = btn.getAttribute('data-id');
 
-                    if (confirm('Voulez-vous supprimer cette avance ?')) {
-                        fetch(`/admin/avances/${id}`, {
-                                method: 'DELETE',
-                                headers: {
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Accept': 'application/json'
-                                }
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    // Supprime la ligne de la vue ou recharge la page
-                                    let row = document.getElementById(`row-avance-${id}`);
-                                    if (row) row.remove();
-                                    else location.reload();
-                                }
-                            })
-                            .catch(error => console.error('Erreur:', error));
-                    }
+                    Swal.fire({
+                        title: 'Êtes-vous sûr ?',
+                        text: "Voulez-vous vraiment supprimer cette avance sur salaire ?",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Oui, supprimer',
+                        cancelButtonText: 'Annuler'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch(`/admin/avances/${id}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json'
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        let row = document.getElementById(`row-avance-${id}`);
+                                        if (row) {
+                                            row.remove();
+                                        }
+
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Supprimé !',
+                                            text: 'L\'avance a bien été supprimée.',
+                                            timer: 1500,
+                                            showConfirmButton: false
+                                        }).then(() => {
+                                            if (!row) location.reload();
+                                        });
+                                    } else {
+                                        Swal.fire('Erreur', data.message ||
+                                            'Une erreur est survenue.', 'error');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Erreur:', error);
+                                    Swal.fire('Erreur', 'Impossible de joindre le serveur.',
+                                        'error');
+                                });
+                        }
+                    });
                 }
             });
         });

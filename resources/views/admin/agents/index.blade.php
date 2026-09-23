@@ -82,10 +82,11 @@
                                     <td>
                                         <div class="d-flex gap-1">
                                             <a href="{{ route('admin.agents.show', $agent->ulid) }}"
-                                                class="btn btn-sm btn-info text-white"><i class="bi bi-eye"></i></a>
+                                                class="btn btn-sm btn-info text-white">Détails<i
+                                                    class="bi bi-eye ml-2"></i></a>
                                             @can('Modifier données')
                                                 <a href="{{ route('admin.agents.edit', $agent->ulid) }}"
-                                                    class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+                                                    class="btn btn-sm btn-warning">Modifier<i class="bi bi-pencil ml-2"></i></a>
                                             @endcan
                                             {{-- @can('Supprimer données')
                                                 <button type="button" class="btn btn-sm btn-danger"

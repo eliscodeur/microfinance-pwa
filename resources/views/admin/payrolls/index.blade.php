@@ -71,14 +71,39 @@
                                 </div>
                             @elseif ($contientDesAttentes)
                                 <!-- Votre formulaire de validation existant -->
-                                <form action="{{ route('admin.payrolls.store') }}" method="POST" class="w-100">
+                                <form action="{{ route('admin.payrolls.store') }}" method="POST" class="w-100"
+                                    id="formValiderTout">
                                     @csrf
-                                    <input type="hidden" name="mois" value="{{ $mois }}">
-                                    <input type="hidden" name="annee" value="{{ $annee }}">
-                                    <button type="submit" class="btn btn-success w-100" id="btnValiderTout">
+                                    {{-- On fusionne l'année et le mois au format YYYY-MM attendu par le contrôleur --}}
+                                    <input type="hidden" name="periode"
+                                        value="{{ $annee . '-' . str_pad($mois, 2, '0', STR_PAD_LEFT) }}">
+
+                                    <button type="button" class="btn btn-success w-100" id="btnValiderTout">
                                         <i class="bi bi-check2-all me-1"></i> Valider tout
                                     </button>
                                 </form>
+
+                                {{-- Script SweetAlert2 --}}
+                                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                                <script>
+                                    document.getElementById('btnValiderTout').addEventListener('click', function(e) {
+                                        Swal.fire({
+                                            title: 'Confirmer la validation globale ?',
+                                            text: "Cette action va valider les salaires de tous les agents et générer les dépenses associées pour cette période.",
+                                            icon: 'warning',
+                                            showCancelButton: true,
+                                            confirmButtonColor: '#28a745', // Vert Bootstrap
+                                            cancelButtonColor: '#d33', // Rouge
+                                            confirmButtonText: 'Oui, tout valider',
+                                            cancelButtonText: 'Annuler'
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                // Soumission effective du formulaire si l'utilisateur clique sur "Oui"
+                                                document.getElementById('formValiderTout').submit();
+                                            }
+                                        });
+                                    });
+                                </script>
                             @else
                                 <div
                                     class="w-100 d-flex align-items-center justify-content-center bg-success-subtle text-success border border-success rounded px-2 py-2 small fw-bold text-center">
@@ -156,13 +181,15 @@
                                     </span>
                                 </td>
                                 <td class="text-end">
-                                    <div class="d-inline-flex gap-2">
-                                        <a href="{{ route('admin.payrolls.details', ['agent' => $payroll->agent->ulid, 'mois' => $mois, 'annee' => $annee]) }}"
-                                            class="btn btn-sm btn-outline-secondary">
-                                            <i class="bi bi-file-earmark-text me-1"></i> Détails
-                                        </a>
-
+                                    <div class="d-inline-flex gap-2 align-items-center">
                                         @if ($payroll->statut == 'En attente')
+                                            {{-- Bouton de prévisualisation pour les salaires en attente --}}
+                                            <a href="{{ route('admin.payrolls.details', ['agent' => $payroll->agent->ulid, 'mois' => $mois, 'annee' => $annee]) }}"
+                                                class="btn btn-sm btn-outline-secondary" title="Prévisualiser et ajuster">
+                                                <i class="bi bi-file-earmark-text me-1"></i> Détails
+                                            </a>
+
+                                            {{-- Actions de validation individuelle --}}
                                             @if (!$estMoisActuelOuFutur)
                                                 <button type="button" class="btn btn-sm btn-dark">
                                                     Valider
@@ -173,6 +200,16 @@
                                                     <i class="bi bi-lock me-1"></i> Verrouillé
                                                 </span>
                                             @endif
+                                        @else
+                                            <a href="{{ route('admin.payrolls.details', ['agent' => $payroll->agent->ulid, 'mois' => $mois, 'annee' => $annee]) }}"
+                                                class="btn btn-sm btn-outline-success"
+                                                title="Consulter le bulletin officiel validé">
+                                                <i class="bi bi-file-earmark-check me-1"></i> Bulletin
+                                            </a>
+
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                Payé / Validé
+                                            </span>
                                         @endif
                                     </div>
                                 </td>

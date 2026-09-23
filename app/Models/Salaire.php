@@ -19,6 +19,13 @@ class Salaire extends Model
         'annee',
         'periode_debut',
         'periode_fin',
+        'depense_id',
+        'salaire_base',
+        'commission_travail',
+        'commission_carnet',
+        'commission_cycle',
+        'bonus',
+        'total_avances',
         'montant_net',
         'statut',
         'validated_by',
@@ -26,10 +33,16 @@ class Salaire extends Model
     ];
 
     protected $casts = [
-        'periode_debut' => 'date',
-        'periode_fin'   => 'date',
-        'validated_at'  => 'datetime',
-        'montant_net'   => 'decimal:2',
+        'periode_debut'      => 'date',
+        'periode_fin'        => 'date',
+        'validated_at'       => 'datetime',
+        'salaire_base'       => 'decimal:2',
+        'commission_travail' => 'decimal:2',
+        'commission_carnet'  => 'decimal:2',
+        'commission_cycle'   => 'decimal:2',
+        'bonus'              => 'decimal:2',
+        'total_avances'      => 'decimal:2',
+        'montant_net'        => 'decimal:2',
     ];
 
     /**
@@ -59,5 +72,10 @@ class Salaire extends Model
     public function validator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    public function depense(): BelongsTo
+    {
+        return $this->belongsTo(Depense::class, 'depense_id');
     }
 }

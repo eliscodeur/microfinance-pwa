@@ -4,13 +4,17 @@ use App\Http\Controllers\Admin\AgentController;
 use App\Http\Controllers\Admin\BonusController;
 use App\Http\Controllers\Admin\CarnetController;
 use App\Http\Controllers\Admin\CategoryTontineController;
+use App\Http\Controllers\Admin\ChargeController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\CollecteController;
 use App\Http\Controllers\Admin\CreditController;
 use App\Http\Controllers\Admin\CycleController as AdminCycleController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DepenseController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SalaryAdvanceController;
+use App\Http\Controllers\Admin\StockCarnetController;
 use App\Http\Controllers\Admin\SyncBatchController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\SyncController;
@@ -61,10 +65,11 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
         return response()->json(Agent::pluck('can_sync', 'id'));
     })->name('agents.sync-status');
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payrolls.index');
-    // Route::get('/payrolls/{salaire}/details', [PayrollController::class, 'details'])->name('payrolls.details');
+    Route::put('/payrolls/avances/{avance}/tranches', [PayrollController::class, 'updateTranches'])->name('payrolls.avances.updateTranches');
     Route::get('/payrolls/preview-details', [PayrollController::class, 'previewDetails'])->name('payrolls.details');
-    // Route::post('/payroll', [PayrollController::class, 'store'])->name('payrolls.create');
-    Route::post('/payroll', [PayrollController::class, 'store'])->name('payrolls.store');
+    Route::get('/stocks', [StockCarnetController::class, 'index'])->name('stocks.index')->middleware('can:Gérer Carnets');
+    Route::post('/stocks/entree', [StockCarnetController::class, 'storeEntree'])->name('stocks.entree');
+    Route::post('/payroll/store', [PayrollController::class, 'store'])->name('payrolls.store');
     Route::resource('agents', AgentController::class)->middleware('can:Gérer Agents');
     Route::patch('agents/{agent}/toggle-status', [AgentController::class, 'toggleStatus'])->name('agents.toggleStatus');
     Route::get('agents/export/{format}', [AgentController::class, 'export'])->name('agents.export');
@@ -73,11 +78,12 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('/agents-list/{historyUlid}', [AgentController::class, 'getAgentsExceptCurrent'])->name('agents.list.except');
     Route::post('/carnet-historique/{ulid}/reassign', [CarnetController::class, 'reassign'])->name('carnets.reassign');
     Route::resource('bonuses', BonusController::class)->only(['index', 'store', 'destroy'])->middleware('can:Gérer Commissions');
-
+    Route::put('/parametres-tarifs/{parametreTarif}', [CategoryTontineController::class, 'updateTarifEpargne'])->name('parametres-tarifs.update');
     Route::resource('clients', ClientController::class)->middleware('can:Gérer Clients');
     Route::get('clients/export/{format}', [ClientController::class, 'export'])->name('clients.export');
     Route::get('clients/{client}/export-history', [ClientController::class, 'exportHistory'])->name('clients.exportHistory');
-
+    Route::get('/api/evolution-ventes', [CarnetController::class, 'evolutionVentes'])->name('evolution-ventes');
+    Route::get('/api/repartition-tontines', [CarnetController::class, 'repartitionTontines'])->name('repartition-tontines');
     Route::resource('credits', CreditController::class)->only(['index', 'create', 'store', 'show'])->middleware('can:Gérer Crédits');
     Route::post('credits/{credit}/approve', [CreditController::class, 'approve'])->name('credits.approve');
     Route::post('credits/{credit}/settle-with-tontine', [CreditController::class, 'settleCreditWithTontine'])->name('credits.settle-with-tontine');
@@ -89,6 +95,16 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('/carnets/get-by-client-credit/{clientId}', [CreditController::class, 'getCarnetsByClient'])->name('carnets.get-by-client-credit');
     Route::get('/carnets/details/{id}', [CreditController::class, 'getCarnetDetails'])->name('carnets.details');
     Route::get('/carnets/{type?}', [CarnetController::class, 'index'])->name('carnets.index')->middleware('can:Gérer Carnets')->where('type', 'tontine|compte');
+    Route::prefix('charges')->name('charges.')->group(function () {
+        Route::get('/', [ChargeController::class, 'index'])->name('index');
+        Route::get('/categories/create', [ChargeController::class, 'createCategory'])->name('categories.create');
+        Route::post('/categories', [ChargeController::class, 'storeCategory'])->name('categories.store');
+        Route::patch('/categories/{ulid}/toggle', [ChargeController::class, 'toggleCategoryStatus'])->name('categories.toggle');
+        Route::post('/types', [ChargeController::class, 'storeType'])->name('types.store');
+    });
+    Route::resource('depenses', DepenseController::class)->parameters([
+        'depenses' => 'depense:ulid',
+    ]);
     Route::get('/carnets/{carnet}', [CarnetController::class, 'show'])->name('carnets.show')->middleware('can:Gérer Carnets');
     Route::post('/carnets/store', [CarnetController::class, 'store'])->name('carnets.store')->middleware('can:Gérer Carnets');
     Route::put('/carnets/{carnet}', [CarnetController::class, 'update'])->name('carnets.update')->middleware('can:Gérer Carnets');
@@ -103,7 +119,13 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::post('bonuses/bulk-approve', [BonusController::class, 'bulkApprove'])->name('bonuses.bulk-approve');
     Route::post('bonuses/{id}/approve-single', [BonusController::class, 'approveSingle'])->name('bonuses.approve-single');
     Route::delete('bonuses/{id}/reject-single', [BonusController::class, 'rejectSingle'])->name('bonuses.reject-single');
-
+    Route::post('/agents/{agent}/avances', [SalaryAdvanceController::class, 'store'])->name('agents.avances.store');
+    Route::delete('/avances/{id}', [SalaryAdvanceController::class, 'destroy'])->name('avances.destroy');
+    Route::get('/avances/{id}/edit', [SalaryAdvanceController::class, 'edit'])->name('avances.edit');
+    Route::get('/payrolls/avances', [SalaryAdvanceController::class, 'index'])->name('payrolls.avance');
+    Route::put('/avances/{uid}', [SalaryAdvanceController::class, 'update'])->name('avances.update');
+    Route::patch('/payrolls/avance/{id}/valider', [SalaryAdvanceController::class, 'validerAvance'])->name('payrolls.avance.valider');
+    Route::patch('/payrolls/avance/{id}/rejeter', [SalaryAdvanceController::class, 'rejeterAvance'])->name('payrolls.avance.rejeter');
     // 2. Route Resource (Seulement pour index, store et destroy)
     Route::resource('bonuses', BonusController::class)->only(['index', 'store', 'destroy']);
     Route::get('paiements/historique', [BonusController::class, 'history'])->name('bonuses.history')->middleware('can:Gérer Commissions');

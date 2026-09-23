@@ -22,8 +22,6 @@ class DashboardController extends Controller
         // 1. Collecte Brute : Total historique de l'argent encaissé
         $totalCollecteBrute = Collecte::sum('montant');
 
-                            // 2. Retraits : Total des sommes rendues aux clients (Assurez-vous d'avoir ce modèle)
-                            // $totalRetraits = Retrait::sum('montant');
         $totalRetraits = 0; // À remplacer par votre calcul réel
 
         // 3. Trésorerie Nette : Ce qui reste physiquement dans le coffre

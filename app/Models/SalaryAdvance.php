@@ -21,6 +21,7 @@ class SalaryAdvance extends Model
         'statut',
         'motif',
         'approved_by',
+        'created_by',
     ];
 
     protected $casts = [
@@ -45,11 +46,15 @@ class SalaryAdvance extends Model
 
     public function agent()
     {
-        return $this->belongsTo(User::class, 'agent_id');
+        return $this->belongsTo(Agent::class, 'agent_id');
     }
 
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

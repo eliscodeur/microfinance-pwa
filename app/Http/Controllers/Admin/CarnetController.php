@@ -11,6 +11,7 @@ use App\Models\ClientCarnetNumber;
 use App\Models\Cycle;
 use App\Models\Depot;
 use App\Models\Retrait;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -65,6 +66,65 @@ class CarnetController extends Controller
             return redirect()->back()->with('error', "Une erreur est survenue : " . $e->getMessage());
         }
     }
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'client_id'               => 'required|exists:clients,id',
+    //         'type'                    => 'required|in:tontine,compte',
+    //         'category_tontine_id'     => 'required_if:type,tontine',
+    //         'parent_id'               => 'nullable|exists:carnets,id',
+    //         'client_carnet_number_id' => 'required|exists:client_carnet_numbers,id',
+    //         'agent_id'                => 'required|exists:agents,id',
+    //     ], [
+    //         'client_id.required'               => 'Le client est obligatoire.',
+    //         'category_tontine_id.required_if'  => 'Veuillez choisir une catégorie pour la tontine.',
+    //         'client_carnet_number_id.required' => 'Veuillez sélectionner un numéro de carnet.',
+    //         'agent_id.required'                => 'Veuillez sélectionner un agent.',
+    //     ]);
+
+    //     DB::beginTransaction();
+    //     try {
+    //         // 1. Récupérer le numéro physique source
+    //         $carnetNumber = ClientCarnetNumber::findOrFail($request->client_carnet_number_id);
+
+    //         $validated['numero']     = $carnetNumber->numero;
+    //         $validated['ulid']       = strtolower((string) \Illuminate\Support\Str::ulid());
+    //         $validated['statut']     = 'actif';
+    //         $validated['date_debut'] = now()->toDateString();
+    //         $validated['created_by'] = auth()->id();
+
+    //         if ($validated['type'] === 'compte') {
+    //             $validated['category_tontine_id'] = null;
+    //         }
+    //         // Créer le carnet
+    //         $carnet = Carnet::create($validated);
+    //         // Enregistrer l'historique de l'attribution de l'agent
+    //         CarnetAgentHistory::create([
+    //             'ulid'        => strtolower((string) \Illuminate\Support\Str::ulid()),
+    //             'carnet_id'   => $carnet->id,
+    //             'agent_id'    => $validated['agent_id'],
+    //             'assigned_at' => now(),
+    //         ]);
+
+    //         DB::table('client_carnet_numbers')
+    //             ->where('id', $carnetNumber->id)
+    //             ->update([
+    //                 'statut'     => 'utilise',
+    //                 'used_at'    => now(),
+    //                 'updated_at' => now(),
+    //             ]);
+
+    //         DB::commit();
+    //         return redirect()->route('admin.carnets.index')
+    //             ->with('success', "Carnet n° " . $carnet->numero . " créé avec succès.");
+
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         dd($e->getMessage());
+    //         return back()->withInput()->with('error', 'Erreur : ' . $e->getMessage());
+    //     }
+    // }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -83,21 +143,70 @@ class CarnetController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Récupérer le numéro physique source
-            $carnetNumber = ClientCarnetNumber::findOrFail($request->client_carnet_number_id);
+            // 1. Récupérer et verrouiller le numéro physique en stock
+            $carnetNumber = ClientCarnetNumber::where('id', $request->client_carnet_number_id)
+                ->where('statut', 'disponible')
+                ->lockForUpdate()
+                ->first();
 
+            if (! $carnetNumber) {
+                return back()->withInput()->with('error', 'Ce numéro de carnet n\'est plus disponible en stock.');
+            }
+
+            // 2. Déterminer le prix unitaire de vente selon le type (tontine ou compte/épargne)
+            $prixVente         = 0;
+            $categoryTontineId = null;
+
+            if ($validated['type'] === 'tontine') {
+                $categoryTontineId = $request->category_tontine_id;
+                $categorie         = DB::table('categories_tontine')->where('id', $categoryTontineId)->first();
+                $prixVente         = $categorie ? $categorie->prix : 0;
+            } else {
+                $tarif     = DB::table('parametre_tarifs')->where('code', 'carnet_epargne_prix')->first();
+                $prixVente = $tarif ? $tarif->prix : 0;
+            }
+
+            // 3. LOGIQUE FIFO DIRECTE (Sans boucle) :
+// 3. LOGIQUE FIFO AVEC DISTINCTION TONTINE / COMPTE
+            $query = DB::table('mouvement_stock_carnets')
+                ->where('type', 'entree')
+                ->where('quantite_restante', '>', 0);
+
+            // Si c'est une tontine, on cherche dans le stock spécifique à cette catégorie
+            if ($validated['type'] === 'tontine') {
+                $query->where('categories_tontine_id', $categoryTontineId);
+            } else {
+                // Si c'est un compte épargne, on cherche dans le stock sans catégorie (ou un type spécifique)
+                $query->whereNull('categories_tontine_id');
+            }
+
+            $entreeStock = $query->orderBy('created_at', 'asc') // FIFO : Le plus ancien en premier
+                ->lockForUpdate()
+                ->first();
+
+            if (! $entreeStock) {
+                $libelleStock = $validated['type'] === 'tontine' ? 'de cette catégorie de tontine' : 'de compte épargne';
+                return back()->withInput()->with('error', "Stock épuisé : aucun carnet disponible en entrée pour ce type ($libelleStock).");
+            }
+
+            $prixAchat = $entreeStock->prix_unitaire_achat;
+
+            DB::table('mouvement_stock_carnets')
+                ->where('id', $entreeStock->id)
+                ->decrement('quantite_restante', 1);
+            // 4. Préparation des données du carnet
             $validated['numero']     = $carnetNumber->numero;
             $validated['ulid']       = strtolower((string) \Illuminate\Support\Str::ulid());
             $validated['statut']     = 'actif';
             $validated['date_debut'] = now()->toDateString();
             $validated['created_by'] = auth()->id();
 
-            if ($validated['type'] === 'compte') {
-                $validated['category_tontine_id'] = null;
-            }
-            // Créer le carnet
+            if ($validated['type'] === 'compte') {$validated['category_tontine_id'] = null;}
+
+            // 5. Créer le carnet attribué
             $carnet = Carnet::create($validated);
-            // Enregistrer l'historique de l'attribution de l'agent
+
+            // 6. Enregistrer l'historique de l'agent
             CarnetAgentHistory::create([
                 'ulid'        => strtolower((string) \Illuminate\Support\Str::ulid()),
                 'carnet_id'   => $carnet->id,
@@ -105,21 +214,32 @@ class CarnetController extends Controller
                 'assigned_at' => now(),
             ]);
 
-            DB::table('client_carnet_numbers')
-                ->where('id', $carnetNumber->id)
-                ->update([
-                    'statut'     => 'utilise',
-                    'used_at'    => now(),
-                    'updated_at' => now(),
-                ]);
+            // 7. Mettre à jour le statut du numéro physique
+            $carnetNumber->update([
+                'statut'  => 'utilise',
+                'used_at' => now(),
+            ]);
+
+            // 8. Enregistrer le mouvement de stock (Sortie)
+            DB::table('mouvement_stock_carnets')->insert([
+                'ulid'                  => strtolower((string) \Illuminate\Support\Str::ulid()),
+                'categories_tontine_id' => $categoryTontineId,
+                'type'                  => 'sortie',
+                'quantite'              => 1,
+                'quantite_restante'     => 0,          // Une sortie n'a pas de stock restant (ou laisse à null/0)
+                'prix_unitaire_achat'   => $prixAchat, // Prix FIFO récupéré
+                'prix_unitaire_vente'   => $prixVente, // Prix de vente dynamique
+                'motif'                 => 'Attribution carnet n° ' . $carnet->numero,
+                'created_at'            => now(),
+                'updated_at'            => now(),
+            ]);
 
             DB::commit();
             return redirect()->route('admin.carnets.index')
-                ->with('success', "Carnet n° " . $carnet->numero . " créé avec succès.");
+                ->with('success', "Carnet n° " . $carnet->numero . " attribué avec succès (FIFO par quantité restante).");
 
         } catch (\Exception $e) {
             DB::rollBack();
-            dd($e->getMessage());
             return back()->withInput()->with('error', 'Erreur : ' . $e->getMessage());
         }
     }
@@ -427,6 +547,139 @@ class CarnetController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Carnet réattribué avec succès.',
+        ]);
+    }
+
+    public function evolutionVentes(Request $request)
+    {
+        $periode = $request->input('periode', '7_jours');
+
+        // 1. Définir l'intervalle selon le filtre choisi
+        if ($periode === '7_jours') {
+            $startDate    = now()->subDays(6)->startOfDay();
+            $endDate      = now()->endOfDay();
+            $groupByMonth = false;
+        } elseif ($periode === 'ce_mois') {
+            $startDate    = now()->startOfMonth();
+            $endDate      = now()->endOfMonth();
+            $groupByMonth = false;
+        } elseif ($periode === '12_mois') {
+            $startDate    = now()->subMonths(11)->startOfMonth();
+            $endDate      = now()->endOfMonth();
+            $groupByMonth = true; // On groupe par mois pour 12 mois
+        } elseif ($periode === 'personnalisee') {
+            $startDate = Carbon::parse($request->input('date_debut'))->startOfDay();
+            $endDate   = Carbon::parse($request->input('date_fin'))->endOfDay();
+            // Optionnel : basculer en mois si l'écart est supérieur à 3 mois
+            $groupByMonth = $startDate->diffInDays($endDate) > 90;
+        } else {
+            $startDate    = now()->subDays(6)->startOfDay();
+            $endDate      = now()->endOfDay();
+            $groupByMonth = false;
+        }
+
+        // 2. Récupérer les données groupées (par jour ou par mois)
+        if ($groupByMonth) {
+            $ventes = Carnet::select(
+                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as periode_cle"),
+                'type',
+                DB::raw('COUNT(*) as total')
+            )
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->groupBy('periode_cle', 'type')
+                ->orderBy('periode_cle', 'asc')
+                ->get()
+                ->keyBy(fn($item) => $item->periode_cle . '_' . $item->type);
+        } else {
+            $ventes = Carnet::select(
+                DB::raw('DATE(created_at) as periode_cle'),
+                'type',
+                DB::raw('COUNT(*) as total')
+            )
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->groupBy('periode_cle', 'type')
+                ->orderBy('periode_cle', 'asc')
+                ->get()
+                ->keyBy(fn($item) => $item->periode_cle . '_' . $item->type);
+        }
+
+        // 3. Remplir les périodes manquantes pour une courbe continue
+        $labels      = [];
+        $tontineData = [];
+        $compteData  = [];
+        $current     = $startDate->copy();
+
+        while ($current <= $endDate) {
+            if ($groupByMonth) {
+                $keyFormat   = $current->format('Y-m');
+                $labelFormat = $current->locale('fr')->isoFormat('MMM YYYY'); // Ex: "Janv. 2026"
+                $current->addMonth();
+            } else {
+                $keyFormat   = $current->format('Y-m-d');
+                $labelFormat = $current->locale('fr')->isoFormat('D MMM YYYY'); // Ex: "23 Sept. 2026"
+                $current->addDay();
+            }
+
+            // Éviter les doublons de labels si on avance par mois
+            if (! in_array($labelFormat, $labels)) {
+                $labels[] = $labelFormat;
+
+                $tontineKey = $keyFormat . '_tontine';
+                $compteKey  = $keyFormat . '_compte';
+
+                $tontineData[] = isset($ventes[$tontineKey]) ? $ventes[$tontineKey]->total : 0;
+                $compteData[]  = isset($ventes[$compteKey]) ? $ventes[$compteKey]->total : 0;
+            }
+        }
+
+        return response()->json([
+            'labels'  => $labels,
+            'tontine' => $tontineData,
+            'compte'  => $compteData,
+        ]);
+    }
+
+    public function repartitionTontines(Request $request)
+    {
+        $periode = $request->input('periode', '7_jours');
+
+        // 1. Définir l'intervalle selon le filtre choisi
+        if ($periode === '7_jours') {
+            $startDate = now()->subDays(6)->startOfDay();
+            $endDate   = now()->endOfDay();
+        } elseif ($periode === 'ce_mois') {
+            $startDate = now()->startOfMonth();
+            $endDate   = now()->endOfMonth();
+        } elseif ($periode === '12_mois') {
+            $startDate = now()->subMonths(11)->startOfMonth();
+            $endDate   = now()->endOfMonth();
+        } elseif ($periode === 'personnalisee') {
+            $startDate = Carbon::parse($request->input('date_debut'))->startOfDay();
+            $endDate   = Carbon::parse($request->input('date_fin'))->endOfDay();
+        } else {
+            $startDate = now()->subDays(6)->startOfDay();
+            $endDate   = now()->endOfDay();
+        }
+
+        // 2. Récupérer les ventes groupées par catégorie de tontine
+        $repartition = Carnet::select(
+            'categories_tontine.libelle as nom_categorie',
+            DB::raw('COUNT(carnets.id) as total')
+        )
+            ->join('categories_tontine', 'carnets.category_tontine_id', '=', 'categories_tontine.id')
+            ->where('carnets.type', 'tontine')
+            ->whereBetween('carnets.created_at', [$startDate, $endDate])
+            ->groupBy('categories_tontine.id', 'categories_tontine.libelle')
+            ->orderBy('total', 'desc')
+            ->get();
+
+        // 3. Formater les données pour Chart.js (Donut)
+        $labels = $repartition->pluck('nom_categorie')->toArray();
+        $values = $repartition->pluck('total')->toArray();
+
+        return response()->json([
+            'labels' => $labels,
+            'values' => $values,
         ]);
     }
 

@@ -1,18 +1,23 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\CategoryTontine; 
+use App\Models\CategoryTontine;
+use App\Models\ParametreTarif;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CategoryTontineController extends Controller
 {
-    // Affichage de la liste
+// Affichage de la liste
     public function index()
     {
         $categories = CategoryTontine::orderBy('created_at', 'desc')->get();
-        return view('admin.categorie-tontine.index', compact('categories'));
+
+        // Récupérer le tarif du carnet d'épargne (avec une valeur par défaut si absent)
+        $tarifEpargne = \App\Models\ParametreTarif::where('code', 'carnet_epargne_prix')->first();
+
+        return view('admin.categorie-tontine.index', compact('categories', 'tarifEpargne'));
     }
 
     // Insertion (depuis le modal d'ajout)
@@ -20,35 +25,35 @@ class CategoryTontineController extends Controller
     {
         try {
             $validated = $request->validate([
-                'libelle' => 'required|string|max:255|unique:categories_tontine,libelle',
-                'prix' => 'required|numeric|min:0',
+                'libelle'       => 'required|string|max:255|unique:categories_tontine,libelle',
+                'prix'          => 'required|numeric|min:0',
                 'nombre_cycles' => 'required|integer|min:1',
-                'description' => 'required|integer|min:1',
+                'description'   => 'required|integer|min:1',
             ], [
-                'libelle.unique' => 'Ce nom de catégorie existe déjà.',
-                'libelle.required' => 'Le libellé est obligatoire.',
+                'libelle.unique'       => 'Ce nom de catégorie existe déjà.',
+                'libelle.required'     => 'Le libellé est obligatoire.',
                 'description.required' => 'La base de crédit est obligatoire.',
-                'description.min' => 'La base de crédit doit être un nombre positif.',
+                'description.min'      => 'La base de crédit doit être un nombre positif.',
             ]);
 
             CategoryTontine::create($validated);
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Catégorie ajoutée avec succès.'
+                'status'  => 'success',
+                'message' => 'Catégorie ajoutée avec succès.',
             ], 200);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Erreur de validation (doublon, champ vide)
             return response()->json([
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
 
         } catch (\Exception $e) {
             // Erreur serveur grave (SQL, faute de frappe, etc.)
             Log::error("Erreur ajout catégorie: " . $e->getMessage());
             return response()->json([
-                'message' => 'Erreur serveur: ' . $e->getMessage()
+                'message' => 'Erreur serveur: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -60,15 +65,15 @@ class CategoryTontineController extends Controller
             // 1. Validation avec exception pour l'ID actuel
             $validated = $request->validate([
                 // On dit à 'unique' d'ignorer l'ID de la catégorie qu'on modifie
-                'libelle' => 'required|string|max:255|unique:categories_tontine,libelle,' . $id,
-                'prix' => 'required|numeric|min:0',
+                'libelle'       => 'required|string|max:255|unique:categories_tontine,libelle,' . $id,
+                'prix'          => 'required|numeric|min:0',
                 'nombre_cycles' => 'required|integer|min:1',
-                'description' => 'required|integer|min:1',
+                'description'   => 'required|integer|min:1',
             ], [
-                'libelle.unique' => 'Désolé, ce libellé est déjà utilisé par une autre catégorie.',
-                'libelle.required' => 'Le libellé ne peut pas être vide.',
+                'libelle.unique'       => 'Désolé, ce libellé est déjà utilisé par une autre catégorie.',
+                'libelle.required'     => 'Le libellé ne peut pas être vide.',
                 'description.required' => 'La base de crédit est obligatoire.',
-                'description.min' => 'La base de crédit doit être un nombre positif.',
+                'description.min'      => 'La base de crédit doit être un nombre positif.',
             ]);
 
             // 2. Récupération et mise à jour
@@ -76,20 +81,20 @@ class CategoryTontineController extends Controller
             $category->update($validated);
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Catégorie mise à jour avec succès !'
+                'status'  => 'success',
+                'message' => 'Catégorie mise à jour avec succès !',
             ], 200);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Erreurs de validation (ex: le libellé existe déjà ailleurs)
             return response()->json([
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
 
         } catch (\Exception $e) {
             // Erreur fatale (ex: ID inexistant ou problème SQL)
             return response()->json([
-                'message' => 'Erreur lors de la mise à jour : ' . $e->getMessage()
+                'message' => 'Erreur lors de la mise à jour : ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -103,16 +108,40 @@ class CategoryTontineController extends Controller
 
             // On renvoie du JSON pour que le script AJAX sache que c'est bon
             return response()->json([
-                'status' => 'success',
-                'message' => 'Catégorie supprimée avec succès.'
+                'status'  => 'success',
+                'message' => 'Catégorie supprimée avec succès.',
             ], 200);
 
         } catch (\Exception $e) {
             // En cas d'erreur (ex: catégorie liée à des transactions existantes)
             return response()->json([
-                'status' => 'error',
-                'message' => 'Impossible de supprimer cette catégorie : ' . $e->getMessage()
+                'status'  => 'error',
+                'message' => 'Impossible de supprimer cette catégorie : ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function updateTarifEpargne(Request $request, ParametreTarif $parametreTarif)
+    {
+        $validated = $request->validate([
+            'libelle' => 'required|string|max:255',
+            'prix'    => 'required|numeric|min:0',
+        ], [
+            'libelle.required' => 'Le libellé est obligatoire.',
+            'prix.required'    => 'Le prix est obligatoire.',
+            'prix.numeric'     => 'Le prix doit être un nombre valide.',
+        ]);
+
+        $parametreTarif->update($validated);
+
+        // Compatible avec ton AJAX dans la vue
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Prix du carnet d\'épargne mis à jour avec succès.',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Tarif mis à jour avec succès.');
     }
 }
