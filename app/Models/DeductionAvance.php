@@ -32,4 +32,12 @@ class DeductionAvance extends Model
     {
         return $this->belongsTo(SalaryAdvance::class, 'salary_advance_id');
     }
+
+    /**
+     * Relation avec l'employé administratif (si applicable)
+     */
+    public function employeAdministratif()
+    {
+        return $this->belongsTo(EmployeAdministratif::class, 'employe_administratif_id');
+    }
 }

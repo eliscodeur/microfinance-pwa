@@ -11,7 +11,10 @@ use App\Http\Controllers\Admin\CreditController;
 use App\Http\Controllers\Admin\CycleController as AdminCycleController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepenseController;
+use App\Http\Controllers\Admin\EmployeAdministratifController;
+use App\Http\Controllers\Admin\FonctionController;
 use App\Http\Controllers\Admin\PayrollController;
+use App\Http\Controllers\Admin\PayrollEmployerController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SalaryAdvanceController;
 use App\Http\Controllers\Admin\StockCarnetController;
@@ -65,8 +68,17 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
         return response()->json(Agent::pluck('can_sync', 'id'));
     })->name('agents.sync-status');
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payrolls.index');
+    Route::get('/payrolls/bulletin/{id}', [PayrollController::class, 'showValidated'])
+        ->name('payrolls.validated');
+    Route::get('/payrolls/bulletin/{id}/employe', [PayrollEmployerController::class, 'showValidated'])
+        ->name('payrolls.employe.validated');
     Route::put('/payrolls/avances/{avance}/tranches', [PayrollController::class, 'updateTranches'])->name('payrolls.avances.updateTranches');
     Route::get('/payrolls/preview-details', [PayrollController::class, 'previewDetails'])->name('payrolls.details');
+    // 1. Gestion des Fonctions
+    Route::resource('fonctions', FonctionController::class)->except(['create', 'show', 'edit']);
+
+    // 2. Gestion du Personnel Administratif
+    Route::resource('employes', EmployeAdministratifController::class);
     Route::get('/stocks', [StockCarnetController::class, 'index'])->name('stocks.index')->middleware('can:Gérer Carnets');
     Route::post('/stocks/entree', [StockCarnetController::class, 'storeEntree'])->name('stocks.entree');
     Route::post('/payroll/store', [PayrollController::class, 'store'])->name('payrolls.store');
@@ -118,8 +130,17 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     // 1. Routes personnalisées (DÉCLARER AVANT LE RESOURCE)
     Route::post('bonuses/bulk-approve', [BonusController::class, 'bulkApprove'])->name('bonuses.bulk-approve');
     Route::post('bonuses/{id}/approve-single', [BonusController::class, 'approveSingle'])->name('bonuses.approve-single');
-    Route::delete('bonuses/{id}/reject-single', [BonusController::class, 'rejectSingle'])->name('bonuses.reject-single');
-    Route::post('/agents/{agent}/avances', [SalaryAdvanceController::class, 'store'])->name('agents.avances.store');
+
+    Route::post('/agents/{agent}/avances', [SalaryAdvanceController::class, 'storeAgent'])->name('agents.avances.store');
+
+    Route::get('/payrolls/employes', [PayrollEmployerController::class, 'index'])->name('payrolls.employes.index');
+    Route::get('payrolls/employes/{ulid}', [PayrollEmployerController::class, 'previewDetails'])->name('payrolls.employes.details');
+    Route::post('/payrolls/employes/store', [PayrollEmployerController::class, 'store'])->name('payrolls.employes.store');
+    Route::put('/payrolls/avances/employe/{avance}/tranches', [PayrollEmployerController::class, 'updateTranches'])->name('payrolls.avances.employe.updateTranches');
+
+    Route::post('/payrolls/employes/{ulid}/payroll/store-brouillon', [PayrollEmployerController::class, 'storeBrouillon'])
+        ->name('payrolls.employe.store-brouillon');
+    Route::post('/employes/{employe}/avances', [SalaryAdvanceController::class, 'storeEmploye'])->name('employes.avances.store');
     Route::delete('/avances/{id}', [SalaryAdvanceController::class, 'destroy'])->name('avances.destroy');
     Route::get('/avances/{id}/edit', [SalaryAdvanceController::class, 'edit'])->name('avances.edit');
     Route::get('/payrolls/avances', [SalaryAdvanceController::class, 'index'])->name('payrolls.avance');

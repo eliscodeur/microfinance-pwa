@@ -62,11 +62,11 @@ class CollecteController extends Controller
 
             // Créer le bonus pour l'agent (uniquement si aucun n'existe encore pour ce cycle)
             Bonus::create([
-                'agent_id' => $cycle->agent_id,
-                'cycle_id' => $cycle->id,
-                'montant'  => $montantCommission,
-                'statut'   => 'en_attente',
-                'motif'    => "Commission collecte — Cycle #{$cycle->id}",
+                'agent_id'         => $cycle->agent_id,
+                'cycle_id'         => $cycle->id,
+                'montant'          => $montantCommission,
+                'statut'           => 'en_attente',
+                'motif'            => "Commission collecte — Cycle",
                 'date_attribution' => now(),
             ]);
         }

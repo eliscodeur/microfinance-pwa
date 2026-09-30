@@ -3,12 +3,13 @@
 $usersMenuOpen = request()->routeIs('admin.roles.*') || request()->routeIs('admin.users.*');
 $bonusMenuOpen = request()->routeIs('admin.bonuses.*');
 $agentsMenuOpen = request()->routeIs('admin.agents.*');
+$personnelMenuOpen = request()->routeIs('admin.employes.*') || request()->routeIs('admin.fonctions.*'); // <-- Ajout pour le personnel & fonctions
 $clientsMenuOpen = request()->routeIs('admin.clients.*');
 $creditsMenuOpen = request()->routeIs('admin.credits.*') || request()->routeIs('admin.prets.*');
 $carnetsMenuOpen = request()->routeIs('admin.carnets.*') || request()->routeIs('admin.categories.*');
 $collecteMenuOpen = request()->routeIs('admin.sync-batches.*') || request()->routeIs('admin.cycles.*');
 $payrollMenuOpen = request()->routeIs('admin.payrolls.*');
-$chargesMenuOpen = request()->routeIs('admin.charges.*'); // <-- Ajout pour les charges
+$chargesMenuOpen = request()->routeIs('admin.charges.*') || request()->routeIs('admin.depenses.*');
 @endphp
 
 <style>
@@ -135,6 +136,18 @@ $chargesMenuOpen = request()->routeIs('admin.charges.*'); // <-- Ajout pour les 
                     class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">Liste</a>
             </div>
         @endcan
+        <!-- PERSONNEL ADMINISTRATIF -->
+        <a href="#personnelSub" data-bs-toggle="collapse" aria-expanded="{{ $personnelMenuOpen ? 'true' : 'false' }}"
+            class="menu-toggle {{ $personnelMenuOpen ? 'active' : '' }}">
+            <i class="bi bi-people-fill"></i> <span>Personnel & Fonctions</span>
+        </a>
+        <div class="collapse {{ $personnelMenuOpen ? 'show' : '' }} submenu" id="personnelSub"
+            data-bs-parent="#sidebarNav">
+            <a href="{{ route('admin.employes.index') }}"
+                class="{{ request()->routeIs('admin.employes.*') ? 'active' : '' }}">Liste du Personnel</a>
+            <a href="{{ route('admin.fonctions.index') }}"
+                class="{{ request()->routeIs('admin.fonctions.*') ? 'active' : '' }}">Postes & Fonctions</a>
+        </div>
 
         <!-- TERRAIN -->
         @can('Gérer Agents')
@@ -169,12 +182,17 @@ $chargesMenuOpen = request()->routeIs('admin.charges.*'); // <-- Ajout pour les 
         @can('Gérer Salaires')
             <a href="#payrollSub" data-bs-toggle="collapse" aria-expanded="{{ $payrollMenuOpen ? 'true' : 'false' }}"
                 class="menu-toggle {{ $payrollMenuOpen ? 'active' : '' }}">
-                <i class="bi bi-wallet2"></i> <span>Salaires & Paie</span>
+                <i class="bi bi-wallet2"></i> <span>Salaires & Avances</span>
             </a>
             <div class="collapse {{ $payrollMenuOpen ? 'show' : '' }} submenu" id="payrollSub"
                 data-bs-parent="#sidebarNav">
                 <a href="{{ route('admin.payrolls.index') }}"
-                    class="{{ request()->routeIs('admin.payrolls.index*') ? 'active' : '' }}">Salaires</a>
+                    class="{{ request()->routeIs('admin.payrolls.index*') ? 'active' : '' }}">Salaires agents</a>
+
+                {{-- Ajout du lien pour les salaires employés administratifs --}}
+                <a href="{{ route('admin.payrolls.employes.index') }}"
+                    class="{{ request()->routeIs('admin.payrolls.employes.*') ? 'active' : '' }}">Salaires employés</a>
+
                 <a href="{{ route('admin.payrolls.avance') }}"
                     class="{{ request()->routeIs('admin.payrolls.avance*') ? 'active' : '' }}">Avances sur salaire</a>
             </div>

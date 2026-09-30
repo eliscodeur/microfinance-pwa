@@ -42,7 +42,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Date Demande</th>
-                                <th>Agent concerné</th>
+                                <th>Bénéficiaire (Agent / Employé)</th>
                                 <th>Montant Total</th>
                                 <th>Mensualité</th>
                                 <th>Tranches</th>
@@ -53,18 +53,25 @@
                         </thead>
                         <tbody>
                             @forelse ($avances as $avance)
+                                @php
+                                    // Détermination dynamique du nom et du code/identifiant selon la relation chargée
+                                    $beneficiaireNom =
+                                        $avance->agent->nom ??
+                                        ($avance->employe->nom . ' ' . ($avance->employe->prenoms ?? '') ?? 'N/A');
+                                    // $beneficiaireCode = $avance->agent->code_agent ?? ($avance->employe->ulid ?? '-');
+                                @endphp
                                 <tr>
                                     <td>{{ \Carbon\Carbon::parse($avance->date_demande)->format('d/m/Y') }}</td>
                                     <td>
-                                        <div class="fw-bold">{{ $avance->agent->nom ?? 'N/A' }}</div>
-                                        <small class="text-muted">{{ $avance->agent->code_agent ?? '-' }}</small>
+                                        <div class="fw-bold">{{ $beneficiaireNom }}</div>
+                                        {{-- <small class="text-muted">{{ $beneficiaireCode }}</small> --}}
                                     </td>
                                     <td>
                                         <strong
                                             class="text-primary">{{ number_format($avance->montant_total, 0, ',', ' ') }}
-                                            FCFA</strong>
+                                        </strong>
                                     </td>
-                                    <td>{{ number_format($avance->montant_mensuel, 0, ',', ' ') }} FCFA</td>
+                                    <td>{{ number_format($avance->montant_mensuel, 0, ',', ' ') }}</td>
                                     <td>{{ $avance->tranches_payees }} / {{ $avance->nombre_tranches }}</td>
                                     <td>{{ $avance->motif ?? '-' }}</td>
                                     <td>

@@ -12,6 +12,7 @@ class SalaryAdvance extends Model
     protected $fillable = [
         'advance_uid',
         'agent_id',
+        'employe_administratif_id',
         'montant_total',
         'montant_mensuel',
         'nombre_tranches',
@@ -56,5 +57,9 @@ class SalaryAdvance extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+    public function employe()
+    {
+        return $this->belongsTo(EmployeAdministratif::class, 'employe_administratif_id');
     }
 }

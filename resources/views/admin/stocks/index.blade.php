@@ -7,7 +7,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="h3 mb-0 text-gray-800"></i>Stock de carnets</h1>
-                <p class="text-muted small mb-0">Suivi rigoureux des arrivages, des vente des carnets </p>
+                <p class="text-muted small mb-0">Suivi rigoureux des arrivages, des ventes des carnets </p>
             </div>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-success btn-sm shadow-sm" data-bs-toggle="modal"
@@ -31,7 +31,7 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col">
-                                <div class="text-xs fw-bold text-primary text-uppercase mb-1">Stock Total en Réserve</div>
+                                <div class="text-xs fw-bold text-primary text-uppercase mb-1">Stock total en réserve</div>
                                 <div class="h5 mb-0 fw-bold text-gray-800">{{ number_format($stockTotal, 0, ',', ' ') }}
                                     carnets</div>
                             </div>
@@ -49,7 +49,7 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col">
-                                <div class="text-xs fw-bold text-success text-uppercase mb-1">Stock Carnets Tontines</div>
+                                <div class="text-xs fw-bold text-success text-uppercase mb-1">Stock carnets tontines</div>
                                 <div class="h5 mb-0 fw-bold text-gray-800">{{ number_format($stockTontines, 0, ',', ' ') }}
                                     carnets</div>
                             </div>
@@ -67,7 +67,7 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col">
-                                <div class="text-xs fw-bold text-info text-uppercase mb-1">Stock Comptes d'Épargne</div>
+                                <div class="text-xs fw-bold text-info text-uppercase mb-1">Stock comptes d'épargne</div>
                                 <div class="h5 mb-0 fw-bold text-gray-800">{{ number_format($stockComptes, 0, ',', ' ') }}
                                     carnets</div>
                             </div>
@@ -371,7 +371,7 @@
                         data: {
                             labels: data.labels,
                             datasets: [{
-                                    label: 'Ventes Tontine',
+                                    label: 'Ventes carnet de tontine',
                                     data: data.tontine,
                                     borderColor: 'rgb(40, 167, 69)',
                                     backgroundColor: 'rgba(40, 167, 69, 0.1)',
@@ -379,7 +379,7 @@
                                     fill: true
                                 },
                                 {
-                                    label: 'Ventes Épargne',
+                                    label: 'Ventes carnet d\'épargne',
                                     data: data.compte,
                                     borderColor: 'rgb(0, 123, 255)',
                                     backgroundColor: 'rgba(0, 123, 255, 0.1)',

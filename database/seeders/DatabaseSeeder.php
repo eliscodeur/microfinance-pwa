@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             CreditSystemSeeder::class,
             ClientCarnetNumberSeeder::class,
             SalaryGridSeeder::class,
+            FonctionSeeder::class,
+            EmployeAdministratifSeeder::class,
         ]);
     }
 }

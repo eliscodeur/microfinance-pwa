@@ -374,64 +374,63 @@
                             <i class="bi bi-wallet2 me-2"></i> D. Historique des avances sur salaire déduites
                         </h5>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-striped align-middle mb-0">
-                                <thead class="table-light fs-7">
-                                    <tr>
-                                        <th>Date de demande / création</th>
-                                        <th>Motif</th>
-                                        <th>Montant initial / Déduit</th>
-                                        <th>Statut</th>
-                                        <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($avancesList ?? [] as $avance)
-                                        @php
-                                            // On calcule le montant en multipliant le nombre de tranches sélectionnées/actives par le montant mensuel
-                                            $tranchesActivesCount = collect($avance->tranches_formatees ?? [])
-                                                ->where('selectionne', true)
-                                                ->count();
 
-                                            $montantDeduuitMois =
-                                                $tranchesActivesCount * ($avance->montant_mensuel ?? 0);
-                                        @endphp
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold text-danger"><i class="fas fa-file-invoice-dollar me-2"></i>
+                                Historique des avances sur salaire déduites pour ce mois</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped align-middle mb-0">
+                                    <thead class="table-light text-uppercase fs-7">
                                         <tr>
-                                            <td>{{ optional($avance->created_at)->format('d/m/Y') ?? '---' }}</td>
-                                            <td>{{ $avance->motif ?? 'Avance sur salaire' }}</td>
-                                            <td class="font-monospace text-danger fw-bold">
-                                                - {{ number_format($montantDeduuitMois, 0, ',', ' ') }} FCFA
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-warning text-dark">
-                                                    {{ ucfirst($avance->statut ?? 'en attente') }}
-                                                </span>
-                                            </td>
-                                            <td class="text-end">
-                                                <!-- Bouton pour ouvrir le modal spécifique à cette avance -->
-                                                <button type="button" class="btn btn-sm btn-outline-primary"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalAvance-{{ $avance->id }}">
-                                                    <i class="bi bi-list-check me-1"></i> Gérer les tranches
-                                                </button>
-                                            </td>
+                                            <th class="py-3 ps-4">Date de demande / création</th>
+                                            <th class="py-3">Motif</th>
+                                            <th class="py-3">Montant initial / Déduit</th>
+                                            <th class="py-3">Statut</th>
+                                            <th class="py-3 text-end pe-4">Actions</th>
                                         </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="text-center text-muted py-3">Aucune avance sur
-                                                salaire enregistrée pour cette période.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($avancesList ?? $payrollDetails->avances_concernes as $avance)
+                                            <tr>
+                                                <td class="ps-4">
+                                                    {{ $avance->created_at ? $avance->created_at->format('d/m/Y') : 'N/A' }}
+                                                </td>
+                                                <td>{{ $avance->motif ?? 'Avance sur salaire' }}</td>
+                                                <td class="text-danger fw-bold">-
+                                                    {{ number_format($avance->montant_mensuel ?? 0, 0, ',', ' ') }} FCFA
+                                                </td>
+                                                <td>
+                                                    <span
+                                                        class="badge bg-warning text-dark">{{ ucfirst($avance->statut ?? 'en_cours') }}</span>
+                                                </td>
+                                                <td class="text-end pe-4">
+                                                    <!-- Bouton pour ouvrir le modal spécifique à cette avance -->
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalAvance-{{ $avance->id }}">
+                                                        <i class="bi bi-list-check me-1"></i> Gérer les tranches
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4 text-muted">Aucune avance ou
+                                                    prêt actif déduit pour cette période.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    @foreach ($avancesList ?? [] as $avance)
+    @foreach ($avancesList ?? $payrollDetails->avances_concernes as $avance)
         <div class="modal fade" id="modalAvance-{{ $avance->id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
@@ -440,16 +439,16 @@
                         @method('PUT')
 
                         {{-- On transmet également le mois et l'année pour que le contrôleur sache quel bulletin mettre à jour --}}
-                        <input type="hidden" name="mois" value="{{ $salaire->mois ?? request('mois') }}">
-                        <input type="hidden" name="annee" value="{{ $salaire->annee ?? request('annee') }}">
-                        <input type="hidden" name="agent_id" value="{{ $avance->agent_id }}">
+                        <input type="hidden" name="mois" value="{{ $mois }}">
+                        <input type="hidden" name="annee" value="{{ $annee }}">
+                        <input type="hidden" name="agent_id" value="{{ $avance->$avance->agent_id }}">
 
                         <div class="modal-header bg-light">
                             <h5 class="modal-title h6 fw-bold">
                                 <i class="bi bi-wallet2 text-danger me-2"></i> Gestion des tranches -
                                 {{ $avance->motif ?? 'Avance sur salaire' }}
                                 <span
-                                    class="text-muted fs-7">({{ number_format($avance->montant_total ?? 0, 0, ',', ' ') }}
+                                    class="text-muted fs-7">({{ number_format($avance->montant_total ?? ($avance->montant ?? 0), 0, ',', ' ') }}
                                     FCFA)</span>
                             </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
@@ -486,12 +485,12 @@
                                                     @endif
                                                 </td>
                                                 <td class="fw-bold">
-                                                    Tranche {{ $tranche['numero'] }} / {{ $avance->nombre_tranches }}
+                                                    Tranche {{ $tranche['numero'] }} / {{ $avance->nombre_tranches ?? 1 }}
                                                     <span
-                                                        class="text-muted fw-normal">({{ ucfirst($tranche['mois']) }})</span>
+                                                        class="text-muted fw-normal">({{ ucfirst($tranche['mois'] ?? '') }})</span>
                                                 </td>
                                                 <td class="font-monospace text-danger">
-                                                    {{ number_format($tranche['montant'], 0, ',', ' ') }} FCFA
+                                                    {{ number_format($tranche['montant'] ?? 0, 0, ',', ' ') }} FCFA
                                                 </td>
                                                 <td>
                                                     @if ($tranche['deja_paye'])
@@ -512,7 +511,7 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary btn-sm"
                                 data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-danger btn-sm">Enregistrer</button>
+                            <button type="submit" class="btn btn-danger btn-sm">Enregistrer les tranches</button>
                         </div>
                     </form>
                 </div>

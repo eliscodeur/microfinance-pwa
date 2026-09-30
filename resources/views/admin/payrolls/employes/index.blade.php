@@ -5,18 +5,18 @@
         <!-- En-tête de page -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2 class="h4 mb-1">Génération et validation des salaires & paie</h2>
-                <p class="text-muted mb-0">Visualisation, calcul automatique et validation des éléments de paie mensuelle.
-                </p>
+                <h2 class="h4 mb-1">Salaires & Paie - Employés Administratifs</h2>
+                <p class="text-muted mb-0">Visualisation, calcul automatique et validation des bulletins de paie du personnel
+                    administratif.</p>
             </div>
         </div>
-        {{-- @dump($payrolls) --}}
-        <!-- Formulaire de filtre par mois/année et bouton Valider tout dynamique -->
+
+        <!-- Formulaire de filtre par mois/année et bouton Valider tout -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <div class="row g-3 align-items-end">
                     <!-- 1. FORMULAIRE DE FILTRE (GET) -->
-                    <form action="{{ route('admin.payrolls.index') }}" method="GET" id="filterForm"
+                    <form action="{{ route('admin.payrolls.employes.index') }}" method="GET" id="filterForm"
                         class="col-md-8 row g-3 align-items-end m-0 p-0">
                         <div class="col-md-5">
                             <label for="mois" class="form-label small fw-bold">Mois de paie</label>
@@ -54,11 +54,10 @@
                     <div class="col-md-4 d-flex align-items-end">
                         @php
                             $contientDesAttentes = collect($payrolls ?? [])->contains(function ($item) {
-                                return $item->statut === 'En attente';
+                                return strtolower($item->statut ?? 'en attente') === 'en attente' ||
+                                    strtolower($item->statut ?? '') === 'brouillon';
                             });
-                        @endphp
 
-                        @php
                             $estMoisActuelOuFutur =
                                 $annee > now()->year || ($annee == now()->year && $mois >= now()->month);
                         @endphp
@@ -70,11 +69,9 @@
                                     la fin du mois.
                                 </div>
                             @elseif ($contientDesAttentes)
-                                <!-- Votre formulaire de validation existant -->
-                                <form action="{{ route('admin.payrolls.store') }}" method="POST" class="w-100"
+                                <form action="{{ route('admin.payrolls.employes.store') }}" method="POST" class="w-100"
                                     id="formValiderTout">
                                     @csrf
-                                    {{-- On fusionne l'année et le mois au format YYYY-MM attendu par le contrôleur --}}
                                     <input type="hidden" name="periode"
                                         value="{{ $annee . '-' . str_pad($mois, 2, '0', STR_PAD_LEFT) }}">
 
@@ -89,16 +86,15 @@
                                     document.getElementById('btnValiderTout').addEventListener('click', function(e) {
                                         Swal.fire({
                                             title: 'Confirmer la validation globale ?',
-                                            text: "Cette action va valider les salaires de tous les agents et générer les dépenses associées pour cette période.",
+                                            text: "Cette action va valider les salaires des employés administratifs et générer les dépenses associées pour cette période.",
                                             icon: 'warning',
                                             showCancelButton: true,
-                                            confirmButtonColor: '#28a745', // Vert Bootstrap
-                                            cancelButtonColor: '#d33', // Rouge
+                                            confirmButtonColor: '#28a745',
+                                            cancelButtonColor: '#d33',
                                             confirmButtonText: 'Oui, tout valider',
                                             cancelButtonText: 'Annuler'
                                         }).then((result) => {
                                             if (result.isConfirmed) {
-                                                // Soumission effective du formulaire si l'utilisateur clique sur "Oui"
                                                 document.getElementById('formValiderTout').submit();
                                             }
                                         });
@@ -119,16 +115,14 @@
         <!-- Tableau des résultats -->
         <div class="card border-0 shadow-sm">
             <div class="table-responsive">
-                <table id="payrollsTable" class="table table-striped table-bordered dt-responsive nowrap align-middle"
-                    style="width:100%">
+                <table id="payrollsEmployesTable"
+                    class="table table-striped table-bordered dt-responsive nowrap align-middle" style="width:100%">
                     <thead class="table-light">
                         <tr>
-                            <th>Agent</th>
+                            <th>Employé</th>
                             <th class="text-end">Salaire de base</th>
-                            <th class="text-end">Commissions (Cycles)</th>
-                            <th class="text-end">Commissions (Carnet)</th>
-                            <th class="text-end">Commissions (Travail)</th>
-                            <th class="text-end">Bonus</th>
+                            <th class="text-end">Primes / Indemnités</th>
+                            <th class="text-end">Salaire Brut</th>
                             <th class="text-end text-danger">Avance déduite</th>
                             <th class="text-end fw-bold">Salaire Net</th>
                             <th>Statut</th>
@@ -142,22 +136,20 @@
                                 <td>
                                     <div class="d-flex flex-column align-items-start">
                                         <span class="fw-semibold text-dark">
-                                            {{ $payroll->agent->nom ?? '---' }}
+                                            {{ $payroll->employe->nom ?? '' }}
+                                            {{ $payroll->employe->prenoms ?? ($payroll->employe->name ?? '---') }}
                                         </span>
                                         <span class="text-muted font-monospace" style="font-size: 0.75rem;">
-                                            N° {{ $payroll->agent->code_agent }}
+                                            {{ $payroll->employe->poste ?? 'Administratif' }}
                                         </span>
                                     </div>
                                 </td>
                                 <td class="text-end">{{ number_format($payroll->salaire_base ?? 0, 0, ',', ' ') }}</td>
-                                <td class="text-end">{{ number_format($payroll->commission_cycle ?? 0, 0, ',', ' ') }}</td>
-                                <td class="text-end">{{ number_format($payroll->commission_carnet ?? 0, 0, ',', ' ') }}
+                                <td class="text-end">
+                                    {{ number_format(($payroll->primes_totales ?? 0) + ($payroll->indemnites_totales ?? 0), 0, ',', ' ') }}
                                 </td>
-                                <td class="text-end">{{ number_format($payroll->commission_travail ?? 0, 0, ',', ' ') }}
-                                </td>
-                                <td class="text-end">{{ number_format($payroll->bonus ?? 0, 0, ',', ' ') }}</td>
+                                <td class="text-end">{{ number_format($payroll->salaire_brut ?? 0, 0, ',', ' ') }}</td>
 
-                                <!-- Colonne Avance sur salaire déduite -->
                                 <td class="text-end text-danger">
                                     @if (($payroll->avance_deduite ?? 0) > 0)
                                         - {{ number_format($payroll->avance_deduite, 0, ',', ' ') }}
@@ -171,52 +163,43 @@
                                 </td>
                                 <td>
                                     @php
-                                        $statutClass = match (strtolower($payroll->statut ?? '')) {
+                                        $statutBrut = strtolower($payroll->statut ?? 'en attente');
+                                        $statutClass = match ($statutBrut) {
                                             'validé', 'valide' => 'bg-light text-dark border border-secondary',
+                                            'brouillon'
+                                                => 'bg-warning-subtle text-warning border border-warning-subtle',
                                             default => 'bg-light text-muted border',
                                         };
                                     @endphp
                                     <span class="badge {{ $statutClass }} fw-normal">
-                                        {{ $payroll->statut ?? 'En attente' }}
+                                        {{ ucfirst($payroll->statut ?? 'En attente') }}
                                     </span>
                                 </td>
                                 <td class="text-end">
-                                    <div class="d-inline-flex gap-2 align-items-center">
-                                        @if ($payroll->statut == 'En attente')
-                                            {{-- Bouton de prévisualisation pour les salaires en attente --}}
-                                            <a href="{{ route('admin.payrolls.details', ['agent' => $payroll->agent->ulid, 'mois' => $mois, 'annee' => $annee]) }}"
-                                                class="btn btn-sm btn-outline-secondary" title="Prévisualiser et ajuster">
-                                                <i class="bi bi-file-earmark-text me-1"></i> Détails
-                                            </a>
+                                    <div class="d-inline-flex gap-2 align-items-center justify-content-end">
+                                        @php
+                                            $statut = strtolower($payroll->statut ?? 'en attente');
+                                            $employeUlid = $payroll->employe->ulid ?? '#';
+                                        @endphp
 
-                                            {{-- Actions de validation individuelle --}}
-                                            @if (!$estMoisActuelOuFutur)
-                                                <button type="button" class="btn btn-sm btn-dark">
-                                                    Valider
-                                                </button>
-                                            @else
-                                                <span class="text-muted small d-inline-flex align-items-center"
-                                                    title="La validation n'est possible qu'après la clôture du mois">
-                                                    <i class="bi bi-lock me-1"></i> Verrouillé
-                                                </span>
-                                            @endif
-                                        @else
-                                            {{-- Bouton de consultation du bulletin validé avec l'ULID --}}
-                                            <a href="{{ route('admin.payrolls.validated', $payroll->salaire_id) }}"
-                                                class="btn btn-sm btn-outline-success"
-                                                title="Consulter le bulletin officiel validé">
-                                                <i class="bi bi-file-earmark-check me-1"></i> Bulletin
+                                        {{-- Si le salaire n'a pas d'ID (pas encore enregistré) ou s'il est en brouillon / en attente --}}
+                                        @if (empty($payroll->id) || $statut == 'brouillon' || $statut == 'en attente')
+                                            <a href="{{ route('admin.payrolls.employes.details', $employeUlid) }}?mois={{ $mois }}&annee={{ $annee }}"
+                                                class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye me-1"></i> Détails
                                             </a>
-                                            {{-- 
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                                Payé / Validé
-                                            </span> --}}
+                                        @else
+                                            {{-- Sinon, le salaire est validé, on affiche le bouton vers le bulletin officiel --}}
+                                            <a href="{{ route('admin.payrolls.employe.validated', $payroll->ulid) }}"
+                                                class="btn btn-sm btn-success">
+                                                <i class="bi bi-file-earmark-text me-1"></i> Voir le bulletin
+                                            </a>
                                         @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            {{-- DataTables gère l'affichage vide --}}
+                            {{-- DataTables gère le contenu vide --}}
                         @endforelse
                     </tbody>
                 </table>
@@ -233,11 +216,11 @@
 
     <script>
         $(document).ready(function() {
-            $('#payrollsTable').DataTable({
+            $('#payrollsEmployesTable').DataTable({
                 language: {
                     emptyTable: "Aucun salaire à afficher pour ce mois.",
-                    info: "Affichage de _START_ à _END_ sur _TOTAL_ agents",
-                    infoEmpty: "Affichage de 0 à 0 sur 0 agent",
+                    info: "Affichage de _START_ à _END_ sur _TOTAL_ employés",
+                    infoEmpty: "Affichage de 0 à 0 sur 0 employé",
                     infoFiltered: "(filtré à partir de _MAX_ éléments au total)",
                     lengthMenu: "Afficher _MENU_ éléments",
                     loadingRecords: "Chargement...",
@@ -261,7 +244,8 @@
                         var moisParam = $('#mois').val() || '';
                         var anneeParam = $('#annee').val() || '';
 
-                        window.location.href = "{{ url('admin/payrolls/export/excel') }}" +
+                        window.location.href =
+                            "{{ url('admin/payrolls/employes/export/excel') }}" +
                             "?search=" + searchParam +
                             "&mois=" + moisParam +
                             "&annee=" + anneeParam;
@@ -280,6 +264,28 @@
                     searchable: false,
                     targets: 7
                 }]
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.getElementById('btnValiderTout').addEventListener('click', function(e) {
+            e.preventDefault(); // Empêche la soumission directe
+
+            Swal.fire({
+                title: 'Confirmation de validation',
+                text: "Voulez-vous vraiment valider et comptabiliser les salaires de tous les employés actifs pour cette période ?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#198754', // Vert (Bootstrap Success)
+                cancelButtonColor: '#6c757d', // Gris (Bootstrap Secondary)
+                confirmButtonText: 'Oui, tout valider',
+                cancelButtonText: 'Annuler'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Si l'utilisateur clique sur "Oui", on soumet le formulaire
+                    document.getElementById('formValiderTout').submit();
+                }
             });
         });
     </script>

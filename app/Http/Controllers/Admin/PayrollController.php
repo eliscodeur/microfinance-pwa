@@ -7,6 +7,7 @@ use App\Models\Bonus;
 use App\Models\Carnet;
 use App\Models\Cycle;
 use App\Models\DeductionAvance;
+use App\Models\Salaire;
 use App\Models\SalaryAdvance;
 use App\Services\PayrollService;
 use Carbon\Carbon;
@@ -25,7 +26,7 @@ class PayrollController extends Controller
 
     public function index(Request $request)
     {
-        // Récupération de la période (par défaut le mois passé, ex: 2026-08)
+
         $mois  = $request->input('mois', now()->subMonth()->month);
         $annee = $request->input('annee', now()->subMonth()->year);
 
@@ -40,56 +41,75 @@ class PayrollController extends Controller
         $agents   = Agent::all();
         $payrolls = [];
 
-        // Calcul ou récupération automatique pour tous les agents sur ce mois
         foreach ($agents as $agent) {
-            // Récupération des données du service (qui retourne un tableau)
-            $calculs = $this->payrollService->calculerCommissionGlobaleCarnets($agent, $dateDebut->toDateString(), $dateFin->toDateString());
-
-            $salaireBase       = $calculs['salaire_base'] ?? ($agent->salaire_base ?? 0);
-            $commissionTravail = $calculs['commission_travail'] ?? 0;
-            $commissionCarnet  = $calculs['montant_commission_carnet'] ?? 0;
-            $commissionCycle   = $calculs['montant_total_commission_cycle'] ?? 0;
-            $bonus             = $calculs['montant_total_bonus'] ?? 0;
-
-            // --- GESTION DES AVANCES SUR SALAIRE (Étalement) ---
-            $avancesEnCours = \App\Models\SalaryAdvance::where('agent_id', $agent->id)
-                ->where('statut', 'en_cours')
-                ->get();
-
-            // 2. On vérifie s'il existe des choix personnalisés dans notre table 'deductions_avances'
-            $deductionsPersonnalisees = \App\Models\DeductionAvance::where('agent_id', $agent->id)
-                ->where('mois', $mois)
-                ->where('annee', $annee)
-                ->get();
-
-            if ($deductionsPersonnalisees->isNotEmpty()) {
-                // Si l'administrateur a fait un choix spécifique (coché/décoché dans la modale)
-                $totalAvanceDeduite = $deductionsPersonnalisees->sum('montant');
-            } else {
-                // Comportement par défaut : on somme toutes les avances en cours
-                $totalAvanceDeduite = $avancesEnCours->sum('montant_mensuel');
-            }
-
             // Vérifier si un enregistrement existe déjà dans la table 'salaires' pour ce mois
             $salaireEnregistré = DB::table('salaires')
                 ->where('agent_id', $agent->id)
-                ->where('mois', $dateDebut->month)
-                ->where('annee', $dateDebut->year)
+                ->where('mois', $mois)
+                ->where('annee', $annee)
                 ->first();
 
-            // Calcul du salaire net global en additionnant les gains et en soustrayant l'avance étalée
-            $salaireBrut = $salaireBase + $commissionTravail + $commissionCycle + $bonus + $commissionCarnet;
-            $salaireNet  = max(0, $salaireBrut - $totalAvanceDeduite); // Évite un net négatif par sécurité
+            if ($salaireEnregistré) {
+                // --- CAS 1 : LE SALAIRE EST DÉJÀ ENREGISTRÉ (ON RÉCUPÈRE LES DONNÉES FIGÉES) ---
+                $salaireBase        = $salaireEnregistré->salaire_base;
+                $commissionTravail  = $salaireEnregistré->commission_travail;
+                $commissionCarnet   = $salaireEnregistré->commission_carnet;
+                $commissionCycle    = $salaireEnregistré->commission_cycle;
+                $bonus              = $salaireEnregistré->bonus;
+                $totalAvanceDeduite = $salaireEnregistré->total_avances;
+                $salaireNet         = $salaireEnregistré->montant_net;
+
+                // Récupérer les avances qui étaient concernées ou en cours pour affichage
+                $avancesConcernes = \App\Models\SalaryAdvance::where('agent_id', $agent->id)->get();
+            } else {
+                // --- CAS 2 : PRÉVISUALISATION (CALCUL À LA VOLÉE) ---
+                $calculs = $this->payrollService->calculerCommissionGlobaleCarnets($agent, $dateDebut->toDateString(), $dateFin->toDateString());
+
+                $salaireBase       = $calculs['salaire_base'] ?? ($agent->salaire_base ?? 0);
+                $commissionTravail = $calculs['commission_travail'] ?? 0;
+                $commissionCarnet  = $calculs['montant_commission_carnet'] ?? 0;
+                $commissionCycle   = $calculs['montant_total_commission_cycle'] ?? 0;
+                $bonus             = $calculs['montant_total_bonus'] ?? 0;
+
+                $salaireBrut = $salaireBase + $commissionTravail + $commissionCycle + $bonus + $commissionCarnet;
+
+                // Gestion des avances en cours et des choix personnalisés
+                $avancesEnCours = \App\Models\SalaryAdvance::where('agent_id', $agent->id)
+                    ->where('statut', 'en_cours')
+                    ->get();
+
+                $deductionsPersonnalisees = \App\Models\DeductionAvance::where('agent_id', $agent->id)
+                    ->where('mois', $mois)
+                    ->where('annee', $annee)
+                    ->get();
+
+                if ($deductionsPersonnalisees->isNotEmpty()) {
+                    $totalAvanceDeduite = $deductionsPersonnalisees->sum('montant');
+                } else {
+                    // Simulation du respect de la règle du brut (on ne prend que ce que le brut peut supporter par tranche)
+                    $totalAvanceDeduite = 0;
+                    foreach ($avancesEnCours as $avance) {
+                        $montantTranche = $avance->montant_mensuel ?? 0;
+                        if ($montantTranche > 0 && $salaireBrut >= ($totalAvanceDeduite + $montantTranche)) {
+                            $totalAvanceDeduite += $montantTranche;
+                        }
+                    }
+                }
+
+                $salaireNet       = max(0, $salaireBrut - $totalAvanceDeduite);
+                $avancesConcernes = $avancesEnCours;
+            }
 
             $payrolls[] = (object) [
                 'agent'              => $agent,
                 'salaire_base'       => $salaireBase,
                 'commission_travail' => $commissionTravail,
+                'salaire_id'         => $salaireEnregistré ? $salaireEnregistré->id : null,
                 'commission_carnet'  => $commissionCarnet,
                 'commission_cycle'   => $commissionCycle,
                 'bonus'              => $bonus,
-                'avance_deduite'     => $totalAvanceDeduite, // Pour affichage éventuel sur le bulletin
-                'avances_concernes'  => $avancesEnCours,     // Pour le suivi
+                'avance_deduite'     => $totalAvanceDeduite,
+                'avances_concernes'  => $avancesConcernes,
                 'salaire_net'        => $salaireNet,
                 'statut'             => $salaireEnregistré ? ucfirst($salaireEnregistré->statut) : 'En attente',
             ];
@@ -97,6 +117,185 @@ class PayrollController extends Controller
 
         return view('admin.payrolls.index', compact('payrolls', 'mois', 'annee'));
     }
+
+    public function showValidated(string $id)
+    {
+
+        $salaire = Salaire::with(['agent', 'validator', 'depense'])
+            ->where('id', $id)
+            ->firstOrFail();
+
+        return view('admin.payrolls.show', compact('salaire'));
+    }
+    // public function store(Request $request)
+    // {
+    //     try {
+    //         $request->validate([
+    //             'periode' => 'required|date_format:Y-m',
+    //         ]);
+
+    //         $periodeInput = $request->input('periode');
+    //         $dateDebut    = Carbon::createFromFormat('Y-m', $periodeInput)->startOfMonth();
+    //         $dateFin      = Carbon::createFromFormat('Y-m', $periodeInput)->endOfMonth();
+
+    //         $mois   = $dateDebut->month;
+    //         $annee  = $dateDebut->year;
+    //         $agents = Agent::all();
+
+    //         // 1. Récupérer en amont la catégorie de charge liée aux salaires
+    //         $categorieSalaire = DB::table('categories_charges')
+    //             ->where('libelle', 'LIKE', '%salaire%')
+    //             ->orWhere('code_analytique', 'LIKE', '66%')
+    //             ->first();
+
+    //         $categorieId = $categorieSalaire ? $categorieSalaire->id : null;
+
+    //         DB::transaction(function () use ($agents, $dateDebut, $dateFin, $mois, $annee, $categorieId) {
+    //             foreach ($agents as $agent) {
+    //                 // 1. Récupération des composantes financières PayrollService
+    //                 $payrollDetails = $this->payrollService->calculerCommissionGlobaleCarnets($agent, $dateDebut->toDateString(), $dateFin->toDateString());
+
+    //                 $salaireBase             = $payrollDetails['salaire_base'] ?? ($agent->salaire_base ?? 0);
+    //                 $commissionTravail       = $payrollDetails['commission_travail'] ?? 0;
+    //                 $montantCommissionCarnet = $payrollDetails['montant_commission_carnet'] ?? 0;
+    //                 $totalCommissionCycle    = $payrollDetails['montant_total_commission_cycle'] ?? 0;
+    //                 $totalBonus              = $payrollDetails['montant_total_bonus'] ?? 0;
+
+    //                 // Calcul du brut ou total avant déductions d'avances
+    //                 $montantBrut = $salaireBase + $commissionTravail + $montantCommissionCarnet + $totalCommissionCycle + $totalBonus;
+
+    //                 // 2. GESTION DES AVANCES SUR SALAIRE POUR CET AGENT
+    //                 $avancesList = DB::table('salary_advances')
+    //                     ->where('agent_id', $agent->id)
+    //                     ->where('statut', 'en_cours')
+    //                     ->get();
+
+    //                 $totalDeductionsAvances = 0;
+
+    //                 foreach ($avancesList as $avance) {$deductionExistante = DB::table('deductions_avances')
+    //                         ->where('salary_advance_id', $avance->id)
+    //                         ->where('mois', $mois)
+    //                         ->where('annee', $annee)
+    //                         ->first();
+
+    //                     if (! $deductionExistante) {
+    //                         $montantTranche = $avance->montant_mensuel ?? 0;
+
+    //                         if ($montantTranche > 0) {
+    //                             DB::table('deductions_avances')->insert([
+    //                                 'ulid'              => (string) \Illuminate\Support\Str::ulid(),
+    //                                 'agent_id'          => $agent->id,
+    //                                 'salary_advance_id' => $avance->id,
+    //                                 'montant'           => $montantTranche,
+    //                                 'nombre_tranches'   => 1,
+    //                                 'mois'              => $mois,
+    //                                 'annee'             => $annee,
+    //                                 'created_at'        => now(),
+    //                                 'updated_at'        => now(),
+    //                             ]);
+    //                         }
+    //                     }
+
+    //                     $totalTranchesPayees = DB::table('deductions_avances')
+    //                         ->where('salary_advance_id', $avance->id)
+    //                         ->sum('nombre_tranches');
+
+    //                     $montantCeMois = DB::table('deductions_avances')
+    //                         ->where('salary_advance_id', $avance->id)
+    //                         ->where('mois', $mois)
+    //                         ->where('annee', $annee)
+    //                         ->sum('montant');
+
+    //                     $totalDeductionsAvances += $montantCeMois;
+
+    //                     $updateData = ['tranches_payees' => $totalTranchesPayees];
+    //                     if ($totalTranchesPayees >= $avance->nombre_tranches) {$updateData['statut'] = 'soldee';}
+
+    //                     DB::table('salary_advances')
+    //                         ->where('id', $avance->id)
+    //                         ->update($updateData);}
+
+    //                 // Le montant net final
+    //                 $montantNet = max(0, $montantBrut - $totalDeductionsAvances);
+    //                 // 3. GESTION DE LA DÉPENSE ASSOCIÉE (Comptabilité / Trésorerie)
+    //                 // Vérifier si un salaire existe déjà pour récupérer son éventuel depense_id existant
+    //                 $salaireExistant = DB::table('salaires')
+    //                     ->where('agent_id', $agent->id)
+    //                     ->where('mois', $mois)
+    //                     ->where('annee', $annee)
+    //                     ->first();
+
+    //                 $depenseId    = $salaireExistant ? $salaireExistant->depense_id : null;
+    //                 $motifDepense = 'Paiement du salaire de ' . $agent->name . ' (Mois : ' . $mois . '/' . $annee . ')';
+
+    //                 if ($montantNet > 0) {
+    //                     if ($depenseId) {
+    //                         // Mise à jour de la dépense existante si le salaire est recalculé
+    //                         DB::table('depenses')->where('id', $depenseId)->update([
+    //                             'categories_charge_id' => $categorieId,
+    //                             'montant'              => $montantNet,
+    //                             'motif'                => $motifDepense,
+    //                             'updated_at'           => now(),
+    //                         ]);
+    //                     } else {
+    //                         // Création d'une nouvelle ligne de décaissement dans les dépenses
+    //                         $depenseId = DB::table('depenses')->insertGetId([
+    //                             'ulid'                 => (string) \Illuminate\Support\Str::ulid(),
+    //                             'categories_charge_id' => $categorieId,
+    //                             'montant'              => $montantNet,
+    //                             'date_depense'         => now(),
+    //                             'beneficiaire'         => $agent->name ?? 'Personnel',
+    //                             'mode_paiement'        => 'Virement Bancaire',
+    //                             'reference_piece'      => 'SAL-' . $annee . '-' . str_pad($mois, 2, '0', STR_PAD_LEFT) . '-' . $agent->code_agent,
+    //                             'motif'                => $motifDepense,
+    //                             'user_id'              => auth()->id(),
+    //                             'created_at'           => now(),
+    //                             'updated_at'           => now(),
+    //                         ]);
+    //                     }
+    //                 }
+
+    //                 // 4. Enregistrer ou mettre à jour le salaire net avec la liaison
+
+    //                 \App\Models\Salaire::updateOrCreate(
+    //                     [
+    //                         'agent_id' => $agent->id,
+    //                         'mois'     => $mois,
+    //                         'annee'    => $annee,
+    //                     ],
+    //                     [
+    //                         'depense_id'         => $depenseId,
+    //                         'salaire_base'       => $salaireBase,
+    //                         'commission_travail' => $commissionTravail,
+    //                         'commission_carnet'  => $montantCommissionCarnet,
+    //                         'commission_cycle'   => $totalCommissionCycle,
+    //                         'bonus'              => $totalBonus,
+    //                         'total_avances'      => $totalDeductionsAvances,
+    //                         'montant_net'        => $montantNet,
+    //                         'periode_debut'      => $dateDebut->toDateString(),
+    //                         'periode_fin'        => $dateFin->toDateString(),
+    //                         'statut'             => 'valide',
+    //                         'validated_by'       => auth()->id(),
+    //                         'validated_at'       => now(),
+    //                     ]
+    //                 );
+    //                 // 5. Marquer les paiements de cet agent sur la période comme inclus
+    //                 DB::table('paiements')
+    //                     ->where('agent_id', $agent->id)
+    //                     ->whereNull('inclus_dans_salaire_at')
+    //                     ->whereBetween('created_at', [$dateDebut->copy()->startOfDay(), $dateFin->copy()->endOfDay()])
+    //                     ->update(['inclus_dans_salaire_at' => now()]);
+    //             }
+    //         });
+
+    //         return redirect()->route('admin.payrolls.index', [
+    //             'mois'  => $mois,
+    //             'annee' => $annee,
+    //         ])->with('success', 'Tous les salaires du mois ont été validés, comptabilisés en dépenses et verrouillés avec succès !');
+    //     } catch (\Exception $e) {
+    //         dd("ERREUR CATCHÉE : " . $e->getMessage(), $e->getTraceAsString());
+    //     }
+    // }
 
     public function store(Request $request)
     {
@@ -143,16 +342,19 @@ class PayrollController extends Controller
 
                     $totalDeductionsAvances = 0;
 
-                    foreach ($avancesList as $avance) {$deductionExistante = DB::table('deductions_avances')
-                            ->where('salary_advance_id', $avance->id)
-                            ->where('mois', $mois)
-                            ->where('annee', $annee)
-                            ->first();
+                    foreach ($avancesList as $avance) {
+                        $montantTranche = $avance->montant_mensuel ?? 0;
 
-                        if (! $deductionExistante) {
-                            $montantTranche = $avance->montant_mensuel ?? 0;
+                        // RÈGLE STRICTE : On ne prélève la tranche QUE si le brut couvre les gains + la tranche
+                        if ($montantTranche > 0 && $montantBrut >= ($totalDeductionsAvances + $montantTranche)) {
 
-                            if ($montantTranche > 0) {
+                            $deductionExistante = DB::table('deductions_avances')
+                                ->where('salary_advance_id', $avance->id)
+                                ->where('mois', $mois)
+                                ->where('annee', $annee)
+                                ->first();
+
+                            if (! $deductionExistante) {
                                 DB::table('deductions_avances')->insert([
                                     'ulid'              => (string) \Illuminate\Support\Str::ulid(),
                                     'agent_id'          => $agent->id,
@@ -165,31 +367,38 @@ class PayrollController extends Controller
                                     'updated_at'        => now(),
                                 ]);
                             }
+
+                            $montantCeMois = DB::table('deductions_avances')
+                                ->where('salary_advance_id', $avance->id)
+                                ->where('mois', $mois)
+                                ->where('annee', $annee)
+                                ->sum('montant');
+
+                            $totalDeductionsAvances += $montantCeMois;
+
+                            // Recalculer le total des tranches payées
+                            $totalTranchesPayees = DB::table('deductions_avances')
+                                ->where('salary_advance_id', $avance->id)
+                                ->sum('nombre_tranches');
+
+                            $updateData = ['tranches_payees' => $totalTranchesPayees];
+                            if ($totalTranchesPayees >= $avance->nombre_tranches) {
+                                $updateData['statut'] = 'soldee';
+                            }
+
+                            DB::table('salary_advances')
+                                ->where('id', $avance->id)
+                                ->update($updateData);
+                        } else {
+                            // Salaire brut insuffisant pour cette tranche : on ignore pour ce mois-ci,
+                            // l'avance reste en cours pour le mois prochain.
                         }
-
-                        $totalTranchesPayees = DB::table('deductions_avances')
-                            ->where('salary_advance_id', $avance->id)
-                            ->sum('nombre_tranches');
-
-                        $montantCeMois = DB::table('deductions_avances')
-                            ->where('salary_advance_id', $avance->id)
-                            ->where('mois', $mois)
-                            ->where('annee', $annee)
-                            ->sum('montant');
-
-                        $totalDeductionsAvances += $montantCeMois;
-
-                        $updateData = ['tranches_payees' => $totalTranchesPayees];
-                        if ($totalTranchesPayees >= $avance->nombre_tranches) {$updateData['statut'] = 'soldee';}
-
-                        DB::table('salary_advances')
-                            ->where('id', $avance->id)
-                            ->update($updateData);}
+                    }
 
                     // Le montant net final
                     $montantNet = max(0, $montantBrut - $totalDeductionsAvances);
+
                     // 3. GESTION DE LA DÉPENSE ASSOCIÉE (Comptabilité / Trésorerie)
-                    // Vérifier si un salaire existe déjà pour récupérer son éventuel depense_id existant
                     $salaireExistant = DB::table('salaires')
                         ->where('agent_id', $agent->id)
                         ->where('mois', $mois)
@@ -201,7 +410,7 @@ class PayrollController extends Controller
 
                     if ($montantNet > 0) {
                         if ($depenseId) {
-                            // Mise à jour de la dépense existante si le salaire est recalculé
+                            // Mise à jour de la dépense existante
                             DB::table('depenses')->where('id', $depenseId)->update([
                                 'categories_charge_id' => $categorieId,
                                 'montant'              => $montantNet,
@@ -209,7 +418,7 @@ class PayrollController extends Controller
                                 'updated_at'           => now(),
                             ]);
                         } else {
-                            // Création d'une nouvelle ligne de décaissement dans les dépenses
+                            // Création d'une nouvelle ligne de décaissement
                             $depenseId = DB::table('depenses')->insertGetId([
                                 'ulid'                 => (string) \Illuminate\Support\Str::ulid(),
                                 'categories_charge_id' => $categorieId,
@@ -224,10 +433,16 @@ class PayrollController extends Controller
                                 'updated_at'           => now(),
                             ]);
                         }
+                    } else {
+                        // Si le montant net est égal à 0 (tout est passé en avance ou brut nul),
+                        // on supprime l'éventuelle dépense liée car il n'y a pas de décaissement.
+                        if ($depenseId) {
+                            DB::table('depenses')->where('id', $depenseId)->delete();
+                            $depenseId = null;
+                        }
                     }
 
                     // 4. Enregistrer ou mettre à jour le salaire net avec la liaison
-
                     \App\Models\Salaire::updateOrCreate(
                         [
                             'agent_id' => $agent->id,
@@ -250,6 +465,7 @@ class PayrollController extends Controller
                             'validated_at'       => now(),
                         ]
                     );
+
                     // 5. Marquer les paiements de cet agent sur la période comme inclus
                     DB::table('paiements')
                         ->where('agent_id', $agent->id)

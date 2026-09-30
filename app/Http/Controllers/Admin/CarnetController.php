@@ -166,8 +166,7 @@ class CarnetController extends Controller
                 $prixVente = $tarif ? $tarif->prix : 0;
             }
 
-            // 3. LOGIQUE FIFO DIRECTE (Sans boucle) :
-// 3. LOGIQUE FIFO AVEC DISTINCTION TONTINE / COMPTE
+            // 3. LOGIQUE FIFO AVEC DISTINCTION TONTINE / COMPTE
             $query = DB::table('mouvement_stock_carnets')
                 ->where('type', 'entree')
                 ->where('quantite_restante', '>', 0);
@@ -176,11 +175,11 @@ class CarnetController extends Controller
             if ($validated['type'] === 'tontine') {
                 $query->where('categories_tontine_id', $categoryTontineId);
             } else {
-                // Si c'est un compte épargne, on cherche dans le stock sans catégorie (ou un type spécifique)
+                // Si c'est un compte épargne, on cherche dans le stock sans catégorie
                 $query->whereNull('categories_tontine_id');
             }
 
-            $entreeStock = $query->orderBy('created_at', 'asc') // FIFO : Le plus ancien en premier
+            $entreeStock = $query->orderBy('created_at', 'asc')
                 ->lockForUpdate()
                 ->first();
 
@@ -203,10 +202,10 @@ class CarnetController extends Controller
 
             if ($validated['type'] === 'compte') {$validated['category_tontine_id'] = null;}
 
-            // 5. Créer le carnet attribué
+            //  Créer le carnet attribué
             $carnet = Carnet::create($validated);
 
-            // 6. Enregistrer l'historique de l'agent
+            //  Enregistrer l'historique de l'agent
             CarnetAgentHistory::create([
                 'ulid'        => strtolower((string) \Illuminate\Support\Str::ulid()),
                 'carnet_id'   => $carnet->id,
@@ -214,21 +213,21 @@ class CarnetController extends Controller
                 'assigned_at' => now(),
             ]);
 
-            // 7. Mettre à jour le statut du numéro physique
+            //  Mettre à jour le statut du numéro physique
             $carnetNumber->update([
                 'statut'  => 'utilise',
                 'used_at' => now(),
             ]);
 
-            // 8. Enregistrer le mouvement de stock (Sortie)
+            //  Enregistrer le mouvement de stock (Sortie)
             DB::table('mouvement_stock_carnets')->insert([
                 'ulid'                  => strtolower((string) \Illuminate\Support\Str::ulid()),
                 'categories_tontine_id' => $categoryTontineId,
                 'type'                  => 'sortie',
                 'quantite'              => 1,
-                'quantite_restante'     => 0,          // Une sortie n'a pas de stock restant (ou laisse à null/0)
-                'prix_unitaire_achat'   => $prixAchat, // Prix FIFO récupéré
-                'prix_unitaire_vente'   => $prixVente, // Prix de vente dynamique
+                'quantite_restante'     => 0,
+                'prix_unitaire_achat'   => $prixAchat,
+                'prix_unitaire_vente'   => $prixVente,
                 'motif'                 => 'Attribution carnet n° ' . $carnet->numero,
                 'created_at'            => now(),
                 'updated_at'            => now(),
@@ -236,7 +235,7 @@ class CarnetController extends Controller
 
             DB::commit();
             return redirect()->route('admin.carnets.index')
-                ->with('success', "Carnet n° " . $carnet->numero . " attribué avec succès (FIFO par quantité restante).");
+                ->with('success', "Carnet n° " . $carnet->numero . " attribué avec succès.");
 
         } catch (\Exception $e) {
             DB::rollBack();

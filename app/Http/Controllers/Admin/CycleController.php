@@ -94,7 +94,7 @@ class CycleController extends Controller
     public function markWithdrawn(Cycle $cycle, Request $request)
     {
         if ($cycle->statut !== 'termine') {
-            return back()->with('error', 'Seuls les cycles termines peuvent etre marques comme retires.');
+            return back()->with('error', 'Seuls les cycles terminés peuvent etre marqués comme retirés.');
         }
 
         if ($cycle->retire_at) {
