@@ -11,7 +11,7 @@
             </div>
             <div>
                 <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#depenseModal">
-                    <i class="bi bi-plus-circle me-1"></i> Enregistrer une Dépense
+                    <i class="bi bi-plus-circle me-1"></i> Enregistrer une dépense
                 </button>
             </div>
         </div>
@@ -89,11 +89,51 @@
             </div>
         @endif
 
+        <!-- Formulaire de Filtres -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-light rounded">
+                <form method="GET" action="{{ route('admin.depenses.index') }}" class="row g-3 align-items-end">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="categorie_id" class="form-label fw-bold">Filtrer par catégorie</label>
+                            <select name="categorie_id" id="categorie_id" class="form-select py-2">
+                                <option value="">Toutes les catégories</option>
+                                @foreach ($categories as $cat)
+                                    <option value="{{ $cat->ulid }}"
+                                        {{ request('categorie_id') == $cat->ulid ? 'selected' : '' }}>
+                                        {{ $cat->libelle }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="periode" class="form-label fw-bold">Période (Du - Au)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white px-3"><i class="bi bi-calendar-range"></i></span>
+                                <input type="text" name="periode" id="periode"
+                                    class="form-control py-2 date-range-picker" placeholder="Sélectionner une période"
+                                    value="{{ request('periode') }}">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4 py-2 shadow-sm">
+                                <i class="bi bi-filter me-1"></i> Filtrer
+                            </button>
+                            <a href="{{ route('admin.depenses.index') }}" class="btn btn-outline-secondary py-2">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Réinitialiser
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
         <!-- Tableau Principal des Dépenses -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Journal des Décaissements</h6>
-                <span class="badge bg-light text-secondary border">Mise à jour en temps réel</span>
+                {{-- <span class="badge bg-light text-secondary border">Mise à jour en temps réel</span> --}}
             </div>
             <div class="card-body px-0 pb-0">
                 <div class="table-responsive">
@@ -107,7 +147,7 @@
                                 <th>Mode</th>
                                 <th class="text-end">Montant (FCFA)</th>
                                 <th class="text-center">Auteur</th>
-                                <th class="text-end pe-4">Actions</th>
+                                {{-- <th class="text-end pe-4">Actions</th> --}}
                             </tr>
                         </thead>
                         <tbody>
@@ -153,7 +193,7 @@
                                             {{ Str::limit($depense->user->name ?? 'Admin', 10) }}
                                         </span>
                                     </td>
-                                    <td class="text-end pe-4">
+                                    {{-- <td class="text-end pe-4">
                                         <div class="btn-group" role="group">
                                             <form action="{{ route('admin.depenses.destroy', $depense->ulid) }}"
                                                 method="POST" class="d-inline"
@@ -166,7 +206,7 @@
                                                 </button>
                                             </form>
                                         </div>
-                                    </td>
+                                    </td> --}}
                                 </tr>
                             @empty
                                 <tr>
@@ -180,6 +220,9 @@
                     </table>
                 </div>
             </div>
+            <div class="card-footer bg-white py-3 d-flex justify-content-end">
+                {{ $depenses->links() }}
+            </div>
         </div>
     </div>
 
@@ -191,14 +234,14 @@
                     @csrf
                     <div class="modal-header bg-light">
                         <h5 class="modal-title fw-bold text-primary" id="depenseModalLabel">
-                            <i class="bi bi-cash-coin me-2"></i>Nouveau Décaissement / Dépense
+                            <i class="bi bi-cash-coin me-2"></i>Nouveau décaissement / Dépense
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-4">
                         <div class="row">
                             <div class="col-md-7 mb-3">
-                                <label for="categories_charge_id" class="form-label fw-semibold">Poste de Charge /
+                                <label for="categories_charge_id" class="form-label fw-semibold">Poste de charge /
                                     Catégorie <span class="text-danger">*</span></label>
                                 <select name="categories_charge_id" id="categories_charge_id" class="form-select select2"
                                     required>
@@ -213,13 +256,12 @@
                                     @endforeach
                                 </select>
                             </div>
-
                             <div class="col-md-5 mb-3">
                                 <label for="montant" class="form-label fw-semibold">Montant (FCFA) <span
                                         class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="number" step="any" name="montant" id="montant"
-                                        class="form-control" required placeholder="0">
+                                    <input type="text" name="montant" id="montant" class="form-control" required
+                                        placeholder="0">
                                     <span class="input-group-text bg-light">XOF</span>
                                 </div>
                             </div>
@@ -234,13 +276,13 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="mode_paiement" class="form-label fw-semibold">Mode de Décaissement <span
+                                <label for="mode_paiement" class="form-label fw-semibold">Mode de décaissement <span
                                         class="text-danger">*</span></label>
                                 <select name="mode_paiement" id="mode_paiement" class="form-select" required>
                                     <option value="Espèces">Espèces (Caisse)</option>
-                                    <option value="Virement Bancaire">Virement Bancaire</option>
+                                    <option value="Virement Bancaire">Virement bancaire</option>
                                     <option value="Chèque">Chèque</option>
-                                    <option value="Mobile Money">Mobile Money (T-Money / Flooz)</option>
+                                    <option value="Mobile Money">Mobile money (T-Money / Flooz)</option>
                                 </select>
                             </div>
                         </div>
@@ -254,7 +296,7 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="reference_piece" class="form-label fw-semibold">Pièce Justificative (N°
+                                <label for="reference_piece" class="form-label fw-semibold">Pièce justificative (N°
                                     Facture/Reçu)</label>
                                 <input type="text" name="reference_piece" id="reference_piece" class="form-control"
                                     placeholder="Ex: FAC-2026-894">
@@ -270,12 +312,36 @@
                     </div>
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-primary px-4">Valider le Décaissement</button>
+                        <button type="submit" class="btn btn-primary px-4">Valider le décaissement</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+    <script src="{{ asset('js/flatpickr.min.js') }}"></script>
+    <script src="{{ asset('js/flatpickr-fr.js') }}"></script>
+    <script src="{{ asset('js/imask.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            IMask(document.getElementById('montant'), {
+                mask: Number,
+                scale: 2,
+                signed: false,
+                thousandsSeparator: ' ',
+                padFractionalZeros: false,
+                normalizeZeros: true,
+                min: 0
+            });
+            flatpickr(".date-range-picker", {
+                mode: "range",
+                locale: "fr",
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "j F Y",
+                conjunction: " au "
+            });
+        });
+    </script>
 @endsection
 
 @section('scripts')

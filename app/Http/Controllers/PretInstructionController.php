@@ -1,11 +1,19 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\CategoriesCharge;
 use App\Models\Credit;
 use App\Models\CreditProduct;
+use App\Models\Depense;
+use App\Models\MouvementCaisse;
+use App\Models\Recette;
 use App\Services\CreditCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class PretInstructionController extends Controller
@@ -153,46 +161,172 @@ class PretInstructionController extends Controller
     /**
      * Effectue le décaissement : change l'état et génère l'échéancier
      */
+    // public function decaisser(int $id)
+    // {
+    //     $credit = Credit::with('payments')->findOrFail($id);
+    //     if ($credit->statut !== 'approved') {
+    //         return redirect()->back()->with('error', 'Le crédit doit être approuvé avant décaissement.');
+    //     }
+
+    //     $scheduleData = [
+    //         'montant_demande'  => $credit->montant_accorde ?? $credit->montant_demande,
+    //         'taux'             => $credit->taux,
+    //         'taux_manuel'      => $credit->taux_manuel,
+    //         'mode'             => $credit->mode,
+    //         'periodicite'      => $credit->periodicite,
+    //         'nombre_echeances' => $credit->nombre_echeances,
+    //         'date_debut'       => $credit->date_debut ?? now()->toDateString(),
+    //     ];
+
+    //     $schedule      = CreditCalculator::buildSchedule($scheduleData);
+    //     $interestTotal = CreditCalculator::totalInterest($schedule);
+    //     $monthlyAmount = collect($schedule)->avg('total');
+    //     $dateFin       = collect($schedule)->last()['date'] ?? $scheduleData['date_debut'];
+
+    //     $credit->montant_echeance = round($monthlyAmount, 2);
+    //     $credit->interet_total    = round($interestTotal, 2);
+    //     $credit->date_fin_prevue  = $dateFin;
+    //     $credit->statut           = 'active';
+    //     $credit->save();
+
+    //     $credit->payments()->delete();
+    //     foreach ($schedule as $item) {
+    //         $credit->payments()->create([
+    //             'echeance'          => $item['numero'],
+    //             'due_date'          => $item['date'],
+    //             'montant_principal' => $item['principal'],
+    //             'montant_interets'  => $item['interest'],
+    //             'montant_total'     => $item['total'],
+    //             'status'            => 'pending',
+    //         ]);
+    //     }
+
+    //     return redirect()->route('admin.prets.show', $credit->id)->with('success', 'Crédit décaissé et phase de remboursement activée.');
+    // }
+
     public function decaisser(int $id)
     {
-        $credit = Credit::with('payments')->findOrFail($id);
+        $credit = Credit::with(['payments', 'client', 'creditProduct'])->findOrFail($id);
+
         if ($credit->statut !== 'approved') {
             return redirect()->back()->with('error', 'Le crédit doit être approuvé avant décaissement.');
         }
 
-        $scheduleData = [
-            'montant_demande'  => $credit->montant_accorde ?? $credit->montant_demande,
-            'taux'             => $credit->taux,
-            'taux_manuel'      => $credit->taux_manuel,
-            'mode'             => $credit->mode,
-            'periodicite'      => $credit->periodicite,
-            'nombre_echeances' => $credit->nombre_echeances,
-            'date_debut'       => $credit->date_debut ?? now()->toDateString(),
-        ];
+        try {
+            return DB::transaction(function () use ($credit) {
+                $scheduleData = [
+                    'montant_demande'  => $credit->montant_accorde ?? $credit->montant_demande,
+                    'taux'             => $credit->taux,
+                    'taux_manuel'      => $credit->taux_manuel,
+                    'mode'             => $credit->mode,
+                    'periodicite'      => $credit->periodicite,
+                    'nombre_echeances' => $credit->nombre_echeances,
+                    'date_debut'       => $credit->date_debut ?? now()->toDateString(),
+                ];
 
-        $schedule      = CreditCalculator::buildSchedule($scheduleData);
-        $interestTotal = CreditCalculator::totalInterest($schedule);
-        $monthlyAmount = collect($schedule)->avg('total');
-        $dateFin       = collect($schedule)->last()['date'] ?? $scheduleData['date_debut'];
+                $schedule      = CreditCalculator::buildSchedule($scheduleData);
+                $interestTotal = CreditCalculator::totalInterest($schedule);
+                $monthlyAmount = collect($schedule)->avg('total');
+                $dateFin       = collect($schedule)->last()['date'] ?? $scheduleData['date_debut'];
 
-        $credit->montant_echeance = round($monthlyAmount, 2);
-        $credit->interet_total    = round($interestTotal, 2);
-        $credit->date_fin_prevue  = $dateFin;
-        $credit->statut           = 'active';
-        $credit->save();
+                // 1. Mise à jour du crédit
+                $credit->montant_echeance = round($monthlyAmount, 2);
+                $credit->interet_total    = round($interestTotal, 2);
+                $credit->date_fin_prevue  = $dateFin;
+                $credit->statut           = 'active';
+                $credit->save();
 
-        $credit->payments()->delete();
-        foreach ($schedule as $item) {
-            $credit->payments()->create([
-                'echeance'          => $item['numero'],
-                'due_date'          => $item['date'],
-                'montant_principal' => $item['principal'],
-                'montant_interets'  => $item['interest'],
-                'montant_total'     => $item['total'],
-                'status'            => 'pending',
-            ]);
+                // 2. Recréation de l'échéancier
+                $credit->payments()->delete();
+                foreach ($schedule as $item) {
+                    $credit->payments()->create([
+                        'echeance'          => $item['numero'],
+                        'due_date'          => $item['date'],
+                        'montant_principal' => $item['principal'],
+                        'montant_interets'  => $item['interest'],
+                        'montant_total'     => $item['total'],
+                        'status'            => 'pending',
+                    ]);
+                }
+
+                $montantDecaissement = $credit->montant_accorde ?? $credit->montant_demande;
+
+                // Récupération sécurisée d'une catégorie de charge par défaut
+                $categorieChargeId = CategoriesCharge::where('libelle', 'like', '%credit%')
+                    ->orWhere('libelle', 'like', '%pret%')
+                    ->value('id') ?? CategoriesCharge::value('id');
+
+                if (! $categorieChargeId) {
+                    throw new \Exception("Aucune catégorie de charge n'a été trouvée pour enregistrer la dépense de décaissement.");
+                }
+
+                // 3. ENREGISTREMENT DU DÉCAISSEMENT DANS LES DÉPENSES
+                $depense = Depense::create([
+                    'ulid'                 => (string) Str::ulid(),
+                    'categories_charge_id' => $categorieChargeId,
+                    'montant'              => $montantDecaissement,
+                    'date_depense'         => now()->toDateString(),
+                    'beneficiaire'         => optional($credit->client)->nom . ' ' . optional($credit->client)->prenom,
+                    'mode_paiement'        => 'especes',
+                    'reference_piece'      => 'DEC-PRET-' . date('Ymd') . '-' . $credit->id,
+                    'motif'                => 'Décaissement du crédit #' . $credit->id,
+                    'user_id'              => Auth::id(),
+                ]);
+
+                // 3. bis : MOUVEMENT DE CAISSE ASSOCIÉ (SORTIE)
+                MouvementCaisse::create([
+                    'ulid'           => strtolower((string) Str::ulid()),
+                    'type_operation' => 'decaissement credit',
+                    'sens'           => 'sortie',
+                    'montant'        => $montantDecaissement,
+                    'date_mouvement' => now(),
+                    'mode_paiement'  => 'especes',
+                    'reference'      => 'DEC-PRET-' . date('Ymd') . '-' . $credit->id,
+                    'libelle'        => 'Décaissement du crédit #' . $credit->id . ' - ' . optional($credit->client)->nom,
+                    'source_type'    => Depense::class,
+                    'source_id'      => $depense->id,
+                    'user_id'        => Auth::id(),
+                ]);
+
+                // 4. ENREGISTREMENT DES FRAIS DE DOSSIER DANS LES RECETTES (si applicables)
+                if ($credit->frais_dossier > 0) {
+                    $refRecette = 'REC-FRAIS-' . date('Ymd') . '-' . $credit->id . '-' . time();
+
+                    $recette = Recette::create([
+                        'ulid'          => strtolower((string) Str::ulid()),
+                        'reference'     => $refRecette,
+                        'type_recette'  => 'frais_dossier',
+                        'montant'       => $credit->frais_dossier,
+                        'client_id'     => $credit->client_id,
+                        'credit_id'     => $credit->id,
+                        'user_id'       => Auth::id(),
+                        'mode_paiement' => 'especes',
+                        'date_recette'  => now(),
+                        'commentaire'   => 'Frais de dossier pour le crédit #' . $credit->id,
+                    ]);
+
+                    // 4. bis : MOUVEMENT DE CAISSE ASSOCIÉ (ENTRÉE)
+                    MouvementCaisse::create([
+                        'ulid'           => strtolower((string) Str::ulid()),
+                        'type_operation' => 'frais de dossier',
+                        'sens'           => 'entree',
+                        'montant'        => $credit->frais_dossier,
+                        'date_mouvement' => now(),
+                        'mode_paiement'  => 'especes',
+                        'reference'      => $refRecette,
+                        'libelle'        => 'Frais de dossier - Crédit #' . $credit->id,
+                        'source_type'    => Recette::class,
+                        'source_id'      => $recette->id,
+                        'user_id'        => Auth::id(),
+                    ]);
+                }
+
+                return redirect()->route('admin.prets.show', $credit->id)
+                    ->with('success', 'Crédit décaissé avec succès, flux comptables mis à jour.');
+            });
+        } catch (\Throwable $e) {
+            Log::error("Erreur lors du décaissement du crédit #{$id} : " . $e->getMessage());
+            return redirect()->back()->with('error', "Erreur lors du décaissement : " . $e->getMessage());
         }
-
-        return redirect()->route('admin.prets.show', $credit->id)->with('success', 'Crédit décaissé et phase de remboursement activée.');
     }
 }

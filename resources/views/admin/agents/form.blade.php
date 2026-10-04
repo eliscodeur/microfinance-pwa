@@ -23,77 +23,97 @@
                 @if (isset($agent))
                     @method('PUT')
                 @endif
-                <div class="row mb-3">
+
+                <div class="row g-3 mb-3">
                     <div class="col-md-12 col-lg-6">
-                        <label>Nom et prénom de l'agent</label>
-                        <input type="text" name="nom" class="form-control"
+                        <label for="nom" class="form-label fw-semibold">Nom et prénom de l'agent</label>
+                        <input type="text" name="nom" id="nom" class="form-control py-2"
                             value="{{ isset($agent) ? $agent->nom : old('nom') }}" required>
                     </div>
                     <div class="col-md-12 col-lg-6">
-                        <label>Email de l'agent</label>
-                        <input type="email" name="email" class="form-control"
+                        <label for="email" class="form-label fw-semibold">Email de l'agent</label>
+                        <input type="email" name="email" id="email" class="form-control py-2"
                             value="{{ isset($agent) ? $agent->user->email : old('email') }}" required>
                     </div>
                 </div>
-                <div class="row mb-3">
+
+                <div class="row g-3 mb-4">
                     <div class="col-md-12 col-lg-6">
-                        <label>Numéro de téléphone</label>
-                        <input type="text" name="telephone" class="form-control"
-                            value="{{ isset($agent) ? $agent->telephone : old('telephone') }}" required>
+                        <label for="telephone" class="form-label fw-semibold">Numéro de téléphone</label>
+                        <input type="text" name="telephone" id="telephone" class="form-control py-2"
+                            value="{{ isset($agent) ? '+228 ' . implode(' ', str_split($agent->telephone, 2)) : old('telephone') }}"
+                            required>
                     </div>
                     @if (!isset($agent))
                         <div class="col-md-12 col-lg-6">
-                            <label>Mot de passe</label>
-                            <input type="password" name="password" class="form-control" required>
+                            <label for="password" class="form-label fw-semibold">Mot de passe</label>
+                            <input type="password" name="password" id="password" class="form-control py-2" required>
                         </div>
                     @endif
-
                 </div>
 
-                <div class="image-upload-wrapper border-dashed text-center p-2 position-relative mt-3"
-                    style="border: 2px dashed #ddd; border-radius: 15px; background: #f9f9f9; transition: 0.3s; min-height: 100px;">
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Photo de profil</label>
+                    <div class="image-upload-wrapper border-dashed text-center p-3 position-relative"
+                        style="border: 2px dashed #ced4da; border-radius: 12px; background: #f8f9fa; transition: 0.3s; min-height: 120px; display: flex; align-items: center; justify-content: center;">
 
-                    <div id="imagePreviewContainer"
-                        class="position-relative d-inline-block {{ isset($agent) && $agent->image ? '' : 'd-none' }}"
-                        style="cursor: pointer;" onclick="document.getElementById('photoInput').click()">
-                        <img src="{{ isset($agent) && $agent->image ? asset('storage/' . $agent->image) : '#' }}"
-                            id="imagePreview" alt="Aperçu" class="img-thumbnail shadow-sm"
-                            style="max-height: 150px; border-radius: 10px;">
+                        <div id="imagePreviewContainer"
+                            class="position-relative d-inline-block {{ isset($agent) && $agent->image ? '' : 'd-none' }}"
+                            style="cursor: pointer;" onclick="document.getElementById('photoInput').click()">
+                            <img src="{{ isset($agent) && $agent->image ? asset('storage/' . $agent->image) : '#' }}"
+                                id="imagePreview" alt="Aperçu" class="img-thumbnail shadow-sm"
+                                style="max-height: 140px; border-radius: 10px;">
 
-                        <button type="button" class="btn-close position-absolute bg-white shadow-sm rounded-circle p-2"
-                            style="top: -10px; right: -10px; font-size: 0.7rem; z-index: 10;" aria-label="Supprimer"
-                            onclick="removeImage(event)"></button>
+                            <button type="button" class="btn-close position-absolute bg-white shadow-sm rounded-circle p-2"
+                                style="top: -10px; right: -10px; font-size: 0.7rem; z-index: 10;" aria-label="Supprimer"
+                                onclick="removeImage(event)"></button>
+                        </div>
+
+                        <div id="uploadPlaceholder" class="{{ isset($agent) && $agent->image ? 'd-none' : '' }}"
+                            onclick="document.getElementById('photoInput').click()" style="cursor: pointer; width: 100%;">
+                            <i class="bi bi-cloud-arrow-up text-primary" style="font-size: 2.5rem;"></i>
+                            <p class="text-muted small mb-0 mt-1">Cliquez pour ajouter une photo</p>
+                        </div>
+
+                        <input type="file" name="image" id="photoInput" class="d-none" accept="image/*"
+                            onchange="previewImage(event)">
+
+                        <input type="hidden" name="remove_photo" id="removePhotoInput" value="0">
                     </div>
-
-                    <div id="uploadPlaceholder" class="p-3 {{ isset($agent) && $agent->image ? 'd-none' : '' }}"
-                        onclick="document.getElementById('photoInput').click()" style="cursor: pointer;">
-                        <i class="bi bi-cloud-arrow-up text-primary" style="font-size: 2.5rem;"></i>
-                        <p class="text-muted small mb-0">Cliquez pour ajouter une photo</p>
-                    </div>
-
-                    <input type="file" name="image" id="photoInput" class="d-none" accept="image/*"
-                        onchange="previewImage(event)">
-                    <!-- <input type="file" name="image" id="image" class="form-control" accept="image/*" onchange="previewImage(event)"> -->
-
-                    <input type="hidden" name="remove_photo" id="removePhotoInput" value="0">
                 </div>
 
-
-                <!-- <button class="btn btn-success">{{ isset($agent) ? 'Modifier' : 'Enregistrer' }}</button> -->
-                <div class="d-flex justify-content-end mt-2">
-                    <button type="submit" class="btn btn-success px-4">
-                        {{ isset($agent) ? 'Modifier l\'agent' : 'Enregistrer l\'agent' }}
-                    </button>
-
+                <div class="d-flex justify-content-end gap-2 mt-4">
                     @if (isset($agent))
-                        <a href="{{ route('admin.agents.index') }}" class="btn btn-outline-secondary ms-2 px-4">
+                        <a href="{{ route('admin.agents.index') }}" class="btn btn-outline-secondary px-4 py-2">
                             Annuler
                         </a>
                     @endif
+                    <button type="submit" class="btn btn-success px-4 py-2">
+                        {{ isset($agent) ? 'Modifier l\'agent' : 'Enregistrer l\'agent' }}
+                    </button>
                 </div>
             </form>
         </div>
     </div>
+    <script src="{{ asset('js/imask.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const phoneInput = document.getElementById('telephone');
+            if (phoneInput) {
+                const maskOptions = {
+                    mask: '+228 00 00 00 00',
+                    lazy: false,
+                    placeholderChar: '_'
+                };
+                const mask = IMask(phoneInput, maskOptions);
+
+                // Si une valeur existe déjà au chargement en mode edit
+                if (phoneInput.value) {
+                    mask.unmaskedValue = phoneInput.value.replace(/\D/g, '').replace(/^228/, '');
+                }
+            }
+        });
+    </script>
     <script>
         // 1. Fonction pour l'aperçu (mise à jour pour gérer le container)
         function previewImage(event) {

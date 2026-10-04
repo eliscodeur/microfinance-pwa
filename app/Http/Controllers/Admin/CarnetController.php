@@ -10,6 +10,8 @@ use App\Models\Client;
 use App\Models\ClientCarnetNumber;
 use App\Models\Cycle;
 use App\Models\Depot;
+use App\Models\MouvementCaisse;
+use App\Models\Recette;
 use App\Models\Retrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -213,6 +215,21 @@ class CarnetController extends Controller
                 'assigned_at' => now(),
             ]);
 
+            // Enregistrement automatique de la recette
+
+            Recette::create([
+                'ulid'          => strtolower((string) \Illuminate\Support\Str::ulid()),
+                'reference'     => 'REC-CAR-' . date('Ymd') . '-' . $carnet->id,
+                'type_recette'  => 'vente_carnet',
+                'montant'       => $prixVente,
+                'client_id'     => $validated['client_id'],
+                'credit_id'     => null,
+                'user_id'       => auth()->id(),
+                'mode_paiement' => 'especes',
+                'date_recette'  => now(),
+                'commentaire'   => 'Vente automatique du carnet n° ' . $carnet->numero,
+            ]);
+
             //  Mettre à jour le statut du numéro physique
             $carnetNumber->update([
                 'statut'  => 'utilise',
@@ -387,17 +404,52 @@ class CarnetController extends Controller
         ]);
 
         try {
-            Depot::create([
-                'client_id'   => $validated['client_id'],
-                'carnet_id'   => $validated['carnet_id'],
-                'user_id'     => auth()->id(),
-                'montant'     => $validated['montant'],
-                'date_depot'  => $validated['date_depot'],
-                'commentaire' => $validated['commentaire'] ?? null,
-                'cycle_id'    => null,
-            ]);
+            $result = DB::transaction(function () use ($validated, $request) {
 
-            $message = 'Dépôt de ' . number_format($validated['montant'], 0, ',', ' ') . ' F enregistré avec succès.';
+                $carnet = Carnet::with('client')->findOrFail($validated['carnet_id']);
+
+                $client  = Client::findOrFail($validated['client_id']);
+                $cycleId = null;
+
+                // Si c'est un carnet de tontine, on cherche ou associe le cycle actif
+                if ($carnet->type === 'tontine') {
+                    // Exemple : récupérer le dernier cycle non clôturé (ou adapter selon ta relation)
+                    $cycleActif = $carnet->cycles()->whereNull('retire_at')->latest()->first();
+                    $cycleId    = $cycleActif ? $cycleActif->id : null;
+                }
+
+                // 1. Enregistrement du dépôt
+                $depot = Depot::create([
+                    'client_id'   => $validated['client_id'],
+                    'carnet_id'   => $validated['carnet_id'],
+                    'user_id'     => auth()->id(),
+                    'montant'     => $validated['montant'],
+                    'date_depot'  => $validated['date_depot'],
+                    'commentaire' => $validated['commentaire'] ?? null,
+                    'cycle_id'    => $cycleId,
+                ]);
+
+                // 2. ENREGISTREMENT DU MOUVEMENT DE CAISSE (ENTRÉE)
+                $referenceDepot = 'DEP-' . date('Ymd') . '-' . $depot->id;
+
+                MouvementCaisse::create([
+                    'ulid'           => strtolower((string) Str::ulid()),
+                    'type_operation' => 'depot ' . $carnet->type,
+                    'sens'           => 'entree',
+                    'montant'        => $validated['montant'],
+                    'date_mouvement' => $validated['date_depot'],
+                    'mode_paiement'  => 'especes',
+                    'reference'      => $referenceDepot,
+                    'libelle'        => 'Dépôt (' . $carnet->type . ') - Client ' . $client->nom . ' ' . $client->prenom,
+                    'source_type'    => Depot::class,
+                    'source_id'      => $depot->id,
+                    'user_id'        => auth()->id(),
+                ]);
+
+                return $validated['montant'];
+            });
+
+            $message = 'Dépôt de ' . number_format($result, 0, ',', ' ') . ' F enregistré avec succès.';
 
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'message' => $message]);
@@ -466,7 +518,7 @@ class CarnetController extends Controller
                     );
                 }
 
-                Retrait::create([
+                $retrait = Retrait::create([
                     'carnet_id'     => $request->carnet_id,
                     'client_id'     => $request->client_id,
                     'cycle_id'      => ($carnet->type === 'tontine') ? $request->cycle_id : null,
@@ -476,6 +528,23 @@ class CarnetController extends Controller
                     'montant_net'   => $montantNetSaisi,
                     'date_retrait'  => $request->date_retrait,
                     'note'          => $request->note,
+                ]);
+
+                // ENREGISTREMENT DU MOUVEMENT DE CAISSE (SORTIE)
+                $referenceRetrait = 'RET-' . date('Ymd') . '-' . $retrait->id;
+                $client           = Client::findOrFail($request->client_id);
+                MouvementCaisse::create([
+                    'ulid'           => strtolower((string) Str::ulid()),
+                    'type_operation' => 'retrait ' . $carnet->type,
+                    'sens'           => 'sortie',
+                    'montant'        => $montantNetSaisi, // Le montant effectif décaissé
+                    'date_mouvement' => $request->date_retrait,
+                    'mode_paiement'  => 'especes',
+                    'reference'      => $referenceRetrait,
+                    'libelle'        => 'Retrait (' . $carnet->type . ') - Client ' . $client->nom . ' ' . $client->prenom,
+                    'source_type'    => Retrait::class,
+                    'source_id'      => $retrait->id,
+                    'user_id'        => auth()->id(),
                 ]);
 
                 // Clôture automatique du cycle (tontine uniquement)

@@ -13,8 +13,10 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepenseController;
 use App\Http\Controllers\Admin\EmployeAdministratifController;
 use App\Http\Controllers\Admin\FonctionController;
+use App\Http\Controllers\Admin\JournalCaisseController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\PayrollEmployerController;
+use App\Http\Controllers\Admin\RecetteController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SalaryAdvanceController;
 use App\Http\Controllers\Admin\StockCarnetController;
@@ -117,6 +119,8 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::resource('depenses', DepenseController::class)->parameters([
         'depenses' => 'depense:ulid',
     ]);
+    Route::get('/caisse/journal', [JournalCaisseController::class, 'index'])->name('caisse.journal');
+    Route::get('/recettes', [RecetteController::class, 'index'])->name('recettes.index');
     Route::get('/carnets/{carnet}', [CarnetController::class, 'show'])->name('carnets.show')->middleware('can:Gérer Carnets');
     Route::post('/carnets/store', [CarnetController::class, 'store'])->name('carnets.store')->middleware('can:Gérer Carnets');
     Route::put('/carnets/{carnet}', [CarnetController::class, 'update'])->name('carnets.update')->middleware('can:Gérer Carnets');

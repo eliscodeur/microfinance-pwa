@@ -17,7 +17,7 @@
             <h2 class="card-title mb-4">{{ isset($client) ? 'Modifier un client' : 'Ajouter un Client' }}</h2>
 
             <form method="POST"
-                action="{{ isset($client) ? route('admin.clients.update', $client->id) : route('admin.clients.store') }}"
+                action="{{ isset($client) ? route('admin.clients.update', $client->ulid) : route('admin.clients.store') }}"
                 enctype="multipart/form-data" class="mt-4">
                 @csrf
                 @if (isset($client))
@@ -52,12 +52,12 @@
                         <label>Genre</label>
                         <select name="genre" class="form-control">
                             <option value="">Sélectionner un genre</option>
-                            <option value="masculin" {{ isset($client) && $client->genre == 'masculin' ? 'selected' : '' }}>
+                            <option value="masculin"
+                                {{ isset($client) && strtolower($client->genre) == 'masculin' ? 'selected' : '' }}>
                                 Masculin</option>
-                            <option value="féminin" {{ isset($client) && $client->genre == 'féminin' ? 'selected' : '' }}>
+                            <option value="féminin"
+                                {{ isset($client) && strtolower($client->genre) == 'féminin' ? 'selected' : '' }}>
                                 Féminin
-                            </option>
-                            <option value="autre" {{ isset($client) && $client->genre == 'autre' ? 'selected' : '' }}>Autre
                             </option>
                         </select>
                     </div>
@@ -66,19 +66,19 @@
                         <select name="statut_matrimonial" class="form-control">
                             <option value="">Sélectionner un statut</option>
                             <option value="célibataire"
-                                {{ isset($client) && $client->statut_matrimonial == 'célibataire' ? 'selected' : '' }}>
+                                {{ isset($client) && strtolower($client->statut_matrimonial) == 'célibataire' ? 'selected' : '' }}>
                                 Célibataire
                             </option>
                             <option value="marié(e)"
-                                {{ isset($client) && $client->statut_matrimonial == 'marié(e)' ? 'selected' : '' }}>
+                                {{ isset($client) && strtolower($client->statut_matrimonial) == 'marié(e)' ? 'selected' : '' }}>
                                 Marié(e)
                             </option>
                             <option value="divorcé(e)"
-                                {{ isset($client) && $client->statut_matrimonial == 'divorcé(e)' ? 'selected' : '' }}>
+                                {{ isset($client) && strtolower($client->statut_matrimonial) == 'divorcé(e)' ? 'selected' : '' }}>
                                 Divorcé(e)
                             </option>
                             <option value="veuf(ve)"
-                                {{ isset($client) && $client->statut_matrimonial == 'veuf(ve)' ? 'selected' : '' }}>
+                                {{ isset($client) && strtolower($client->statut_matrimonial) == 'veuf(ve)' ? 'selected' : '' }}>
                                 Veuf(ve)
                             </option>
                         </select>
@@ -100,7 +100,7 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label>Téléphone</label>
-                        <input type="text" name="telephone" class="form-control"
+                        <input type="text" name="telephone" class="form-control" id="telephone"
                             value="{{ isset($client) ? $client->telephone : old('telephone') }}" required>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -151,6 +151,7 @@
                         <div class="col-md-6">
                             <label>Téléphone du référent</label>
                             <input type="text" name="reference_telephone" class="form-control"
+                                id="reference_telephone"
                                 value="{{ isset($client) ? $client->reference_telephone : old('reference_telephone') }}">
                         </div>
                     </div>
@@ -162,7 +163,7 @@
                         <option value="">Sélectionner un agent</option>
                         @foreach ($agents as $agent)
                             <option value="{{ $agent->id }}"
-                                {{ isset($client) && $client->agent_id == $agent->id ? 'selected' : '' }}>
+                                {{ (isset($currentAgentId) && $currentAgentId == $agent->id) || old('agent_id') == $agent->id ? 'selected' : '' }}>
                                 {{ $agent->nom }}
                             </option>
                         @endforeach
@@ -184,6 +185,40 @@
             </form>
         </div>
     </div>
+    <script src="{{ asset('js/imask.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const phoneInput = document.getElementById('telephone');
+            if (phoneInput) {
+                const maskOptions = {
+                    mask: '+228 00 00 00 00',
+                    lazy: false,
+                    placeholderChar: '_'
+                };
+                const mask = IMask(phoneInput, maskOptions);
+
+
+                if (phoneInput.value) {
+                    mask.unmaskedValue = phoneInput.value.replace(/\D/g, '').replace(/^228/, '');
+                }
+            }
+
+            const phoneInputReference = document.getElementById('reference_telephone');
+            if (phoneInputReference) {
+                const maskOptions = {
+                    mask: '+228 00 00 00 00',
+                    lazy: false,
+                    placeholderChar: '_'
+                };
+                const mask = IMask(phoneInputReference, maskOptions);
+
+
+                if (phoneInput.value) {
+                    mask.unmaskedValue = phoneInputReference.value.replace(/\D/g, '').replace(/^228/, '');
+                }
+            }
+        });
+    </script>
     <script>
         // 1. Fonction pour l'aperçu (mise à jour pour gérer le container)
         function previewImage(event) {

@@ -10,6 +10,7 @@ use App\Models\CreditPayment;
 use App\Models\CreditProduct;
 use App\Models\Cycle;
 use App\Models\PaymentTransaction;
+use App\Models\Recette;
 use App\Models\Retrait;
 use App\Services\CreditCalculator;
 use Carbon\Carbon;
@@ -79,13 +80,13 @@ class CreditController extends Controller
                         'id'                 => $carnet->id,
                         'numero'             => $carnet->numero,
                         'type'               => $carnet->type,
-                        'category'           => $carnet->categoryTontine->libelle,
+                        'category'           => optional($carnet->categoryTontine)->libelle,
+                        'required_pointages' => optional($carnet->categoryTontine)->minimumPointagesRequired() ?? 0,
                         'solde'              => ($carnet->type === 'compte') ? $carnet->solde_disponible : $carnet->activeCycleSavings(),
                         'solde_bloque'       => $carnet->credits->sum('montant_demande'),
                         'solde_tontine'      => $carnet->solde_tontine_non_retire,
                         'mise'               => $carnet->cycles->first()->montant_journalier ?? 0,
                         'total_pointages'    => $carnet->totalPointages(),
-                        'required_pointages' => $carnet->categoryTontine->minimumPointagesRequired() ?? 0,
                     ];
                 });
 
@@ -97,12 +98,10 @@ class CreditController extends Controller
             'creditProducts' => CreditProduct::with('creditObjects')->get(),
         ]);
     }
-
     public function store(Request $request)
     {
         $today = now()->toDateString();
 
-        // 0. Anticipation : On cherche s'il existe déjà un brouillon "pending" pour ce carnet
         $existingPendingCredit = null;
         if ($request->filled('carnet_id')) {
             $existingPendingCredit = Credit::where('carnet_id', $request->carnet_id)
@@ -363,7 +362,6 @@ class CreditController extends Controller
     }
 
     /**
-     * Récupère les détails complets d'un carnet
      * Retourne différentes informations selon le type de carnet
      */
     public function getCarnetDetails(int $id)
@@ -851,6 +849,40 @@ class CreditController extends Controller
                     'notes'             => $request->input('notes'),
                 ]);
 
+                // ENREGISTREMENT DE LA RECETTE : Remboursement Crédit
+
+                Recette::create([
+                    'ulid'          => strtolower((string) \Illuminate\Support\Str::ulid()),
+                    'reference'     => 'REC-RMB-' . date('Ymd') . '-' . $payment->id . '-' . time(),
+                    'type_recette'  => 'remboursement_credit',
+                    'montant'       => $amountPaye,
+                    'client_id'     => $credit->client_id,
+                    'credit_id'     => $credit->id,
+                    'user_id'       => auth()->id(),
+                    'mode_paiement' => $request->input('mode_paiement', 'especes'),
+                    'date_recette'  => now(),
+                    'commentaire'   => 'Remboursement échéance #' . $payment->echeance . ' du crédit #' . $credit->id,
+                ]);
+
+                // ENREGISTREMENT DE LA RECETTE : Pénalité (si applicable)
+
+                $penaliteMontant = array_key_exists('penalite', $updates) ? $updates['penalite'] : (float) $payment->penalite;
+
+                if ($penaliteMontant > 0) {
+
+                    Recette::create([
+                        'ulid'          => strtolower((string) \Illuminate\Support\Str::ulid()),
+                        'reference'     => 'REC-PEN-' . date('Ymd') . '-' . $payment->id . '-' . time(),
+                        'type_recette'  => 'penalite_retard',
+                        'montant'       => $penaliteMontant,
+                        'client_id'     => $credit->client_id,
+                        'credit_id'     => $credit->id,
+                        'user_id'       => auth()->id(),
+                        'mode_paiement' => $request->input('mode_paiement', 'especes'),
+                        'date_recette'  => now(),
+                        'commentaire'   => 'Perception de pénalité de retard - Échéance #' . $payment->echeance . ' (Crédit #' . $credit->id . ')',
+                    ]);
+                }
                 // Ajuster le cumulatif global remboursé sur le dossier de crédit
                 $credit->increment('montant_rembourse', $amountPaye);
             }

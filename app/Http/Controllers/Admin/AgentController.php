@@ -22,22 +22,7 @@ class AgentController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Récupération du terme de recherche
-        $search = $request->query('search');
-
-        // 2. Requête filtrée
-        $agents = Agent::query()
-            ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('nom', 'like', "%{$search}%")
-                        ->orWhere('code_agent', 'like', "%{$search}%")
-                        ->orWhere('telephone', 'like', "%{$search}%");
-                });
-            })
-            ->latest() // Trie par défaut
-            ->paginate(10)
-            ->withQueryString();
-
+        $agents = Agent::all();
         return view('admin.agents.index', compact('agents'));
     }
 
@@ -59,9 +44,13 @@ class AgentController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge([
+            'telephone' => str_replace([' ', '+228'], '', $request->telephone),
+        ]);
+
         $request->validate([
             'nom'       => 'required|string|max:255',
-            'telephone' => 'required',
+            'telephone' => 'required|digits:8',
             'email'     => 'required|email|unique:users,email',
             'password'  => 'required|min:4',
             'image'     => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -203,7 +192,9 @@ class AgentController extends Controller
      */
     public function edit($id)
     {
-        $agent = Agent::findOrFail($id);
+
+        $agent = Agent::where('ulid', $id)->firstOrFail();
+
         return view('admin.agents.form', compact('agent'));
     }
 

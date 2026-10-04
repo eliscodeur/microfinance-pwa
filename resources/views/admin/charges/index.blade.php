@@ -111,23 +111,20 @@
                         <div class="mb-3">
                             <label for="type_libelle" class="form-label fw-semibold">Libellé du type <span
                                     class="text-danger">*</span></label>
-                            <input type="text" name="libelle" id="type_libelle" class="form-control" required
-                                placeholder="Ex: Charges d'exploitation...">
+                            <input type="text" name="libelle" id="type_libelle" class="form-control" required>
                         </div>
 
                         <!-- AJOUT DU CHAMP CODE REQUIS PAR LA MIGRATION -->
                         <div class="mb-3">
                             <label for="type_code" class="form-label fw-semibold">Code unique <span
                                     class="text-danger">*</span></label>
-                            <input type="text" name="code" id="type_code" class="form-control" required
-                                placeholder="Ex: EXP, PERS, FIX...">
+                            <input type="text" name="code" id="type_code" class="form-control" required>
                             <div class="form-text text-muted">Un code court unique en majuscules (ex: EXP).</div>
                         </div>
 
                         <div class="mb-3">
                             <label for="type_description" class="form-label fw-semibold">Description (Optionnel)</label>
-                            <textarea name="description" id="type_description" rows="3" class="form-control"
-                                placeholder="Précisions sur ce type de charge..."></textarea>
+                            <textarea name="description" id="type_description" rows="3" class="form-control"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -165,22 +162,19 @@
                         <div class="mb-3">
                             <label for="libelle" class="form-label fw-semibold">Libellé de la catégorie <span
                                     class="text-danger">*</span></label>
-                            <input type="text" name="libelle" id="libelle" class="form-control" required
-                                placeholder="Ex: Loyer bureau, Carburant...">
+                            <input type="text" name="libelle" id="libelle" class="form-control" required>
                         </div>
 
                         <!-- AJOUT : Code analytique présent dans le modèle -->
                         <div class="mb-3">
                             <label for="code_analytique" class="form-label fw-semibold">Code Analytique
                                 (Optionnel)</label>
-                            <input type="text" name="code_analytique" id="code_analytique" class="form-control"
-                                placeholder="Ex: 606100">
+                            <input type="text" name="code_analytique" id="code_analytique" class="form-control">
                         </div>
 
                         <div class="mb-3">
                             <label for="description" class="form-label fw-semibold">Description (Optionnel)</label>
-                            <textarea name="description" id="description" rows="3" class="form-control"
-                                placeholder="Précisions sur cette catégorie..."></textarea>
+                            <textarea name="description" id="description" rows="3" class="form-control"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">

@@ -420,9 +420,9 @@
                     donutChart = new Chart(ctx, {
                         type: 'doughnut',
                         data: {
-                            labels: data.labels, // Noms des catégories de tontine
+                            labels: data.labels,
                             datasets: [{
-                                data: data.values, // Quantités vendues par catégorie
+                                data: data.values,
                                 backgroundColor: [
                                     '#28a745', '#17a2b8', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14'
                                 ],

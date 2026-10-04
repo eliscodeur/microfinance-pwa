@@ -15,6 +15,7 @@
     <!-- Styles DataTables & Buttons -->
     <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.0.2/css/buttons.bootstrap5.min.css">
+    <link rel="stylesheet" href="{{ asset('css/flatpickr.min.css') }}">
 
     <!-- jQuery & DataTables Core (Chargés ici pour être disponibles partout immédiatement) -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

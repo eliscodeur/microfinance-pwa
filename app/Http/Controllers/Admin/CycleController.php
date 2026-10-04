@@ -98,7 +98,7 @@ class CycleController extends Controller
         }
 
         if ($cycle->retire_at) {
-            return back()->with('error', 'Ce cycle a deja ete marque comme retire.');
+            return back()->with('error', 'Ce cycle a déjà été marqué comme retiré.');
         }
 
         $withdrawDate = $request->input('retire_at')

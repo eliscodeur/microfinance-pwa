@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -9,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ClientAgentHistory extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUlids;
 
     protected $table = 'client_agent_history';
 
@@ -22,7 +21,7 @@ class ClientAgentHistory extends Model
     ];
 
     protected $casts = [
-        'assigned_at' => 'datetime',
+        'assigned_at'   => 'datetime',
         'unassigned_at' => 'datetime',
     ];
 
@@ -30,7 +29,7 @@ class ClientAgentHistory extends Model
     {
         return ['ulid'];
     }
-    
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);

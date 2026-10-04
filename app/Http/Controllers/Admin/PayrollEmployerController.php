@@ -3,7 +3,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DeductionAvance;
+use App\Models\Depense;
 use App\Models\EmployeAdministratif;
+use App\Models\MouvementCaisse;
 use App\Models\SalaireEmploye;
 use App\Models\SalaryAdvance;
 use Carbon\Carbon;
@@ -133,7 +135,7 @@ class PayrollEmployerController extends Controller
             $mois  = $dateDebut->month;
             $annee = $dateDebut->year;
 
-            $employes = EmployeAdministratif::where('actif', true)->get();
+            $employes = EmployeAdministratif::where('actif', 1)->get();
 
             if ($employes->isEmpty()) {
                 return redirect()->back()->with('error', 'Aucun employé actif trouvé pour cette période.');
@@ -177,7 +179,7 @@ class PayrollEmployerController extends Controller
 
                             if (! $deductionExistante) {
                                 DB::table('deductions_avances')->insert([
-                                    'ulid'                     => (string) Str::ulid(),
+                                    'ulid'                     => strtolower((string) Str::ulid()),
                                     'employe_administratif_id' => $employe->id,
                                     'salary_advance_id'        => $avance->id,
                                     'montant'                  => $montantTranche,
@@ -224,7 +226,7 @@ class PayrollEmployerController extends Controller
                     ];
                 }
 
-                // 2. GESTION DE LA DÉPENSE UNIQUE GLOBALE DU MOIS
+                // 2. GESTION DE LA DÉPENSE UNIQUE GLOBALE DU MOIS ET DU MOUVEMENT DE CAISSE
                 $referencePiece = 'SAL-ADMIN-' . $annee . '-' . str_pad($mois, 2, '0', STR_PAD_LEFT);
 
                 // Formatage pro du nom du mois en français
@@ -232,21 +234,32 @@ class PayrollEmployerController extends Controller
                 $motifDepense = 'Règlement global des salaires du personnel administratif - Période de ' . $nomMoisLong . ' ' . $annee;
 
                 // Chercher si une dépense globale existe déjà pour ce mois
-                $depenseGlobaleId = DB::table('depenses')
-                    ->where('reference_piece', $referencePiece)
-                    ->value('id');
+                $depenseGlobale   = DB::table('depenses')->where('reference_piece', $referencePiece)->first();
+                $depenseGlobaleId = $depenseGlobale ? $depenseGlobale->id : null;
 
                 if ($totalMoisNet > 0) {
                     if ($depenseGlobaleId) {
+                        // Mise à jour de la dépense existante
                         DB::table('depenses')->where('id', $depenseGlobaleId)->update([
                             'categories_charge_id' => $categorieId,
                             'montant'              => $totalMoisNet,
                             'motif'                => $motifDepense,
                             'updated_at'           => now(),
                         ]);
+
+                        // Mise à jour du mouvement de caisse lié
+                        MouvementCaisse::where('source_type', Depense::class)
+                            ->where('source_id', $depenseGlobaleId)
+                            ->update([
+                                'montant'        => $totalMoisNet,
+                                'libelle'        => 'Dépense : ' . $motifDepense,
+                                'date_mouvement' => now(),
+                            ]);
+
                     } else {
+                        // Création de la dépense globale
                         $depenseGlobaleId = DB::table('depenses')->insertGetId([
-                            'ulid'                 => (string) Str::ulid(),
+                            'ulid'                 => strtolower((string) Str::ulid()),
                             'categories_charge_id' => $categorieId,
                             'montant'              => $totalMoisNet,
                             'date_depense'         => now(),
@@ -258,9 +271,29 @@ class PayrollEmployerController extends Controller
                             'created_at'           => now(),
                             'updated_at'           => now(),
                         ]);
+
+                        // Création automatique du mouvement de caisse (SORTIE)
+                        MouvementCaisse::create([
+                            'ulid'           => strtolower((string) Str::ulid()),
+                            'type_operation' => 'salaire employe',
+                            'sens'           => 'sortie',
+                            'montant'        => $totalMoisNet,
+                            'date_mouvement' => now(),
+                            'mode_paiement'  => 'Virement Bancaire',
+                            'reference'      => $referencePiece,
+                            'libelle'        => 'Dépense : ' . $motifDepense,
+                            'source_type'    => Depense::class,
+                            'source_id'      => $depenseGlobaleId,
+                            'user_id'        => auth()->id(),
+                        ]);
                     }
                 } else {
+                    // Si le montant net global tombe à 0, on supprime la dépense et le mouvement de caisse associé
                     if ($depenseGlobaleId) {
+                        MouvementCaisse::where('source_type', Depense::class)
+                            ->where('source_id', $depenseGlobaleId)
+                            ->delete();
+
                         DB::table('depenses')->where('id', $depenseGlobaleId)->delete();
                         $depenseGlobaleId = null;
                     }
@@ -280,7 +313,7 @@ class PayrollEmployerController extends Controller
                             'annee'      => $annee,
                         ],
                         [
-                            'ulid'               => optional($salaireExistant)->ulid ?? (string) Str::ulid(),
+                            'ulid'               => optional($salaireExistant)->ulid ?? strtolower((string) Str::ulid()),
                             'depense_id'         => $depenseGlobaleId,
                             'salaire_base'       => $data['salaire_base'],
                             'primes_totales'     => 0,

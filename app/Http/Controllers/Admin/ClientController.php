@@ -9,6 +9,7 @@ use App\Models\ClientCarnetNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ClientController extends Controller
 {
@@ -26,16 +27,20 @@ class ClientController extends Controller
 
     public function create()
     {
-        $agents = Agent::all();
+        $agents = Agent::where('actif', true)->orderBy("nom", 'ASC')->get();
         return view('admin.clients.form', compact('agents'));
     }
 
     public function store(Request $request)
     {
+        $request->merge([
+            'telephone' => str_replace([' ', '+228'], '', $request->telephone),
+        ]);
+
         $validated = $request->validate([
             'nom'       => 'required|string|max:255',
             'prenom'    => 'required|string|max:255',
-            'telephone' => 'required|string',
+            'telephone' => 'required|digits:8',
             'agent_id'  => 'nullable|exists:agents,id',
             'photo'     => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -50,6 +55,7 @@ class ClientController extends Controller
 
             if ($request->filled('agent_id')) {
                 ClientAgentHistory::create([
+                    'ulid'        => strtolower((string) Str::ulid()),
                     'client_id'   => $client->id,
                     'agent_id'    => $request->agent_id,
                     'assigned_at' => now(),
@@ -71,20 +77,30 @@ class ClientController extends Controller
 
     public function edit(string $ulid)
     {
-        $client = Client::findOrFail($ulid);
-        $agents = Agent::all();
+        $client = Client::where('ulid', $ulid)->firstOrFail();
 
-        return view('admin.clients.form', compact('client', 'agents'));
+        $activeHistory = ClientAgentHistory::where('client_id', $client->id)
+            ->whereNull('unassigned_at')
+            ->first();
+
+        $currentAgentId = $activeHistory ? $activeHistory->agent_id : null;
+
+        $agents = Agent::where('actif', true)->get();
+
+        return view('admin.clients.form', compact('client', 'agents', 'currentAgentId'));
     }
 
     public function update(Request $request, string $ulid)
     {
-        $client = Client::findOrFail($ulid);
+        $client = Client::where('ulid', $ulid)->firstOrFail();
+        $request->merge([
+            'telephone' => str_replace([' ', '+228'], '', $request->telephone),
+        ]);
 
         $validated = $request->validate([
             'nom'       => 'required|string|max:255',
             'prenom'    => 'required|string|max:255',
-            'telephone' => 'required|string|max:20',
+            'telephone' => 'required|digits:8',
             'agent_id'  => 'nullable|exists:agents,id',
             'photo'     => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -129,110 +145,6 @@ class ClientController extends Controller
         $client->delete();
         return redirect()->route('admin.clients.index')->with('success', 'Client supprimé');
     }
-
-    // public function export(Request $request, string $format)
-    // {
-    //     $exportAll = $request->boolean('all'); // Option pour tout exporter
-    //     $search    = trim((string) $request->query('search', ''));
-    //     $agentId   = $request->query('agent_id');
-
-    //     $query = Client::with('agent');
-
-    //     // Applique les filtres uniquement si "all" n'est pas demandé
-    //     if (! $exportAll) {
-    //         $query->when($search !== '', function ($q) use ($search) {
-    //             $q->where(function ($subQuery) use ($search) {
-    //                 $subQuery->where('nom', 'like', "%{$search}%")
-    //                     ->orWhere('prenom', 'like', "%{$search}%")
-    //                     ->orWhere('telephone', 'like', "%{$search}%")
-    //                     ->orWhere('adresse', 'like', "%{$search}%")
-    //                     ->orWhere(DB::raw("CONCAT(nom, ' ', prenom)"), 'like', "%{$search}%");
-    //             });
-    //         })
-    //             ->when($agentId, fn($q) => $q->where('agent_id', $agentId));
-    //     }
-
-    //     $clients = $query->get();
-
-    //     if ($clients->isEmpty()) {
-    //         return redirect()->back()->with('error', 'Aucun client trouvé pour l\'exportation.');
-    //     }
-
-    //     $extension = ($format === 'excel') ? 'xlsx' : 'csv';
-    //     $filename  = 'clients_' . ($exportAll ? 'complet_' : 'filtre_') . date('Y-m-d_His') . '.' . $extension;
-
-    //     // --- ENREGISTREMENT DE LA TRACE EN BDD ---
-    //     ExportHistory::create([
-    //         'user_id'      => auth()->id(),
-    //         'module'       => 'clients',
-    //         'type_export'  => $format,
-    //         'filename'     => $filename,
-    //         'filters_used' => $exportAll ? ['mode' => 'export_integral'] : [
-    //             'search'   => $search ?: null,
-    //             'agent_id' => $agentId ?: null,
-    //         ],
-    //     ]);
-
-    //     // --- GÉNÉRATION DU FICHIER ---
-    //     if ($format == 'csv') {
-    //         $headers = [
-    //             'Content-Type'        => 'text/csv',
-    //             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-    //         ];
-
-    //         $callback = function () use ($clients) {
-    //             $handle = fopen('php://output', 'w');
-    //             fputcsv($handle, ['Nom', 'Prénom', 'Téléphone', 'Adresse', 'Agent Inscripteur']);
-
-    //             foreach ($clients as $client) {
-    //                 fputcsv($handle, [
-    //                     $client->nom,
-    //                     $client->prenom,
-    //                     $client->telephone,
-    //                     $client->adresse,
-    //                     $client->agent->nom ?? 'Aucun',
-    //                 ]);
-    //             }
-    //             fclose($handle);
-    //         };
-
-    //         return response()->stream($callback, 200, $headers);
-
-    //     } elseif ($format == 'excel') {
-    //         return Excel::download(new class($clients) implements FromCollection
-    //         {
-    //             private $clients;
-
-    //             public function __construct($clients)
-    //             {
-    //                 $this->clients = $clients;
-    //             }
-
-    //             public function collection()
-    //             {
-    //                 $rows = collect($this->clients)->map(function ($client) {
-    //                     return [
-    //                         $client->nom,
-    //                         $client->prenom,
-    //                         $client->telephone,
-    //                         $client->adresse,
-    //                         $client->agent->nom ?? 'Aucun',
-    //                     ];
-    //                 });
-
-    //                 return $rows->prepend([
-    //                     'Nom',
-    //                     'Prénom',
-    //                     'Téléphone',
-    //                     'Adresse',
-    //                     'Agent Inscripteur',
-    //                 ]);
-    //             }
-    //         }, $filename); // Utilisation du nouveau nom de fichier dynamique
-    //     }
-
-    //     return redirect()->back();
-    // }
 
     public function storeNumCarnet(Request $request)
     {
