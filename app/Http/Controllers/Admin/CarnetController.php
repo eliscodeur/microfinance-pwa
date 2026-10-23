@@ -411,9 +411,8 @@ class CarnetController extends Controller
                 $client  = Client::findOrFail($validated['client_id']);
                 $cycleId = null;
 
-                // Si c'est un carnet de tontine, on cherche ou associe le cycle actif
                 if ($carnet->type === 'tontine') {
-                    // Exemple : récupérer le dernier cycle non clôturé (ou adapter selon ta relation)
+                    // récupérer le dernier cycle non clôturé
                     $cycleActif = $carnet->cycles()->whereNull('retire_at')->latest()->first();
                     $cycleId    = $cycleActif ? $cycleActif->id : null;
                 }
