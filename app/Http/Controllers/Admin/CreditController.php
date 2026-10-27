@@ -9,6 +9,7 @@ use App\Models\CreditGuarantor;
 use App\Models\CreditPayment;
 use App\Models\CreditProduct;
 use App\Models\Cycle;
+use App\Models\mouvementcaisse;
 use App\Models\PaymentTransaction;
 use App\Models\Recette;
 use App\Models\Retrait;
@@ -794,13 +795,13 @@ class CreditController extends Controller
                 $updates['penalite'] = round($request->input('penalite'), 0);
             }
 
-            // 2. Traitement d'un versement financier au guichet
             if ($request->filled('montant_paye')) {
                 $amountPaye  = round((float) $request->input('montant_paye'), 0);
                 $currentPaid = (float) $payment->montant_paye;
 
-                $penalite     = array_key_exists('penalite', $updates) ? $updates['penalite'] : (float) $payment->penalite;
-                $totalDue     = (float) $payment->montant_total + $penalite;
+                $penalite = array_key_exists('penalite', $updates) ? $updates['penalite'] : (float) $payment->penalite;
+                $totalDue = (float) $payment->montant_total + $penalite;
+                // Correction de la syntaxe de soustraction pour le reste exigible
                 $remainingDue = round($totalDue - $currentPaid, 0);
 
                 // Contrôle strict de l'ordre d'amortissement
@@ -849,8 +850,7 @@ class CreditController extends Controller
                     'notes'             => $request->input('notes'),
                 ]);
 
-                // ENREGISTREMENT DE LA RECETTE : Remboursement Crédit
-
+                // --- ENREGISTREMENT DE LA RECETTE : Remboursement Crédit ---
                 Recette::create([
                     'ulid'          => strtolower((string) \Illuminate\Support\Str::ulid()),
                     'reference'     => 'REC-RMB-' . date('Ymd') . '-' . $payment->id . '-' . time(),
@@ -861,15 +861,13 @@ class CreditController extends Controller
                     'user_id'       => auth()->id(),
                     'mode_paiement' => $request->input('mode_paiement', 'especes'),
                     'date_recette'  => now(),
-                    'commentaire'   => 'Remboursement échéance #' . $payment->echeance . ' du crédit #' . $credit->id,
+                    'commentaire'   => 'Remboursement échéance #' . $payment->echeance . ' du crédit #' . $credit->credit_uid,
                 ]);
 
-                // ENREGISTREMENT DE LA RECETTE : Pénalité (si applicable)
-
+                // --- ENREGISTREMENT DE LA RECETTE : Pénalité (si applicable) ---
                 $penaliteMontant = array_key_exists('penalite', $updates) ? $updates['penalite'] : (float) $payment->penalite;
 
                 if ($penaliteMontant > 0) {
-
                     Recette::create([
                         'ulid'          => strtolower((string) \Illuminate\Support\Str::ulid()),
                         'reference'     => 'REC-PEN-' . date('Ymd') . '-' . $payment->id . '-' . time(),
@@ -883,6 +881,22 @@ class CreditController extends Controller
                         'commentaire'   => 'Perception de pénalité de retard - Échéance #' . $payment->echeance . ' (Crédit #' . $credit->id . ')',
                     ]);
                 }
+
+                // --- ENREGISTREMENT DU MOUVEMENT DE CAISSE (Entrée physique d'argent) ---
+                MouvementCaisse::create([
+                    'ulid'           => strtolower((string) Str::ulid()),
+                    'type_operation' => 'remboursement credit',
+                    'sens'           => 'entree',
+                    'montant'        => $amountPaye,
+                    'date_mouvement' => now(),
+                    'mode_paiement'  => $request->input('mode_paiement', 'especes'),
+                    'reference'      => 'MVT-RMB-' . date('Ymd') . '-' . $payment->id . '-' . time(),
+                    'libelle'        => 'Encaissement remboursement échéance #' . $payment->echeance . ' (Crédit #' . $credit->credit_uid . ')',
+                    'source_type'    => get_class($payment),
+                    'source_id'      => $payment->id,
+                    'user_id'        => auth()->id(),
+                ]);
+
                 // Ajuster le cumulatif global remboursé sur le dossier de crédit
                 $credit->increment('montant_rembourse', $amountPaye);
             }

@@ -175,7 +175,7 @@ class SalaryAdvanceController extends Controller
             ]);
         });
     }
-    public function validateAdvance($uid)
+    public function validerAvance($uid)
     {
         try {
             return DB::transaction(function () use ($uid) {
@@ -191,10 +191,10 @@ class SalaryAdvanceController extends Controller
 
                 // 1. Mise à jour du statut et de l'approbateur
                 $avance->update([
-                    'statut'      => 'valide',
+                    'statut'      => 'en_cours',
                     'approved_by' => auth()->id(),
                 ]);
-
+                // dd('Ici');
                 // 2. Enregistrement automatique du mouvement de caisse (Sortie d'argent)
                 MouvementCaisse::create([
                     'ulid'           => strtolower((string) Str::ulid()),
@@ -210,17 +210,13 @@ class SalaryAdvanceController extends Controller
                     'user_id'        => auth()->id(),
                 ]);
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'L\'avance sur salaire a été validée et le décaissement a été enregistré en caisse avec succès !',
-                ]);
+                return redirect()->back()->with('success', 'L\'avance sur salaire a été validée et le décaissement a été enregistré en caisse avec succès !');
             });
 
         } catch (\Exception $e) {
-            // Enregistre l'erreur exacte dans les logs Laravel (storage/logs/laravel.log)
+
             Log::error("Erreur validation avance {$uid} : " . $e->getMessage());
 
-            // Retourne l'erreur explicitement au format JSON pour l'intercepter côté front
             return response()->json([
                 'success' => false,
                 'message' => 'Une erreur est survenue : ' . $e->getMessage(),
@@ -242,17 +238,17 @@ class SalaryAdvanceController extends Controller
         return view('admin.payrolls.avance', compact('avances'));
     }
 
-    public function validerAvance($id)
-    {
-        $avance = SalaryAdvance::where('advance_uid', $id)->firstOrFail();
+    // public function validerAvance($id)
+    // {
+    //     $avance = SalaryAdvance::where('advance_uid', $id)->firstOrFail();
 
-        $avance->update([
-            'statut'      => 'en_cours',
-            'approved_by' => auth()->id(),
-        ]);
+    //     $avance->update([
+    //         'statut'      => 'en_cours',
+    //         'approved_by' => auth()->id(),
+    //     ]);
 
-        return back()->with('success', "L'avance sur salaire a été validée avec succès.");
-    }
+    //     return back()->with('success', "L'avance sur salaire a été validée avec succès.");
+    // }
 
     public function rejeterAvance($id)
     {

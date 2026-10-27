@@ -10,17 +10,14 @@ return new class extends Migration
     {
         Schema::create('salary_advances', function (Blueprint $table) {
             $table->id();
-            $table->char('advance_uid', 26)->unique(); // ULID unique
+            $table->char('advance_uid', 26)->unique();
             $table->foreignId('agent_id')->constrained('users')->onDelete('cascade');
 
-                                                            // Montants et étalement
-            $table->integer('montant_total');               // Montant total accordé
-            $table->integer('montant_mensuel');             // Quote-part déduite chaque mois
-            $table->integer('nombre_tranches');             // Nombre total de mois d'étalement
-            $table->integer('tranches_payees')->default(0); // Tranches déjà prélevées
-            $table->integer('montant_restant');             // Solde restant à rembourser
-
-            // Suivi et métadonnées
+            $table->integer('montant_total');
+            $table->integer('montant_mensuel');
+            $table->integer('nombre_tranches');
+            $table->integer('tranches_payees')->default(0);
+            $table->integer('montant_restant');
             $table->date('date_demande');
             $table->enum('statut', ['en_attente', 'en_cours', 'soldee', 'rejetee'])->default('en_attente');
             $table->text('motif')->nullable();

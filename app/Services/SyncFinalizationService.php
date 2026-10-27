@@ -5,16 +5,19 @@ use App\Models\Agent;
 use App\Models\Bonus;
 use App\Models\Collecte;
 use App\Models\Cycle;
+use App\Models\MouvementCaisse;
 use App\Models\SyncBatch;
 use App\Models\SyncHistory;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SyncFinalizationService
 {
     /**
-     * Point d'entrée principal — orchestre toutes les étapes de finalisation.
+     * Point d'entrée principal.
      */
     public function handle(SyncBatch $batch, int $adminId): void
     {
@@ -26,6 +29,7 @@ class SyncFinalizationService
             $mappedCycleIds = $this->updateAgentPins($batch);
             $mappedCycleIds = $this->processCycles($batch, $mappedCycleIds);
             $this->processCollectes($batch, $mappedCycleIds);
+            $this->createMouvementCaisse($batch, $adminId);
             $this->createHistory($batch);
             $this->finalizeBatch($batch, $adminId);
         });
@@ -163,6 +167,30 @@ class SyncFinalizationService
                 }
             }
         }
+    }
+
+    /**
+     * Étape 4 — Enregistre le mouvement de caisse global pour la synchronisation.
+     */
+    private function createMouvementCaisse(SyncBatch $batch, int $adminId): void
+    {
+        if ($batch->total_montant <= 0) {
+            return;
+        }
+
+        MouvementCaisse::create([
+            'ulid'           => strtolower((string) Str::ulid()),
+            'type_operation' => 'collecte',
+            'sens'           => 'entree',
+            'montant'        => $batch->total_montant,
+            'date_mouvement' => now(),
+            'mode_paiement'  => 'especes',
+            'reference'      => 'SYNC-BATCH-' . $batch->sync_uuid,
+            'libelle'        => 'Encaissement synchronisation terrain - Batch #' . $batch->sync_uuid,
+            'source_type'    => SyncBatch::class,
+            'source_id'      => $batch->id,
+            'user_id'        => $adminId,
+        ]);
     }
 
     /**
