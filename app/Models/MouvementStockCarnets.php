@@ -19,6 +19,7 @@ class MouvementStockCarnets extends Model
         'categories_tontine_id',
         'type',
         'quantite',
+        'quantite_restante',
         'prix_unitaire_achat',
         'prix_unitaire_vente',
         'motif',

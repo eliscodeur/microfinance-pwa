@@ -17,12 +17,14 @@ class DatabaseSeeder extends Seeder
             AgentSeeder::class,
             CategoryTontineSeeder::class,
             ClientSeeder::class,
-            CarnetSeeder::class,
             CreditSystemSeeder::class,
             ClientCarnetNumberSeeder::class,
+            CarnetSeeder::class,
             SalaryGridSeeder::class,
             FonctionSeeder::class,
             EmployeAdministratifSeeder::class,
+            TypesChargesSeeder::class,
+            CategoriesChargesSeeder::class,
         ]);
     }
 }

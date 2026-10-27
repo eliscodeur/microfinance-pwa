@@ -92,7 +92,7 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('/agents-list/{historyUlid}', [AgentController::class, 'getAgentsExceptCurrent'])->name('agents.list.except');
     Route::post('/carnet-historique/{ulid}/reassign', [CarnetController::class, 'reassign'])->name('carnets.reassign');
     Route::resource('bonuses', BonusController::class)->only(['index', 'store', 'destroy'])->middleware('can:Gérer Commissions');
-    Route::put('/parametres-tarifs/{parametreTarif}', [CategoryTontineController::class, 'updateTarifEpargne'])->name('parametres-tarifs.update');
+    Route::put('/parametres-tarifs', [CategoryTontineController::class, 'updateTarifEpargne'])->name('parametres-tarifs.update');
     Route::resource('clients', ClientController::class)->middleware('can:Gérer Clients');
     Route::get('clients/export/{format}', [ClientController::class, 'export'])->name('clients.export');
     Route::get('clients/{client}/export-history', [ClientController::class, 'exportHistory'])->name('clients.exportHistory');

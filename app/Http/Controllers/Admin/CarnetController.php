@@ -15,6 +15,7 @@ use App\Models\Recette;
 use App\Models\Retrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -68,67 +69,10 @@ class CarnetController extends Controller
             return redirect()->back()->with('error', "Une erreur est survenue : " . $e->getMessage());
         }
     }
-    // public function store(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'client_id'               => 'required|exists:clients,id',
-    //         'type'                    => 'required|in:tontine,compte',
-    //         'category_tontine_id'     => 'required_if:type,tontine',
-    //         'parent_id'               => 'nullable|exists:carnets,id',
-    //         'client_carnet_number_id' => 'required|exists:client_carnet_numbers,id',
-    //         'agent_id'                => 'required|exists:agents,id',
-    //     ], [
-    //         'client_id.required'               => 'Le client est obligatoire.',
-    //         'category_tontine_id.required_if'  => 'Veuillez choisir une catégorie pour la tontine.',
-    //         'client_carnet_number_id.required' => 'Veuillez sélectionner un numéro de carnet.',
-    //         'agent_id.required'                => 'Veuillez sélectionner un agent.',
-    //     ]);
-
-    //     DB::beginTransaction();
-    //     try {
-    //         // 1. Récupérer le numéro physique source
-    //         $carnetNumber = ClientCarnetNumber::findOrFail($request->client_carnet_number_id);
-
-    //         $validated['numero']     = $carnetNumber->numero;
-    //         $validated['ulid']       = strtolower((string) \Illuminate\Support\Str::ulid());
-    //         $validated['statut']     = 'actif';
-    //         $validated['date_debut'] = now()->toDateString();
-    //         $validated['created_by'] = auth()->id();
-
-    //         if ($validated['type'] === 'compte') {
-    //             $validated['category_tontine_id'] = null;
-    //         }
-    //         // Créer le carnet
-    //         $carnet = Carnet::create($validated);
-    //         // Enregistrer l'historique de l'attribution de l'agent
-    //         CarnetAgentHistory::create([
-    //             'ulid'        => strtolower((string) \Illuminate\Support\Str::ulid()),
-    //             'carnet_id'   => $carnet->id,
-    //             'agent_id'    => $validated['agent_id'],
-    //             'assigned_at' => now(),
-    //         ]);
-
-    //         DB::table('client_carnet_numbers')
-    //             ->where('id', $carnetNumber->id)
-    //             ->update([
-    //                 'statut'     => 'utilise',
-    //                 'used_at'    => now(),
-    //                 'updated_at' => now(),
-    //             ]);
-
-    //         DB::commit();
-    //         return redirect()->route('admin.carnets.index')
-    //             ->with('success', "Carnet n° " . $carnet->numero . " créé avec succès.");
-
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-    //         dd($e->getMessage());
-    //         return back()->withInput()->with('error', 'Erreur : ' . $e->getMessage());
-    //     }
-    // }
 
     public function store(Request $request)
     {
+
         $validated = $request->validate([
             'client_id'               => 'required|exists:clients,id',
             'type'                    => 'required|in:tontine,compte',
@@ -164,8 +108,11 @@ class CarnetController extends Controller
                 $categorie         = DB::table('categories_tontine')->where('id', $categoryTontineId)->first();
                 $prixVente         = $categorie ? $categorie->prix : 0;
             } else {
-                $tarif     = DB::table('parametre_tarifs')->where('code', 'carnet_epargne_prix')->first();
-                $prixVente = $tarif ? $tarif->prix : 0;
+                $tarif = DB::table('parametre_tarifs')->where('code', 'carnet_epargne_prix')->first();
+                if (! $tarif) {
+                    return back()->withErrors(['error' => 'Le prix de vente des carnets n\'est pas configuré pour ce stock de carnets. Veuillez renseigner le tarif dans les paramètres.'])->withInput();
+                }
+                $prixVente = $tarif->prix;
             }
 
             // 3. LOGIQUE FIFO AVEC DISTINCTION TONTINE / COMPTE
@@ -215,19 +162,33 @@ class CarnetController extends Controller
                 'assigned_at' => now(),
             ]);
 
-            // Enregistrement automatique de la recette
-
-            Recette::create([
+            // Enregistrement de la recette de vente
+            $recette = Recette::create([
                 'ulid'          => strtolower((string) \Illuminate\Support\Str::ulid()),
-                'reference'     => 'REC-CAR-' . date('Ymd') . '-' . $carnet->id,
+                'reference'     => 'REC-CAR-' . date('Ymd') . '-' . uniqid(),
                 'type_recette'  => 'vente_carnet',
                 'montant'       => $prixVente,
-                'client_id'     => $validated['client_id'],
+                'client_id'     => $request->client_id,
                 'credit_id'     => null,
-                'user_id'       => auth()->id(),
-                'mode_paiement' => 'especes',
-                'date_recette'  => now(),
-                'commentaire'   => 'Vente automatique du carnet n° ' . $carnet->numero,
+                'user_id'       => Auth::id(),
+                'mode_paiement' => $request->mode_paiement ?? 'especes',
+                'date_recette'  => $request->date_vente ?? now()->toDateString(),
+                'commentaire'   => $request->motif ?? 'Vente de carnets',
+            ]);
+
+            // Enregistrement du mouvement de caisse (Entrée d'argent)
+            MouvementCaisse::create([
+                'ulid'           => strtolower((string) Str::ulid()),
+                'type_operation' => 'vente_carnet',
+                'sens'           => 'entree',
+                'montant'        => $prixVente,
+                'date_mouvement' => $request->date_vente ?? now()->toDateString() . ' ' . now()->format('H:i:s'),
+                'mode_paiement'  => $request->mode_paiement ?? 'especes',
+                'reference'      => $recette->reference,
+                'libelle'        => 'Encaissement : ' . ($request->motif ?? 'Vente de carnets'),
+                'source_type'    => Recette::class,
+                'source_id'      => $recette->id,
+                'user_id'        => Auth::id(),
             ]);
 
             //  Mettre à jour le statut du numéro physique
@@ -256,6 +217,7 @@ class CarnetController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            dd($e->getMessage());
             return back()->withInput()->with('error', 'Erreur : ' . $e->getMessage());
         }
     }

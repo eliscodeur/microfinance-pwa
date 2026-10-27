@@ -174,9 +174,7 @@
     <!-- Modal Modification Prix Carnet d'Épargne -->
     <div class="modal fade" id="editEpargneModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <form id="editEpargneForm"
-                action="{{ isset($tarifEpargne) ? route('admin.parametres-tarifs.update', $tarifEpargne->id) : '#' }}"
-                method="POST" class="modal-content border-0 shadow">
+            <form form id="editEpargneForm" action="{{ route('admin.parametres-tarifs.update') }}" method="POST" class="modal-content border-0 shadow">
                 @csrf @method('PUT')
                 <div class="modal-header border-bottom-0">
                     <h5 class="modal-title fw-bold">Modifier le prix du carnet d'épargne</h5>
@@ -248,6 +246,7 @@
                 }
 
                 // Modification Prix Carnet d'Épargne
+
                 const btnEpargne = e.target.closest('.edit-epargne-btn');
                 if (btnEpargne) {
                     const editEpargneForm = document.getElementById('editEpargneForm');
@@ -257,10 +256,9 @@
 
                     document.getElementById('epargne_libelle').value = btnEpargne.dataset.libelle || '';
                     document.getElementById('epargne_prix').value = btnEpargne.dataset.prix || 0;
-
-                    if (btnEpargne.dataset.id) {
-                        editEpargneForm.action = `/admin/parametres-tarifs/${btnEpargne.dataset.id}`;
-                    }
+                    
+                    // Assure-toi que l'URL correspond exactement à ton nom de route Laravel
+                    editEpargneForm.action = "{{ route('admin.parametres-tarifs.update') }}";
                 }
 
                 // Suppression Catégorie

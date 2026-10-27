@@ -13,7 +13,7 @@ class ClientCarnetNumberSeeder extends Seeder
         $clients = Client::all();
 
         if ($clients->isEmpty()) {
-            return; // Sort si aucun client n'existe
+            return;
         }
 
         foreach ($clients as $client) {
@@ -22,7 +22,7 @@ class ClientCarnetNumberSeeder extends Seeder
                 client: $client,
                 typeCarnet: 'tontine',
                 quantite: 2,
-                createdBy: 1// ID de l'utilisateur qui crée ces numéros (ex: admin)
+                createdBy: 1
             );
 
             // Générer 1 numéro de carnet d'un autre type (ex: 'epargne')
@@ -30,7 +30,7 @@ class ClientCarnetNumberSeeder extends Seeder
                 client: $client,
                 typeCarnet: 'compte',
                 quantite: 1,
-                createdBy: 1// ID de l'utilisateur qui crée ces numéros (ex: admin)
+                createdBy: 1
             );
         }
     }

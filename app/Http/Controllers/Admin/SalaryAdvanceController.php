@@ -2,10 +2,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\MouvementCaisse;
 use App\Models\SalaryAdvance;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class SalaryAdvanceController extends Controller
@@ -175,27 +177,55 @@ class SalaryAdvanceController extends Controller
     }
     public function validateAdvance($uid)
     {
-        // On cherche directement par l'UID
-        $avance = SalaryAdvance::where('advance_uid', $uid)->firstOrFail();
+        try {
+            return DB::transaction(function () use ($uid) {
+                $avance = SalaryAdvance::where('advance_uid', $uid)->firstOrFail();
 
-        // Vérifier si l'avance est bien en attente
-        if ($avance->statut !== 'en_attente') {
+                // Vérifier si l'avance est bien en attente
+                if ($avance->statut !== 'en_attente') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cette avance a déjà été traitée.',
+                    ], 422);
+                }
+
+                // 1. Mise à jour du statut et de l'approbateur
+                $avance->update([
+                    'statut'      => 'valide',
+                    'approved_by' => auth()->id(),
+                ]);
+
+                // 2. Enregistrement automatique du mouvement de caisse (Sortie d'argent)
+                MouvementCaisse::create([
+                    'ulid'           => strtolower((string) Str::ulid()),
+                    'type_operation' => 'avance sur salaire',
+                    'sens'           => 'sortie',
+                    'montant'        => $avance->montant_total,
+                    'date_mouvement' => now()->toDateString() . ' ' . now()->format('H:i:s'),
+                    'mode_paiement'  => 'especes',
+                    'reference'      => 'AV-SAL-' . $avance->advance_uid,
+                    'libelle'        => 'Décaissement avance sur salaire (Réf: ' . $avance->advance_uid . ')',
+                    'source_type'    => SalaryAdvance::class,
+                    'source_id'      => $avance->id,
+                    'user_id'        => auth()->id(),
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'L\'avance sur salaire a été validée et le décaissement a été enregistré en caisse avec succès !',
+                ]);
+            });
+
+        } catch (\Exception $e) {
+            // Enregistre l'erreur exacte dans les logs Laravel (storage/logs/laravel.log)
+            Log::error("Erreur validation avance {$uid} : " . $e->getMessage());
+
+            // Retourne l'erreur explicitement au format JSON pour l'intercepter côté front
             return response()->json([
                 'success' => false,
-                'message' => 'Cette avance a déjà été traitée.',
-            ], 422);
+                'message' => 'Une erreur est survenue : ' . $e->getMessage(),
+            ], 500);
         }
-
-        // Mise à jour du statut et de l'approbateur
-        $avance->update([
-            'statut'      => 'valide',
-            'approved_by' => auth()->id(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'L\'avance sur salaire a été validée avec succès !',
-        ]);
     }
 
     public function index(Request $request)

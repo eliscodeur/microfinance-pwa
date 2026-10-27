@@ -15,7 +15,7 @@ class CategoryTontineController extends Controller
         $categories = CategoryTontine::orderBy('created_at', 'desc')->get();
 
         // Récupérer le tarif du carnet d'épargne (avec une valeur par défaut si absent)
-        $tarifEpargne = \App\Models\ParametreTarif::where('code', 'carnet_epargne_prix')->first();
+        $tarifEpargne = ParametreTarif::where('code', 'carnet_epargne_prix')->first();
 
         return view('admin.categorie-tontine.index', compact('categories', 'tarifEpargne'));
     }
@@ -121,7 +121,7 @@ class CategoryTontineController extends Controller
         }
     }
 
-    public function updateTarifEpargne(Request $request, ParametreTarif $parametreTarif)
+    public function updateTarifEpargne(Request $request)
     {
         $validated = $request->validate([
             'libelle' => 'required|string|max:255',
@@ -132,9 +132,11 @@ class CategoryTontineController extends Controller
             'prix.numeric'     => 'Le prix doit être un nombre valide.',
         ]);
 
-        $parametreTarif->update($validated);
+        ParametreTarif::updateOrCreate(
+            ['code' => 'carnet_epargne_prix'],
+            $validated
+        );
 
-        // Compatible avec ton AJAX dans la vue
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,

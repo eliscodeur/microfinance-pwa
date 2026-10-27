@@ -2,17 +2,23 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CategoriesCharge;
 use App\Models\CategoryTontine;
+use App\Models\Depense;
+use App\Models\MouvementCaisse;
 use App\Models\MouvementStockCarnets;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class StockCarnetController extends Controller
 {
 
     public function index()
     {
-        $categories = CategoryTontine::all();
-
+        $categories        = CategoryTontine::all();
+        $categoriesCharges = CategoriesCharge::where('actif', true)->with('typeCharge')->get();
         // Récupérer uniquement les entrées
         $entrees = MouvementStockCarnets::with('categoryTontine')
             ->where('type', 'entree')
@@ -44,11 +50,11 @@ class StockCarnetController extends Controller
             'sorties',
             'stockTontines',
             'stockComptes',
+            'categoriesCharges',
             'stockTotal'
         ));
     }
 
-    // Enregistrer une entrée (achat / arrivage)
     public function storeEntree(Request $request)
     {
         $request->validate([
@@ -57,19 +63,58 @@ class StockCarnetController extends Controller
             'quantite'              => 'required|integer|min:1',
             'prix_unitaire_achat'   => 'required|numeric|min:0',
             'motif'                 => 'nullable|string|max:255',
+            // Validation des champs financiers du formulaire
+            'categories_charge_id'  => 'required|exists:categories_charges,id',
+            'date_depense'          => 'required|date',
+            'mode_paiement'         => 'required|string|max:50',
+            'beneficiaire'          => 'nullable|string|max:255',
+            'reference_piece'       => 'nullable|string|max:255',
         ]);
 
-        $categorieId = $request->type_carnet === 'compte' ? null : $request->categories_tontine_id;
+        return DB::transaction(function () use ($request) {
+            $categorieId  = $request->type_carnet === 'compte' ? null : $request->categories_tontine_id;
+            $montantTotal = $request->quantite * $request->prix_unitaire_achat; // Correction ici (*)
+            $motifTexte   = $request->motif ?? 'Arrivage / Achat de carnets';
 
-        MouvementStockCarnets::create([
-            'categories_tontine_id' => $categorieId,
-            'type'                  => 'entree',
-            'quantite'              => $request->quantite,
-            'prix_unitaire_achat'   => $request->prix_unitaire_achat,
-            'motif'                 => $request->motif ?? 'Arrivage / Achat de carnets',
-        ]);
+            // 2. Enregistrement de l'entrée de stock
+            MouvementStockCarnets::create([
+                'categories_tontine_id' => $categorieId,
+                'type'                  => 'entree',
+                'quantite'              => $request->quantite,
+                'quantite_restante'     => $request->quantite,
+                'prix_unitaire_achat'   => $request->prix_unitaire_achat,
+                'motif'                 => $motifTexte,
+            ]);
 
-        return redirect()->route('admin.stocks.index')->with('success', 'Entrée de stock enregistrée avec succès.');
+            // 3. Enregistrement de la dépense financière
+            $depense = Depense::create([
+                'ulid'                 => strtolower((string) Str::ulid()),
+                'categories_charge_id' => $request->categories_charge_id,
+                'montant'              => $montantTotal,
+                'date_depense'         => $request->date_depense,
+                'beneficiaire'         => $request->beneficiaire,
+                'mode_paiement'        => $request->mode_paiement,
+                'reference_piece'      => $request->reference_piece,
+                'motif'                => $motifTexte,
+                'user_id'              => Auth::id(),
+            ]);
+
+            // 4. Enregistrement du mouvement de caisse (Sortie d'argent)
+            MouvementCaisse::create([
+                'ulid'           => strtolower((string) Str::ulid()),
+                'type_operation' => 'depense_operationnelle',
+                'sens'           => 'sortie',
+                'montant'        => $montantTotal,
+                'date_mouvement' => $request->date_depense ?? now()->toDateString() . ' ' . now()->format('H:i:s'),
+                'mode_paiement'  => $request->mode_paiement ?? 'especes',
+                'reference'      => $request->reference_piece ?? 'DEP-' . $depense->id,
+                'libelle'        => 'Dépense : ' . $motifTexte . ($request->beneficiaire ? ' ( Bénéficiaire: ' . $request->beneficiaire . ')' : ''),
+                'source_type'    => Depense::class,
+                'source_id'      => $depense->id,
+                'user_id'        => Auth::id(),
+            ]);
+
+            return redirect()->route('admin.stocks.index')->with('success', 'Entrée de stock et décaissement enregistrés avec succès.');
+        });
     }
-
 }

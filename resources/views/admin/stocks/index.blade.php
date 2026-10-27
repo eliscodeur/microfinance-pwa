@@ -282,19 +282,82 @@
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- SECTION 1 : Imputation Financière & Décaissement -->
+                    <h6 class="text-primary fw-bold mb-3">
+                        <i class="bi bi-wallet2 me-1"></i> 1. Imputation Financière & Décaissement
+                    </h6>
+
                     <div class="mb-3">
-                        <label for="type_carnet_select" class="form-label">Type de carnet <span
-                                class="text-danger">*</span></label>
-                        <select name="type_carnet" id="type_carnet_select" class="form-select" required
-                            onchange="toggleCategorieSelect()">
+                        <label for="categories_charge_id" class="form-label fw-semibold">
+                            Poste de charge / Catégorie <span class="text-danger">*</span>
+                        </label>
+                        <select name="categories_charge_id" id="categories_charge_id" class="form-select select2" required>
+                            <option value="">-- Sélectionner un poste comptable --</option>
+                            @foreach ($categoriesCharges as $cat)
+                                <option value="{{ $cat->id }}">
+                                    [{{ $cat->typeCharge->libelle ?? 'Général' }}] {{ $cat->libelle }}
+                                    @if ($cat->code_analytique)
+                                        ({{ $cat->code_analytique }})
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date_depense" class="form-label fw-semibold">
+                                Date de l'opération <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" name="date_depense" id="date_depense" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="mode_paiement" class="form-label fw-semibold">
+                                Mode de décaissement <span class="text-danger">*</span>
+                            </label>
+                            <select name="mode_paiement" id="mode_paiement" class="form-select" required>
+                                <option value="Espèces">Espèces (Caisse)</option>
+                                <option value="Virement Bancaire">Virement bancaire</option>
+                                <option value="Chèque">Chèque</option>
+                                <option value="Mobile Money">Mobile money (T-Money / Flooz)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="beneficiaire" class="form-label fw-semibold">Bénéficiaire / Fournisseur</label>
+                            <input type="text" name="beneficiaire" id="beneficiaire" class="form-control" placeholder="Nom de l'entreprise ou personne payée">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="reference_piece" class="form-label fw-semibold">Pièce justificative (N° Facture/Reçu)</label>
+                            <input type="text" name="reference_piece" id="reference_piece" class="form-control">
+                        </div>
+                    </div>
+
+                    <hr class="my-4 text-muted">
+
+                    <!-- SECTION 2 : Caractéristiques du Stock de Carnets -->
+                    <h6 class="text-primary fw-bold mb-3">
+                        <i class="bi bi-box-seam me-1"></i> 2. Caractéristiques du Stock
+                    </h6>
+
+                    <div class="mb-3">
+                        <label for="type_carnet_select" class="form-label fw-semibold">
+                            Type de carnet <span class="text-danger">*</span>
+                        </label>
+                        <select name="type_carnet" id="type_carnet_select" class="form-select" required onchange="toggleCategorieSelect()">
                             <option value="compte">Carnet d'Épargne</option>
                             <option value="tontine">Tontine</option>
                         </select>
                     </div>
 
                     <div class="mb-3" id="wrapper_categorie" style="display: none;">
-                        <label for="categories_tontine_id" class="form-label">Catégorie de tontine <span
-                                class="text-danger">*</span></label>
+                        <label for="categories_tontine_id" class="form-label fw-semibold">
+                            Catégorie de tontine <span class="text-danger">*</span>
+                        </label>
                         <select name="categories_tontine_id" id="categories_tontine_id" class="form-select">
                             <option value="">-- Sélectionner une catégorie --</option>
                             @foreach ($categories as $cat)
@@ -303,22 +366,24 @@
                         </select>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="quantite_entree" class="form-label">Quantité reçue <span
-                                class="text-danger">*</span></label>
-                        <input type="number" name="quantite" id="quantite_entree" class="form-control" min="1"
-                            required>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="quantite_entree" class="form-label fw-semibold">
+                                Quantité reçue <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" name="quantite" id="quantite_entree" class="form-control" min="1" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="prix_unitaire_achat" class="form-label fw-semibold">
+                                Prix d'achat unitaire (F CFA) <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" step="0.01" name="prix_unitaire_achat" id="prix_unitaire_achat" class="form-control" min="0" required >
+                        </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="prix_unitaire_achat" class="form-label">Prix d'achat unitaire (F CFA) <span
-                                class="text-danger">*</span></label>
-                        <input type="number" step="0.01" name="prix_unitaire_achat" id="prix_unitaire_achat"
-                            class="form-control" min="0" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="motif_entree" class="form-label">Motif / Référence facture</label>
+                        <label for="motif_entree" class="form-label fw-semibold">Motif / Observation</label>
                         <input type="text" name="motif" id="motif_entree" class="form-control">
                     </div>
                 </div>

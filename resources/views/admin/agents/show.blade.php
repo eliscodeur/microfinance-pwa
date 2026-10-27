@@ -73,10 +73,10 @@
                         <div class="mb-3">
                             @php
                                 // On vérifie s'il existe une avance avec le statut 'en_attente'
-$hasPendingAdvance = collect($avancesList ?? [])->contains('statut', 'en_attente');
+                                $hasPendingAdvance = collect($avancesList ?? [])->contains('statut', 'en_attente');
 
-// Optionnel : Si tu veux aussi bloquer si une avance est 'en_cours' (selon ta règle métier)
-// $hasActiveOrPending = collect($avancesList ?? [])->whereIn('statut', ['en_attente', 'en_cours'])->isNotEmpty();
+
+                                // $hasActiveOrPending = collect($avancesList ?? [])->whereIn('statut', ['en_attente', 'en_cours'])->isNotEmpty();
 
                             @endphp
 
@@ -277,7 +277,7 @@ $hasPendingAdvance = collect($avancesList ?? [])->contains('statut', 'en_attente
         @endcan
         {{-- <a href="{{ route('admin.agents.index') }}" class="btn btn-secondary">Retour à la liste</a> --}}
         @can('Modifier données')
-            <a href="{{ route('admin.agents.edit', $agent->id) }}" class="btn btn-primary">Modifier les info de l'agent</a>
+            <a href="{{ route('admin.agents.edit', $agent->ulid) }}" class="btn btn-primary">Modifier les info de l'agent</a>
         @endcan
     </div>
 
