@@ -201,10 +201,12 @@ $chargesMenuOpen =
             <i class="bi bi-wallet"></i> <span>Mouvements de Caisse</span>
         </a>
         <div class="collapse submenu" id="tresorerieSub" data-bs-parent="#sidebarNav">
+            <a href="{{ route('admin.caisse.ouvrir') }}"
+                class="{{ request()->routeIs('admin.caisse.ouvrir*') ? 'active' : '' }}">Ouverture de Caisse</a>
             <a href="{{ route('admin.caisse.journal') }}"
                 class="{{ request()->routeIs('admin.caisse.journal') ? 'active' : '' }}">Journal de Caisse</a>
-            <a href="#" class="{{ request()->routeIs('admin.caisse.cloture') ? 'active' : '' }}">Clôture de
-                Caisse</a>
+            <a href="{{ route('admin.caisse.cloture') }}"
+                class="{{ request()->routeIs('admin.caisse.cloture') ? 'active' : '' }}">Clôture de Caisse</a>
         </div>
 
         <a href="#chargesSub" data-bs-toggle="collapse" aria-expanded="{{ $chargesMenuOpen ? 'true' : 'false' }}"
