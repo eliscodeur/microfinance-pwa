@@ -36,7 +36,8 @@
     @endphp
 
     <div class="container-fluid">
-
+        @php $cashWarningMessage = "Impossible d'enregistrer des dépôts ou retraits sur les carnets sans une caisse ouverte."; @endphp
+        @include('admin.partials.cash-warning-banner')
         {{-- Entête --}}
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
@@ -48,6 +49,11 @@
                     </ol>
                 </nav>
             </div>
+            @inject('sessionService', 'App\Services\CashSessionService')
+            @php
+                $hasCashOpen = auth()->check() && $sessionService->hasActiveSession(auth()->id());
+            @endphp
+            @if($hasCashOpen)
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-primary fw-bold" id="btnRetrait" data-type="{{ $carnet->type }}"
                     data-solde="{{ $soldeDisponible }}" data-encours="{{ $encoursCreditRestant }}"
@@ -80,7 +86,9 @@
                     @endif
                 @endif
             </div>
+            @endif
         </div>
+
 
         {{-- Cartes de Statistiques --}}
         <div class="row g-3 mb-4 align-items-stretch">

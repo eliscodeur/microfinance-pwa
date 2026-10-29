@@ -2,9 +2,11 @@
 
 @section('content')
     <div class="container-fluid px-4">
+        @php $cashWarningMessage = "Impossible de valider les avances sur salaire sans une caisse ouverte."; @endphp
+        @include('admin.partials.cash-warning-banner')
         <div class="d-flex justify-content-between align-items-center my-4">
             <div>
-                <h1 class="h3 text-dark fw-bold mb-0">Gestion des Avances sur Salaire</h1>
+                <h1 class="h3 text-dark fw-bold mb-0">Gestion des avances sur salaire</h1>
                 <p class="text-muted small mb-0">Suivi, validation et traitement des demandes d'avances indépendantes du
                     mois.</p>
             </div>
@@ -33,7 +35,10 @@
                 </form>
             </div>
         </div>
-
+        @inject('sessionService', 'App\Services\CashSessionService')
+        @php
+            $hasCashOpen = auth()->check() && $sessionService->hasActiveSession(auth()->id());
+        @endphp
         <!-- Tableau des avances -->
         <div class="card shadow-sm">
             <div class="card-body">
@@ -48,7 +53,9 @@
                                 <th>Tranches</th>
                                 <th>Motif</th>
                                 <th>Statut</th>
+                                @if($hasCashOpen)
                                 <th class="text-end">Actions</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -88,6 +95,7 @@
                                         @endif
                                     </td>
                                     <td class="text-end">
+                                        @if($hasCashOpen)
                                         @if ($avance->statut === 'en_attente')
                                             <button type="button" class="btn btn-success btn-sm btn-valider-avance me-1"
                                                 data-id="{{ $avance->advance_uid }}" title="Valider l'avance">
@@ -99,6 +107,7 @@
                                             </button>
                                         @else
                                             <span class="text-muted small">Aucune action</span>
+                                        @endif
                                         @endif
                                     </td>
                                 </tr>

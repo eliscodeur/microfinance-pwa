@@ -2,13 +2,19 @@
 
 @section('content')
     <div class="container-fluid px-4 py-3">
-
+        @php $cashWarningMessage = "Impossible d'enregistrer de carnets sans une caisse ouverte."; @endphp
+        @include('admin.partials.cash-warning-banner')
         <!-- En-tête de page -->
+        @inject('sessionService', 'App\Services\CashSessionService')
+        @php
+            $hasCashOpen = auth()->check() && $sessionService->hasActiveSession(auth()->id());
+        @endphp
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="h3 mb-0 text-gray-800"></i>Stock de carnets</h1>
                 <p class="text-muted small mb-0">Suivi rigoureux des arrivages, des ventes des carnets </p>
             </div>
+            @if($hasCashOpen)
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-success btn-sm shadow-sm" data-bs-toggle="modal"
                     data-bs-target="#modalEntree">
@@ -19,6 +25,7 @@
                     <i class="bi bi-dash-circle me-1"></i> Enregistrer une Vente (Sortie)
                 </button> --}}
             </div>
+            @endif
         </div>
 
         <!-- ========================================== -->

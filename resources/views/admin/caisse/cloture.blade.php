@@ -6,33 +6,33 @@
         <div class="col-md-8">
             <div class="card shadow-sm">
                 <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0"><i class="fas fa-lock"></i> Clôture de Session de Caisse</h5>
+                    <h5 class="mb-0"><i class="fas fa-lock"></i> Clôture de session de caisse</h5>
                 </div>
                 <div class="card-body">
                     <!-- Résumé Théorique -->
                     <div class="row mb-4 text-center">
                         <div class="col-md-4">
                             <div class="p-3 border rounded bg-light">
-                                <span class="text-muted d-block">Fond Initial</span>
+                                <span class="text-muted d-block">Fond initial</span>
                                 <h4>{{ number_format($summary['fond_initial'], 0, ',', ' ') }} FCFA</h4>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="p-3 border rounded bg-light">
-                                <span class="text-muted d-block">Total Entrées (+)</span>
+                                <span class="text-muted d-block">Total entrées (+)</span>
                                 <h4 class="text-success">+ {{ number_format($summary['total_entrees'], 0, ',', ' ') }} FCFA</h4>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="p-3 border rounded bg-light">
-                                <span class="text-muted d-block">Total Sorties (-)</span>
+                                <span class="text-muted d-block">Total sorties (-)</span>
                                 <h4 class="text-danger">- {{ number_format($summary['total_sorties'], 0, ',', ' ') }} FCFA</h4>
                             </div>
                         </div>
                     </div>
 
                     <div class="alert alert-info text-center">
-                        <strong>Solde Théorique Attendu :</strong>
+                        <strong>Solde théorique attendu :</strong>
                         <span class="fs-4 fw-bold">{{ number_format($summary['solde_theorique'], 0, ',', ' ') }} FCFA</span>
                     </div>
 
@@ -52,7 +52,7 @@
 
                         <div class="d-grid">
                             <button type="button" id="btnCloturer" class="btn btn-danger btn-lg">
-                                <i class="fas fa-lock"></i> Valider et Clôturer la Caisse
+                                <i class="fas fa-lock"></i> Valider et clôturer la caisse
                             </button>
                         </div>
                     </form>

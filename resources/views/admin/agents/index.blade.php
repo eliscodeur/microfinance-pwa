@@ -2,6 +2,8 @@
 
 @section('content')
     <div class="container-fluid">
+        @php $cashWarningMessage = "Impossible de synchroniser les données des agents de terrain sans une caisse ouverte."; @endphp
+        @include('admin.partials.cash-warning-banner')
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="h4 mb-1">Gestion des Agents</h2>
@@ -32,6 +34,11 @@
                 </form>
             </div>
         </div> --}}
+            @inject('sessionService', 'App\Services\CashSessionService')
+            @php
+                $hasCashOpen = auth()->check() && $sessionService->hasActiveSession(auth()->id());
+            @endphp
+
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <div class="table-responsive">
@@ -44,9 +51,11 @@
                                 @can('Activer/Désactiver')
                                     <th class="text-center">Actif</th>
                                 @endcan
+                                @if($hasCashOpen)
                                 @can('Gérer Synchros')
                                     <th class="text-center">Synchro</th>
                                 @endcan
+                                @endif
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -67,7 +76,7 @@
                                             </button>
                                         </td>
                                     @endcan
-
+                                    @if($hasCashOpen)
                                     @can('Gérer Synchros')
                                         <td class="text-center">
                                             <button type="button" id="btn-sync-{{ $agent->id }}"
@@ -78,6 +87,7 @@
                                             </button>
                                         </td>
                                     @endcan
+                                    @endif
 
                                     <td>
                                         <div class="d-flex gap-1">

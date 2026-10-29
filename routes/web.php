@@ -192,8 +192,8 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::post('/caisse/ouvrir', [CashSessionController::class, 'store'])->name('caisse.ouvrir.store');
 
     // Routes de clôture et journal (protégées par la session ouverte)
+    Route::get('/caisse/journal', [JournalCaisseController::class, 'index'])->name('caisse.journal');
     Route::middleware(['cash.open'])->group(function () {
-        Route::get('/caisse/journal', [JournalCaisseController::class, 'index'])->name('caisse.journal');
         Route::get('/caisse/cloture', [CashClosingController::class, 'index'])->name('caisse.cloture');
         Route::post('/caisse/cloture', [CashClosingController::class, 'store'])->name('caisse.cloture.store');
     });
@@ -240,7 +240,8 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     // Fonctions & Employés Administratifs
     Route::resource('fonctions', FonctionController::class)->except(['create', 'show', 'edit']);
     Route::resource('employes', EmployeAdministratifController::class);
-
+    Route::patch('/employes/{employe}/toggle-status', [EmployeAdministratifController::class, 'toggleStatus'])
+        ->name('employes.toggle-status');
     // Agents
     Route::resource('agents', AgentController::class)->middleware('can:Gérer Agents');
     Route::patch('agents/{agent}/toggle-status', [AgentController::class, 'toggleStatus'])->name('agents.toggleStatus');
@@ -296,7 +297,7 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('/carnets/details/{id}', [CreditController::class, 'getCarnetDetails'])->name('carnets.details');
     Route::get('/carnets/{type?}', [CarnetController::class, 'index'])->name('carnets.index')->middleware('can:Gérer Carnets')->where('type', 'tontine|compte');
     Route::get('/carnets/{carnet}', [CarnetController::class, 'show'])->name('carnets.show')->middleware('can:Gérer Carnets');
-    Route::post('/carnets/store', [CarnetController::class, 'store'])->name('carnets.store')->middleware('can:Gérer Carnets');
+    Route::post('/carnets/store', [CarnetController::class, 'store'])->name('carnets.store')->middleware('can:Gérer Carnets', 'cash.open');
     Route::put('/carnets/{carnet}', [CarnetController::class, 'update'])->name('carnets.update')->middleware('can:Gérer Carnets');
     Route::delete('/carnets/{carnet}', [CarnetController::class, 'destroy'])->name('carnets.destroy')->middleware('can:Gérer Carnets');
     Route::post('/carnet-historique/{ulid}/reassign', [CarnetController::class, 'reassign'])->name('carnets.reassign');

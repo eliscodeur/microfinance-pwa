@@ -30,6 +30,7 @@
                                 <th>Téléphone / Adresse</th>
                                 <th>Contrat & Statut</th>
                                 <th>Salaire Effectif</th>
+                                <th>Actif</th>
                                 <th class="text-end pe-4">Actions</th>
                             </tr>
                         </thead>
@@ -75,23 +76,48 @@
                                             <div class="text-success fs-8 fst-italic">(Personnalisé/Négocié)</div>
                                         @endif
                                     </td>
+                                    <td class="text-center">
+                                        <button type="button" id="btn-status-{{ $employe->ulid }}"
+                                                class="btn btn-link p-0 border-0 shadow-none"
+                                                onclick="fastToggleStatus('{{ $employe->ulid }}', {{ $employe->actif ? 'true' : 'false' }}, '{{ route('admin.employes.toggle-status', $employe->ulid) }}')">
+                                            <i class="bi {{ $employe->actif ? 'bi-toggle2-on text-success' : 'bi-toggle2-off text-secondary' }}"
+                                            style="font-size: 1.8rem;" id="icon-status-{{ $employe->ulid }}"></i>
+                                        </button>
+                                    </td>
                                     <td class="text-end pe-4">
                                         <!-- Bouton Avance sur Salaire déclenchant le modal unique -->
+                                   @php
+                                        // Vérifie si l'employé a une avance en cours
+                                        $hasActiveAdvance = $employe->salaryAdvances->contains(function ($advance) {
+                                            return $advance->statut === 'en_attente';
+                                        });
+                                    @endphp
+
+                                    @if(!$hasActiveAdvance)
+                                        <!-- Le bouton s'affiche normalement si AUCUNE avance n'est en cours -->
                                         <button type="button" class="btn btn-sm btn-light text-warning me-1"
-                                            data-bs-toggle="modal" data-bs-target="#avanceModal"
-                                            data-id="{{ $employe->id }}"
-                                            data-code="{{ $employe->code_agent ?? $employe->nom . ' ' . $employe->prenoms }}"
-                                            data-store-url="{{ route('admin.employes.avances.store', $employe->id) }}"
-                                            title="Avance sur salaire">
+                                                data-bs-toggle="modal" data-bs-target="#avanceModal"
+                                                data-id="{{ $employe->id }}"
+                                                data-code="{{ $employe->code_agent ?? $employe->nom . ' ' . $employe->prenoms }}"
+                                                data-store-url="{{ route('admin.employes.avances.store', $employe->id) }}"
+                                                title="Avance sur salaire">
                                             <i class="bi bi-cash-coin"></i>
                                         </button>
+                                    @else
+                                        <!-- Optionnel : Un bouton grisé / désactivé avec un tooltip explicatif -->
+                                        <button type="button" class="btn btn-sm btn-light text-muted me-1"
+                                                disabled
+                                                title="Une avance sur salaire est déjà en cours pour cet employé.">
+                                            <i class="bi bi-cash-coin mr-2"></i>Avance sur salaire en attente
+                                        </button>
+                                    @endif
 
                                         <a href="{{ route('admin.employes.edit', $employe->ulid) }}"
                                             class="btn btn-sm btn-light text-primary me-1" title="Modifier">
-                                            <i class="bi bi-pencil"></i>
+                                            <i class="bi bi-pencil"></i>Modifier
                                         </a>
 
-                                        <form action="{{ route('admin.employes.destroy', $employe->ulid) }}" method="POST"
+                                        <!-- <form action="{{ route('admin.employes.destroy', $employe->ulid) }}" method="POST"
                                             class="d-inline"
                                             onsubmit="return confirm('Voulez-vous vraiment supprimer cet agent ?');">
                                             @csrf
@@ -100,7 +126,7 @@
                                                 title="Supprimer">
                                                 <i class="bi bi-trash"></i>
                                             </button>
-                                        </form>
+                                        </form> -->
                                     </td>
                                 </tr>
                             @empty
@@ -175,53 +201,167 @@
 @endsection
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const avanceModal = document.getElementById('avanceModal');
+document.addEventListener('DOMContentLoaded', function() {
+    const avanceModal = document.getElementById('avanceModal');
+    const formAvance = document.getElementById('formAvance');
 
-            // Calcul automatique du montant mensuel estimé
-            const montantTotalInput = document.getElementById('montant_total');
-            const nombreTranchesInput = document.getElementById('nombre_tranches');
-            const montantMensuelApercu = document.getElementById('montant_mensuel_apercu');
+    // ==========================================
+    // 1. CALCUL AUTOMATIQUE DU MONTANT MENSUEL
+    // ==========================================
+    const montantTotalInput = document.getElementById('montant_total');
+    const nombreTranchesInput = document.getElementById('nombre_tranches');
+    const montantMensuelApercu = document.getElementById('montant_mensuel_apercu');
 
-            function calculerMensualite() {
-                const total = parseFloat(montantTotalInput.value) || 0;
-                const tranches = parseInt(nombreTranchesInput.value) || 1;
-                if (tranches > 0 && total > 0) {
-                    const mensualite = total / tranches;
-                    montantMensuelApercu.value = new Intl.NumberFormat('fr-FR').format(mensualite.toFixed(2)) +
-                        ' FCFA';
-                } else {
-                    montantMensuelApercu.value = '';
+    function calculerMensualite() {
+        const total = parseFloat(montantTotalInput.value) || 0;
+        const tranches = parseInt(nombreTranchesInput.value) || 1;
+        if (tranches > 0 && total > 0) {
+            const mensualite = total / tranches;
+            montantMensuelApercu.value = new Intl.NumberFormat('fr-FR').format(mensualite.toFixed(2)) + ' FCFA';
+        } else {
+            montantMensuelApercu.value = '';
+        }
+    }
+
+    if (montantTotalInput && nombreTranchesInput) {
+        montantTotalInput.addEventListener('input', calculerMensualite);
+        nombreTranchesInput.addEventListener('input', calculerMensualite);
+    }
+
+    // ==========================================
+    // 2. INJECTION DES DONNÉES DANS LA MODALE
+    // ==========================================
+    if (avanceModal) {
+        avanceModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget; // Le bouton qui a ouvert le modal
+
+            const agentId = button.getAttribute('data-id');
+            const agentCode = button.getAttribute('data-code');
+            const storeUrl = button.getAttribute('data-store-url');
+
+            // Mise à jour des champs du formulaire et des libellés du modal
+            document.getElementById('modal-agent-code').textContent = agentCode;
+            document.getElementById('input_agent_id').value = agentId;
+            formAvance.action = storeUrl;
+
+            // Réinitialisation des champs du formulaire à l'ouverture
+            montantTotalInput.value = '';
+            nombreTranchesInput.value = '1';
+            montantMensuelApercu.value = '';
+            document.getElementById('motif').value = '';
+        });
+    }
+
+    // ==========================================
+    // 3. SOUMISSION EN AJAX & SWEETALERT2
+    // ==========================================
+    if (formAvance) {
+        formAvance.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+            let url = this.action;
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 }
-            }
+            })
+            .then(response => response.json().then(data => ({ status: response.status, body: data })))
+            .then(({ status, body }) => {
+                if (status === 200 && body.success) {
 
-            if (montantTotalInput && nombreTranchesInput) {
-                montantTotalInput.addEventListener('input', calculerMensualite);
-                nombreTranchesInput.addEventListener('input', calculerMensualite);
-            }
+                    let modalInstance = bootstrap.Modal.getInstance(avanceModal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
 
-            // Injection des données de l'employé dans le modal lors de son ouverture
-            if (avanceModal) {
-                avanceModal.addEventListener('show.bs.modal', function(event) {
-                    const button = event.relatedTarget; // Le bouton qui a ouvert le modal
 
-                    const agentId = button.getAttribute('data-id');
-                    const agentCode = button.getAttribute('data-code');
-                    const storeUrl = button.getAttribute('data-store-url');
+                    formAvance.reset();
 
-                    // Mise à jour des champs du formulaire et des libellés du modal
-                    document.getElementById('modal-agent-code').textContent = agentCode;
-                    document.getElementById('input_agent_id').value = agentId;
-                    document.getElementById('formAvance').action = storeUrl;
 
-                    // Réinitialisation optionnelle des champs du formulaire
-                    document.getElementById('montant_total').value = '';
-                    document.getElementById('nombre_tranches').value = '1';
-                    document.getElementById('montant_mensuel_apercu').value = '';
-                    document.getElementById('motif').value = '';
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Succès !',
+                        text: body.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+
+                        location.reload();
+                    });
+
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Action impossible',
+                        text: body.message || 'Une erreur est survenue.',
+                        confirmButtonColor: '#3085d6'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erreur technique:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur technique',
+                    text: 'Impossible de traiter la demande pour le moment.',
+                    confirmButtonColor: '#d33'
+                });
+            });
+        });
+    }
+});
+    function fastToggleStatus(employeId, currentStatus, updateUrl) {
+        Swal.fire({
+            title: 'Êtes-vous sûr ?',
+            text: "Voulez-vous modifier le statut de cet employé ?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Oui, modifier',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Requête AJAX avec Fetch
+                fetch(updateUrl, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Notification de succès discrète et rapide
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Mis à jour !',
+                            text: data.message,
+                            timer: 1200,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Erreur', 'Impossible de modifier le statut.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    Swal.fire('Erreur', 'Une erreur technique est survenue.', 'error');
                 });
             }
         });
+    }
     </script>
 @endpush

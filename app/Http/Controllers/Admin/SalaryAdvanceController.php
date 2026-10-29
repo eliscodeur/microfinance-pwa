@@ -12,51 +12,6 @@ use Illuminate\Support\Str;
 
 class SalaryAdvanceController extends Controller
 {
-    /**
-     * Enregistrer une nouvelle avance sur salaire avec une transaction DB (via AJAX).
-     */
-    // public function store(Request $request, int $agentId)
-    // {
-    //     $request->validate([
-    //         'montant_total'   => 'required|numeric|min:0',
-    //         'nombre_tranches' => 'required|integer|min:1',
-    //         'motif'           => 'nullable|string|max:255',
-    //     ]);
-
-    //     try {
-    //         $avance = DB::transaction(function () use ($request, $agentId) {
-    //             $montantTotal   = $request->montant_total;
-    //             $nombreTranches = $request->nombre_tranches;
-    //             $montantMensuel = $montantTotal / $nombreTranches;
-
-    //             return SalaryAdvance::create([
-    //                 'advance_uid'     => Str::uuid(),
-    //                 'agent_id'        => $agentId,
-    //                 'montant_total'   => $montantTotal,
-    //                 'montant_mensuel' => $montantMensuel,
-    //                 'nombre_tranches' => $nombreTranches,
-    //                 'tranches_payees' => 0,
-    //                 'montant_restant' => $montantTotal,
-    //                 'date_demande'    => now(),
-    //                 'statut'          => 'en_attente',
-    //                 'motif'           => $request->motif,
-    //                 'created_by'      => auth()->id(),
-    //             ]);
-    //         });
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Avance enregistrée avec succès.',
-    //             'avance'  => $avance,
-    //         ]);
-
-    //     } catch (Exception $e) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Erreur lors de l\'enregistrement : ' . $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
     public function storeAgent(Request $request, int $agentId)
     {
         return $this->enregistrerAvance($request, $agentId, 'agent');
@@ -67,7 +22,7 @@ class SalaryAdvanceController extends Controller
         return $this->enregistrerAvance($request, $employeId, 'employe');
     }
 
-// La logique commune mutualisée
+    // La logique commune mutualisée
     private function enregistrerAvance(Request $request, int $id, string $type)
     {
         $request->validate([
@@ -75,6 +30,23 @@ class SalaryAdvanceController extends Controller
             'nombre_tranches' => 'required|integer|min:1',
             'motif'           => 'nullable|string|max:255',
         ]);
+        $foreignKey = ($type === 'agent') ? 'agent_id' : 'employe_administratif_id';
+
+        $hasActiveAdvance = SalaryAdvance::where($foreignKey, $id)
+            ->where('statut', 'en_attente')
+            ->exists();
+
+        if ($hasActiveAdvance) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Opération impossible : Une avance sur salaire est déjà en cours de traitement pour cette personne.',
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->with('error', 'Opération impossible : Une avance sur salaire est déjà en cours de traitement pour cette personne.');
+        }
 
         try {
             $avance = DB::transaction(function () use ($request, $id, $type) {

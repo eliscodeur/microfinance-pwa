@@ -10,6 +10,7 @@ class CashClosing extends Model
 
     protected $fillable = [
         'ulid',
+        'cash_session_id',
         'user_id',
         'fond_caisse_initial',
         'total_entrees',
@@ -24,5 +25,10 @@ class CashClosing extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function session()
+    {
+        return $this->belongsTo(CashSession::class, 'cash_session_id');
     }
 }

@@ -51,6 +51,7 @@ class CashClosingService
             $closing = CashClosing::create([
                 'ulid'                => strtolower((string) Str::ulid()),
                 'user_id'             => $session->user_id,
+                'cash_session_id'     => $session->id,
                 'fond_caisse_initial' => $summary['fond_initial'],
                 'total_entrees'       => $summary['total_entrees'],
                 'total_sorties'       => $summary['total_sorties'],

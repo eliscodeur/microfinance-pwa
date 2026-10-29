@@ -26,4 +26,9 @@ class CashSession extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function closing()
+    {
+        return $this->hasOne(CashClosing::class, 'cash_session_id');
+    }
 }

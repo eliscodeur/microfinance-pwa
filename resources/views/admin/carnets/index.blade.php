@@ -6,6 +6,8 @@
             <h2 class="h4"><i class="bi bi-bank me-2"></i>Administration des Carnets</h2>
             <span class="badge bg-dark p-2">Total Général : {{ $totalGeneral }}</span>
         </div>
+        @php $cashWarningMessage = "Impossible d'enregistrer des dépôts ou retraits sur les carnets sans une caisse ouverte."; @endphp
+        @include('admin.partials.cash-warning-banner')
 
         @if(session('error'))
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -175,6 +177,7 @@
 
     {{-- Chargement sécurisé de jQuery (si non présent dans le layout global) --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         // 1. Fonction pour basculer l'affichage des champs selon le type (tontine ou compte)

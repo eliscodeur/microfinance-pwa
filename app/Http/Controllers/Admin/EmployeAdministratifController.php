@@ -10,9 +10,8 @@ class EmployeAdministratifController extends Controller
 {
     public function index()
     {
-        $employes  = EmployeAdministratif::with('fonction')->latest()->get();
         $fonctions = Fonction::all();
-
+        $employes  = EmployeAdministratif::with(['fonction', 'salaryAdvances'])->latest()->get();
         return view('admin.employes.index', compact('employes', 'fonctions'));
     }
 
@@ -68,5 +67,17 @@ class EmployeAdministratifController extends Controller
     {
         $employe->delete();
         return redirect()->route('admin.employes.index')->with('success', 'Employé supprimé avec succès.');
+    }
+
+    public function toggleStatus(Request $request, EmployeAdministratif $employe)
+    {
+        $employe->actif = ! $employe->actif;
+        $employe->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Le statut de l\'employé a été mis à jour avec succès.',
+            'actif'   => $employe->actif,
+        ]);
     }
 }

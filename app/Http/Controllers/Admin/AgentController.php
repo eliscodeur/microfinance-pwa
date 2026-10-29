@@ -106,8 +106,6 @@ class AgentController extends Controller
             ->whereNull('unassigned_at')
             ->orderBy('assigned_at', 'desc')
             ->get();
-
-        // Variable déjà en place pour alimenter le tableau de la vue
         $avancesList = SalaryAdvance::where('agent_id', $agent->id)
             ->latest()
             ->get();

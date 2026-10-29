@@ -59,6 +59,11 @@ class EmployeAdministratif extends Model
         return $this->belongsTo(Fonction::class, 'fonction_id');
     }
 
+    public function salaryAdvances()
+    {
+        return $this->hasMany(SalaryAdvance::class, 'employe_administratif_id');
+    }
+
     // Accessor intelligent pour récupérer soit le salaire personnalisé, soit celui par défaut de la fonction
     public function getSalaireEffectifAttribute()
     {

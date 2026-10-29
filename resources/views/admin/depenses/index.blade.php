@@ -2,6 +2,8 @@
 
 @section('content')
     <div class="container-fluid px-4 py-3">
+        @php $cashWarningMessage = "Impossible d'enregistrer une dépense opérationnelle sans une caisse ouverte."; @endphp
+        @include('admin.partials.cash-warning-banner')
         <!-- En-tête de page -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
@@ -9,11 +11,17 @@
                 <p class="text-muted small mb-0">Suivi rigoureux des décaissements, charges opérationnelles et notes de
                     frais.</p>
             </div>
+            @inject('sessionService', 'App\Services\CashSessionService')
+            @php
+                $hasCashOpen = auth()->check() && $sessionService->hasActiveSession(auth()->id());
+            @endphp
+            @if($hasCashOpen)
             <div>
                 <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#depenseModal">
                     <i class="bi bi-plus-circle me-1"></i> Enregistrer une dépense
                 </button>
             </div>
+            @endif
         </div>
 
         <!-- KPI / Cartes de Synthèse Financière -->

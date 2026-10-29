@@ -128,7 +128,7 @@ $chargesMenuOpen =
         </a>
 
         <!-- ================= OPÉRATIONS & TERRAIN ================= -->
-        <div class="sidebar-header text-muted small px-3 pt-3 pb-1 text-uppercase fw-bold">Opérations & Terrain</div>
+        <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">Opérations & Terrain</div>
 
         @can('Gérer Clients')
             <a href="#clientsSub" data-bs-toggle="collapse" aria-expanded="{{ $clientsMenuOpen ? 'true' : 'false' }}"
@@ -195,7 +195,7 @@ $chargesMenuOpen =
         @endcan
 
         <!-- ================= TRÉSORERIE & CAISSE ================= -->
-        <div class="sidebar-header text-muted small px-3 pt-3 pb-1 text-uppercase fw-bold">Trésorerie & Caisse</div>
+        <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">Trésorerie & Caisse</div>
 
         <a href="#tresorerieSub" data-bs-toggle="collapse" aria-expanded="false" class="menu-toggle">
             <i class="bi bi-wallet"></i> <span>Mouvements de Caisse</span>
@@ -224,7 +224,7 @@ $chargesMenuOpen =
         </div>
 
         <!-- ================= RESSOURCES HUMAINES & PAIE ================= -->
-        <div class="sidebar-header text-muted small px-3 pt-3 pb-1 text-uppercase fw-bold">RH & Rémunération</div>
+        <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">RH & Rémunération</div>
 
         <a href="#personnelSub" data-bs-toggle="collapse" aria-expanded="{{ $personnelMenuOpen ? 'true' : 'false' }}"
             class="menu-toggle {{ $personnelMenuOpen ? 'active' : '' }}">
@@ -269,7 +269,7 @@ $chargesMenuOpen =
         @endcan
 
         <!-- ================= PARAMÈTRES & SYSTÈME ================= -->
-        <div class="sidebar-header text-muted small px-3 pt-3 pb-1 text-uppercase fw-bold">Paramètres & Système</div>
+        <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">Paramètres & Système</div>
 
         @can('Gérer Utilisateurs')
             <a href="#usersSub" data-bs-toggle="collapse" aria-expanded="{{ $usersMenuOpen ? 'true' : 'false' }}"
