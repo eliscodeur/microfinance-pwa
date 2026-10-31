@@ -123,9 +123,9 @@
                 </div>
 
                 <!-- Pagination -->
-                <div class="mt-3">
+                <!-- <div class="mt-3">
                     {{ $avances->withQueryString()->links() }}
-                </div>
+                </div> -->
             </div>
         </div>
     </div>

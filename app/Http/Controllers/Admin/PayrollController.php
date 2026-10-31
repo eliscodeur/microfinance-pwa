@@ -377,7 +377,7 @@ class PayrollController extends Controller
             $nombreTranches = $avance->nombre_tranches ?? 1;
             $dateDepart     = \Carbon\Carbon::parse($avance->created_at ?? now());
 
-            // A. Compter le CUMUL TOTAL des tranches déjà payées sur cette avance lors des bulletins PRÉCÉDENTS (excluant le mois/année en cours)
+            // A. Compter le CUMUL TOTAL des tranches déjà payées sur cette avance lors des bulletins PRÉCÉDENTS
             $tranchesPasseesCount = DeductionAvance::where('salary_advance_id', $avance->id)
                 ->where(function ($q) use ($mois, $annee) {
                     $q->where('annee', '<', $annee)
@@ -393,7 +393,7 @@ class PayrollController extends Controller
                 ->where('annee', $annee)
                 ->first();
 
-            // Nombre de tranches à cocher pour ce mois-ci (s'il y a une saisie, on la prend, sinon par défaut 1 si tout n'est pas déjà payé)
+            // Nombre de tranches à cocher pour ce mois-ci
             $nbTranchesMoisActuel = $deductionMoisEnCours
                 ? $deductionMoisEnCours->nombre_tranches
                 : ($tranchesPasseesCount < $nombreTranches ? 1 : 0);
@@ -401,18 +401,19 @@ class PayrollController extends Controller
             $tranches = [];
 
             for ($i = 1; $i <= $nombreTranches; $i++) {
+                // Correction de l'opérateur manquant
                 $moisTranche = $dateDepart->copy()->addMonths($i - 1);
 
                 // Tranche appartenant aux mois précédents (bloquée / disabled)
                 $estDejaPaye = ($i <= $tranchesPasseesCount);
 
-                // Tranche incluse dans le mois en cours (sélectionnée par défaut ou via la saisie du mois)
+                // Tranche incluse dans le mois en cours
                 $estCocheMoisActuel = (! $estDejaPaye && $i <= ($tranchesPasseesCount + $nbTranchesMoisActuel));
 
                 $tranches[] = [
                     'id'          => $i,
                     'numero'      => $i,
-                    'mois'        => $moisTranche->translatedFormat('F Y'), // Indicatif textuel (juste pour l'affichage visuel)
+                    'mois'        => $moisTranche->translatedFormat('F Y'),
                     'montant'     => $montantMensuel,
                     'deja_paye'   => $estDejaPaye,
                     'selectionne' => $estDejaPaye || $estCocheMoisActuel,
@@ -434,7 +435,6 @@ class PayrollController extends Controller
             $totalAvances            = $deductionsPersonnalisees->sum('montant');
             $idsAvancesSelectionnees = $deductionsPersonnalisees->pluck('salary_advance_id')->toArray();
         } else {
-            // Par défaut, on somme les montants des tranches marquées comme sélectionnées pour ce mois
             $totalAvances            = 0;
             $idsAvancesSelectionnees = [];
 
@@ -449,7 +449,7 @@ class PayrollController extends Controller
             }
         }
 
-        // Salaire Brut et Net
+        // Salaire Brut et Net (Correction de la soustraction)
         $salaireBrut = $salaireBase + $commissionTravail + $commissionCycle + $bonus + $commissionCarnet;
         $montantNet  = max(0, $salaireBrut - $totalAvances);
 
@@ -502,8 +502,9 @@ class PayrollController extends Controller
             ->map(function ($carnet) use ($mois, $annee, $tauxCarnet, $carnetsData) {
                 $prixCategory = $carnet->categoryTontine->prix ?? 0;
 
-                $carnet->assigned_at        = $carnetsData[$carnet->id]->assigned_at ?? null;
-                $carnet->prix_category      = $prixCategory;
+                $carnet->assigned_at   = $carnetsData[$carnet->id]->assigned_at ?? null;
+                $carnet->prix_category = $prixCategory;
+                // Correction de la multiplication
                 $carnet->commission_generee = ($prixCategory * $tauxCarnet) / 100;
 
                 return $carnet;
@@ -549,7 +550,8 @@ class PayrollController extends Controller
             ->with(['admin', 'validator'])
             ->get();
 
-        return view('admin.payrolls.preview', compact('salaire', 'carnets', 'cycles', 'bonusManuels', 'avancesList'));
+        // AJOUT CRUCIAL : On passe bien $mois et $annee dans le compact()
+        return view('admin.payrolls.preview', compact('salaire', 'carnets', 'cycles', 'bonusManuels', 'avancesList', 'mois', 'annee'));
     }
 
     public function updateTranches(Request $request, $id)

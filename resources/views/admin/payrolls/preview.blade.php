@@ -441,7 +441,7 @@
                         {{-- On transmet également le mois et l'année pour que le contrôleur sache quel bulletin mettre à jour --}}
                         <input type="hidden" name="mois" value="{{ $mois }}">
                         <input type="hidden" name="annee" value="{{ $annee }}">
-                        <input type="hidden" name="agent_id" value="{{ $avance->$avance->agent_id }}">
+                        <input type="hidden" name="agent_id" value="{{ $avance->agent_id }}">
 
                         <div class="modal-header bg-light">
                             <h5 class="modal-title h6 fw-bold">

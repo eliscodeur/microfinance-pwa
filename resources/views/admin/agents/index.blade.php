@@ -9,12 +9,11 @@
                 <h2 class="h4 mb-1">Gestion des Agents</h2>
                 <p class="text-muted mb-0">Liste complète et pilotage des accès agents.</p>
             </div>
-            {{-- <div class="d-flex gap-2">
-                <a href="{{ route('admin.agents.export', array_merge(request()->query(), ['format' => 'csv'])) }}"
-                    class="btn btn-outline-secondary">Exporter CSV</a>
-                <a href="{{ route('admin.agents.export', array_merge(request()->query(), ['format' => 'excel'])) }}"
-                    class="btn btn-outline-success">Exporter Excel</a>
-            </div> --}}
+            <div class="d-flex gap-2">
+                @can('Gérer Agents')
+                    <a href="{{ route('admin.agents.create') }}" class="btn btn-primary">Ajouter agent</a>
+                @endcan
+            </div>
         </div>
 
         {{-- <div class="card border-0 shadow-sm mb-4">
@@ -111,10 +110,6 @@
                         </tbody>
                     </table>
                 </div>
-
-                {{-- <div class="mt-3">
-                    {{ $agents->appends(request()->query())->links('pagination::bootstrap-5') }}
-                </div> --}}
             </div>
         </div>
     </div>
