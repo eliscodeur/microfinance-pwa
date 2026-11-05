@@ -62350,6 +62350,10 @@ var map = {
 		"./resources/js/Pages/Credits/Index.jsx",
 		"resources_js_Pages_Credits_Index_jsx"
 	],
+	"./Credits/Settings.jsx": [
+		"./resources/js/Pages/Credits/Settings.jsx",
+		"resources_js_Pages_Credits_Settings_jsx"
+	],
 	"./Credits/Show.jsx": [
 		"./resources/js/Pages/Credits/Show.jsx",
 		"resources_js_Pages_Credits_Show_jsx"
@@ -62511,7 +62515,7 @@ module.exports = JSON.parse('{"name":"axios","version":"0.21.4","description":"P
 /******/ 		// This function allow to reference async chunks
 /******/ 		__webpack_require__.u = (chunkId) => {
 /******/ 			// return url for filenames not based on template
-/******/ 			if ({"resources_js_Pages_Credits_Create_jsx":1,"resources_js_Pages_Credits_Create2_jsx":1,"resources_js_Pages_Credits_Index_jsx":1,"resources_js_Pages_Credits_Show_jsx":1,"resources_js_Pages_Prets_Index_jsx":1,"resources_js_Pages_Prets_Show_jsx":1}[chunkId]) return "js/" + chunkId + ".js";
+/******/ 			if ({"resources_js_Pages_Credits_Create_jsx":1,"resources_js_Pages_Credits_Create2_jsx":1,"resources_js_Pages_Credits_Index_jsx":1,"resources_js_Pages_Credits_Settings_jsx":1,"resources_js_Pages_Credits_Show_jsx":1,"resources_js_Pages_Prets_Index_jsx":1,"resources_js_Pages_Prets_Show_jsx":1}[chunkId]) return "js/" + chunkId + ".js";
 /******/ 			// return url for filenames based on template
 /******/ 			return undefined;
 /******/ 		};

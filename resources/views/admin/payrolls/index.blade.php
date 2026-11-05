@@ -9,8 +9,22 @@
                 <p class="text-muted mb-0">Visualisation, calcul automatique et validation des éléments de paie mensuelle.
                 </p>
             </div>
+            @php
+            $christiane = collect($payrolls)->first(fn($p) => str_contains(strtolower($p->agent->nom), 'christiane'));
+        @endphp
+        @dump($christiane)
         </div>
         {{-- @dump($payrolls) --}}
+        @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                @foreach ($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
         <!-- Formulaire de filtre par mois/année et bouton Valider tout dynamique -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
@@ -207,7 +221,7 @@
                                                 title="Consulter le bulletin officiel validé">
                                                 <i class="bi bi-file-earmark-check me-1"></i> Bulletin
                                             </a>
-                                            {{-- 
+                                            {{--
                                             <span class="badge bg-success-subtle text-success border border-success-subtle">
                                                 Payé / Validé
                                             </span> --}}
@@ -278,7 +292,7 @@
                 columnDefs: [{
                     orderable: false,
                     searchable: false,
-                    targets: 7
+                    targets: -1 // Target la dernière colonne (Actions) au lieu de Salaire Net (7)
                 }]
             });
         });

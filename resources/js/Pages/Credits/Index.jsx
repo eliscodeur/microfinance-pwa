@@ -78,12 +78,20 @@ export default function Index({ credits }) {
                             clients.
                         </p>
                     </div>
-                    <Link
-                        href="/admin/credits/create"
-                        className="btn btn-primary shadow-sm d-flex align-items-center gap-2"
-                    >
-                        <i className="bi bi-plus-lg"></i> Nouvelle demande
-                    </Link>
+                    <div className="d-flex gap-2">
+                        <Link
+                            href="/admin/credit-settings"
+                            className="btn btn-outline-secondary shadow-sm d-flex align-items-center gap-2"
+                        >
+                            <i className="bi bi-gear"></i> Paramétrage
+                        </Link>
+                        <Link
+                            href="/admin/credits/create"
+                            className="btn btn-primary shadow-sm d-flex align-items-center gap-2"
+                        >
+                            <i className="bi bi-plus-lg"></i> Nouvelle demande
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Table Card */}

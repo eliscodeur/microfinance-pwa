@@ -11,7 +11,9 @@ use App\Models\SalaryAdvance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PayrollEmployerController extends Controller
 {
@@ -134,6 +136,9 @@ class PayrollEmployerController extends Controller
 
             $mois  = $dateDebut->month;
             $annee = $dateDebut->year;
+            if ($dateDebut->gte(now()->startOfMonth())) {
+                return redirect()->back()->with('error', 'La paie ne peut être validée qu’après la clôture du mois concerné.');
+            }
 
             $employes = EmployeAdministratif::where('actif', 1)->get();
 
@@ -155,64 +160,176 @@ class PayrollEmployerController extends Controller
 
                 // 1. Première passe : Calculer les salaires et avances pour chaque employé
                 foreach ($employes as $employe) {
-                    $salaireBase = $employe->getSalaireBase();
-                    $primes      = 0;
-                    $indemnites  = 0;
-                    $salaireBrut = $salaireBase + $primes + $indemnites;
+                    $salaireExistant = SalaireEmploye::where('employe_id', $employe->id)
+                        ->where('mois', $mois)
+                        ->where('annee', $annee)
+                        ->lockForUpdate()
+                        ->first();
 
-                    // Gestion des avances
-                    $avancesList = SalaryAdvance::where('employe_administratif_id', $employe->id)
-                        ->where('statut', 'en_cours')
-                        ->get();
+                    if ($salaireExistant && strtolower($salaireExistant->statut) !== 'brouillon') {
+                        $salaireBase = $salaireExistant->salaire_base;
+                        $primes = $salaireExistant->primes_totales;
+                        $indemnites = $salaireExistant->indemnites_totales;
+                        $salaireBrut = $salaireExistant->salaire_brut;
+                        $totalDeductionsAvances = $salaireExistant->avances_prets;
+                        $autresRetenues = $salaireExistant->autres_retenues;
+                        $salaireNet = $salaireExistant->salaire_net;
+                    } elseif ($salaireExistant) {
+                        $salaireBase = $salaireExistant->salaire_base;
+                        $primes = $salaireExistant->primes_totales;
+                        $indemnites = $salaireExistant->indemnites_totales;
+                        $salaireBrut = $salaireBase + $primes + $indemnites;
+                        $totalDeductionsAvances = $salaireExistant->avances_prets;
+                        $autresRetenues = $salaireExistant->autres_retenues;
+                        $salaireNet = max(0, $salaireBrut - $totalDeductionsAvances - $autresRetenues);
+                    } else {
+                        $salaireBase = $employe->getSalaireBase();
+                        $primes = 0;
+                        $indemnites = 0;
+                        $salaireBrut = $salaireBase + $primes + $indemnites;
+                        $autresRetenues = 0;
+                        $totalDeductionsAvances = 0;
 
-                    $totalDeductionsAvances = 0;
+                        $avancesList = SalaryAdvance::where('employe_administratif_id', $employe->id)
+                            ->where('statut', 'en_cours')
+                            ->get();
 
-                    foreach ($avancesList as $avance) {
-                        $montantTranche = $avance->montant_mensuel ?? 0;
-
-                        if ($montantTranche > 0 && $salaireBrut >= ($totalDeductionsAvances + $montantTranche)) {
+                        foreach ($avancesList as $avance) {
                             $deductionExistante = DB::table('deductions_avances')
                                 ->where('salary_advance_id', $avance->id)
                                 ->where('mois', $mois)
                                 ->where('annee', $annee)
                                 ->first();
+                            $montantTranche = $deductionExistante
+                                ? (float) $deductionExistante->montant
+                                : (float) ($avance->montant_mensuel ?? 0);
+
+                            if ($montantTranche <= 0) {
+                                continue;
+                            }
+
+                            if ($salaireBrut < ($totalDeductionsAvances + $montantTranche)) {
+                                if ($deductionExistante) {
+                                    throw ValidationException::withMessages([
+                                        'avances' => 'Les tranches sélectionnées dépassent le salaire brut de l’employé. Ajustez les retenues avant validation.',
+                                    ]);
+                                }
+                                continue;
+                            }
 
                             if (! $deductionExistante) {
                                 DB::table('deductions_avances')->insert([
-                                    'ulid'                     => strtolower((string) Str::ulid()),
+                                    'ulid' => strtolower((string) Str::ulid()),
                                     'employe_administratif_id' => $employe->id,
-                                    'salary_advance_id'        => $avance->id,
-                                    'montant'                  => $montantTranche,
-                                    'nombre_tranches'          => 1,
-                                    'mois'                     => $mois,
-                                    'annee'                    => $annee,
-                                    'created_at'               => now(),
-                                    'updated_at'               => now(),
+                                    'salary_advance_id' => $avance->id,
+                                    'montant' => $montantTranche,
+                                    'nombre_tranches' => 1,
+                                    'mois' => $mois,
+                                    'annee' => $annee,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
                                 ]);
                             }
 
-                            $montantCeMois = DB::table('deductions_avances')
-                                ->where('salary_advance_id', $avance->id)
-                                ->where('mois', $mois)
-                                ->where('annee', $annee)
-                                ->sum('montant');
-
-                            $totalDeductionsAvances += $montantCeMois;
-
+                            $totalDeductionsAvances += $montantTranche;
                             $totalTranchesPayees = DB::table('deductions_avances')
                                 ->where('salary_advance_id', $avance->id)
                                 ->sum('nombre_tranches');
-
                             $updateData = ['tranches_payees' => $totalTranchesPayees];
                             if ($totalTranchesPayees >= $avance->nombre_tranches) {
                                 $updateData['statut'] = 'soldee';
                             }
-                            SalaryAdvance::where('id', $avance->id)->update($updateData);
+                            $avance->update($updateData);
+                        }
+
+                        $salaireNet = max(0, $salaireBrut - $totalDeductionsAvances - $autresRetenues);
+                    }
+
+                    if ($salaireExistant && strtolower($salaireExistant->statut) === 'brouillon') {
+                        $deductionsDuMois = DB::table('deductions_avances')
+                            ->where('employe_administratif_id', $employe->id)
+                            ->where('mois', $mois)
+                            ->where('annee', $annee)
+                            ->get();
+
+                        if ($deductionsDuMois->isEmpty() && $totalDeductionsAvances > 0) {
+                            $resteADeduire = (float) $totalDeductionsAvances;
+                            $avancesEnCours = SalaryAdvance::where('employe_administratif_id', $employe->id)
+                                ->where('statut', 'en_cours')
+                                ->orderBy('id')
+                                ->get();
+
+                            foreach ($avancesEnCours as $avance) {
+                                $montantTranche = (float) $avance->montant_mensuel;
+                                if ($montantTranche <= 0 || $resteADeduire < $montantTranche) {
+                                    continue;
+                                }
+
+                                $tranchesDejaDeduites = (int) DB::table('deductions_avances')
+                                    ->where('salary_advance_id', $avance->id)
+                                    ->sum('nombre_tranches');
+                                $tranchesRestantes = max(0, $avance->nombre_tranches - $tranchesDejaDeduites);
+                                $tranchesCeMois = min($tranchesRestantes, (int) floor($resteADeduire / $montantTranche));
+
+                                if ($tranchesCeMois === 0) {
+                                    continue;
+                                }
+
+                                $montantCeMois = $tranchesCeMois * $montantTranche;
+                                DB::table('deductions_avances')->insert([
+                                    'ulid' => strtolower((string) Str::ulid()),
+                                    'employe_administratif_id' => $employe->id,
+                                    'salary_advance_id' => $avance->id,
+                                    'montant' => $montantCeMois,
+                                    'nombre_tranches' => $tranchesCeMois,
+                                    'mois' => $mois,
+                                    'annee' => $annee,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                                $resteADeduire -= $montantCeMois;
+                            }
+
+                            if ($resteADeduire > 0.01) {
+                                throw ValidationException::withMessages([
+                                    'avances' => 'Les retenues enregistrées dans le brouillon ne correspondent plus aux tranches d’avances disponibles. Vérifiez le bulletin avant validation.',
+                                ]);
+                            }
+
+                            $deductionsDuMois = DB::table('deductions_avances')
+                                ->where('employe_administratif_id', $employe->id)
+                                ->where('mois', $mois)
+                                ->where('annee', $annee)
+                                ->get();
+                        }
+
+                        if (abs((float) $deductionsDuMois->sum('montant') - (float) $totalDeductionsAvances) > 0.01) {
+                            throw ValidationException::withMessages([
+                                'avances' => 'Le montant des tranches sélectionnées ne correspond pas au brouillon enregistré. Vérifiez le bulletin avant validation.',
+                            ]);
+                        }
+
+                        foreach ($deductionsDuMois as $deduction) {
+                            $avance = SalaryAdvance::find($deduction->salary_advance_id);
+                            if (! $avance) {
+                                continue;
+                            }
+
+                            $tranchesPayees = (int) DB::table('deductions_avances')
+                                ->where('salary_advance_id', $avance->id)
+                                ->sum('nombre_tranches');
+                            $avance->update([
+                                'tranches_payees' => $tranchesPayees,
+                                'statut' => $tranchesPayees >= $avance->nombre_tranches ? 'soldee' : 'en_cours',
+                            ]);
                         }
                     }
 
-                    $autresRetenues = 0;
-                    $salaireNet     = max(0, $salaireBrut - $totalDeductionsAvances);
+                    if ($totalDeductionsAvances + $autresRetenues > $salaireBrut) {
+                        throw ValidationException::withMessages([
+                            'retenues' => 'Le total des retenues ne peut pas dépasser le salaire brut de l’employé.',
+                        ]);
+                    }
 
                     $totalMoisNet += $salaireNet;
 
@@ -220,8 +337,11 @@ class PayrollEmployerController extends Controller
                     $donneesSalaires[] = [
                         'employe_id'   => $employe->id,
                         'salaire_base' => $salaireBase,
+                        'primes' => $primes,
+                        'indemnites' => $indemnites,
                         'salaire_brut' => $salaireBrut,
                         'avances'      => $totalDeductionsAvances,
+                        'autres_retenues' => $autresRetenues,
                         'salaire_net'  => $salaireNet,
                     ];
                 }
@@ -306,6 +426,10 @@ class PayrollEmployerController extends Controller
                         ->where('annee', $annee)
                         ->first();
 
+                    if ($salaireExistant && strtolower($salaireExistant->statut) !== 'brouillon') {
+                        continue;
+                    }
+
                     SalaireEmploye::updateOrCreate(
                         [
                             'employe_id' => $data['employe_id'],
@@ -316,11 +440,12 @@ class PayrollEmployerController extends Controller
                             'ulid'               => optional($salaireExistant)->ulid ?? strtolower((string) Str::ulid()),
                             'depense_id'         => $depenseGlobaleId,
                             'salaire_base'       => $data['salaire_base'],
-                            'primes_totales'     => 0,
-                            'indemnites_totales' => 0,
+                            'primes_totales'     => $data['primes'],
+                            'indemnites_totales' => $data['indemnites'],
                             'salaire_brut'       => $data['salaire_brut'],
                             'avances_prets'      => $data['avances'],
-                            'autres_retenues'    => 0,
+                            'autres_retenues'    => $data['autres_retenues'],
+                            'total_retenues'     => $data['avances'] + $data['autres_retenues'],
                             'salaire_net'        => $data['salaire_net'],
                             'statut'             => 'valide',
                             'validated_by'       => auth()->id(),
@@ -335,8 +460,15 @@ class PayrollEmployerController extends Controller
                 'annee' => $annee,
             ])->with('success', 'Validation globale effectuée et enregistrée avec succès !');
 
-        } catch (\Exception $e) {
-            dd("ERREUR CATCHÉE : " . $e->getMessage(), $e->getTraceAsString());
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Erreur lors de la validation des salaires employés.', [
+                'periode' => $request->input('periode'),
+                'exception' => $e,
+            ]);
+
+            return redirect()->back()->with('error', 'La validation des salaires employés a échoué. Aucune modification partielle n’a été conservée.');
         }
     }
 
@@ -364,9 +496,10 @@ class PayrollEmployerController extends Controller
             ->where('annee', $annee)
             ->first();
 
-        // Condition : Si le salaire existe ET qu'il est au statut "brouillon" (ou enregistré)
-        if ($salaireEnregistré && strtolower($salaireEnregistré->statut) === 'brouillon') {
-            // --- CAS 1 : BULLETIN ENREGISTRÉ EN STATUT BROUILLON (DONNÉES FIGÉES) ---
+        $isEditable = ! $salaireEnregistré || strtolower($salaireEnregistré->statut) === 'brouillon';
+
+        if ($salaireEnregistré) {
+            // Existing payrolls are snapshots; only drafts remain editable.
             $salaireBase        = $salaireEnregistré->salaire_base;
             $primes             = $salaireEnregistré->primes_totales;
             $indemnites         = $salaireEnregistré->indemnites_totales;
@@ -443,7 +576,7 @@ class PayrollEmployerController extends Controller
 
         $avancesList = $avancesConcernes;
 
-        return view('admin.payrolls.employes.preview', compact('payrollDetails', 'mois', 'annee', 'employe', 'avancesList'));
+        return view('admin.payrolls.employes.preview', compact('payrollDetails', 'mois', 'annee', 'employe', 'avancesList', 'isEditable'));
     }
 
     /**
@@ -499,13 +632,30 @@ class PayrollEmployerController extends Controller
     {
         $avance = SalaryAdvance::findOrFail($id);
 
-        // 1. Récupérer le mois, l'année et l'employé ID
-        $mois      = $request->input('mois');
-        $annee     = $request->input('annee');
-        $employeId = $request->input('employe_administratif_id');
+        $periode = $request->validate([
+            'mois' => ['required', 'integer', 'between:1,12'],
+            'annee' => ['required', 'integer', 'between:2000,2100'],
+            'employe_administratif_id' => ['required', 'integer', 'exists:employe_administratifs,id'],
+            'tranches_ids' => ['sometimes', 'array'],
+            'tranches_ids.*' => ['integer', 'distinct', 'between:1,' . max(1, (int) $avance->nombre_tranches)],
+        ]);
+        $mois = $periode['mois'];
+        $annee = $periode['annee'];
+        $employeId = $periode['employe_administratif_id'];
 
-        // 2. Récupérer les numéros de tranches cochés
-        $tranchesSelectionnees = $request->input('tranches_ids', []);
+        abort_unless((int) $avance->employe_administratif_id === (int) $employeId, 404);
+
+        $salaireValide = SalaireEmploye::where('employe_id', $employeId)
+            ->where('mois', $mois)
+            ->where('annee', $annee)
+            ->where('statut', '!=', 'brouillon')
+            ->exists();
+
+        if ($salaireValide) {
+            return back()->with('error', 'Les retenues d’une paie validée sont figées.');
+        }
+
+        $tranchesSelectionnees = $periode['tranches_ids'] ?? [];
 
         // Si aucune case n'est cochée, on supprime l'enregistrement de déduction
         if (empty($tranchesSelectionnees)) {
@@ -565,6 +715,7 @@ class PayrollEmployerController extends Controller
             // Mettre à jour la ligne dans salaires_employe
             $salaireEmploye->update([
                 'avances_prets' => $totalAvanceDeduite,
+                'total_retenues' => $totalRetenues,
                 'salaire_net'   => $nouveauSalaireNet,
             ]);
         }
@@ -576,16 +727,32 @@ class PayrollEmployerController extends Controller
         // 1. Récupérer l'employé via son ULID au lieu de son ID auto-incrémenté
         $employe = EmployeAdministratif::where('ulid', $ulid)->firstOrFail();
 
-        $mois  = $request->input('mois');
-        $annee = $request->input('annee');
+        $data = $request->validate([
+            'mois' => ['required', 'integer', 'between:1,12'],
+            'annee' => ['required', 'integer', 'between:2000,2100'],
+            'primes_totales' => ['nullable', 'numeric', 'min:0'],
+            'indemnites_totales' => ['nullable', 'numeric', 'min:0'],
+            'autres_retenues' => ['nullable', 'numeric', 'min:0'],
+        ]);
+        $mois = (int) $data['mois'];
+        $annee = (int) $data['annee'];
+
+        $salaireExistant = SalaireEmploye::where('employe_id', $employe->id)
+            ->where('mois', $mois)
+            ->where('annee', $annee)
+            ->first();
+
+        if ($salaireExistant && strtolower($salaireExistant->statut) !== 'brouillon') {
+            return back()->with('error', 'Un bulletin validé ne peut pas être modifié.');
+        }
 
         // 2. Récupérer les valeurs saisies ou modifiées dans le formulaire
-        $primesTotales  = floatval($request->input('primes_totales', 0));
-        $indemnites     = floatval($request->input('indemnites_totales', 0));
-        $autresRetenues = floatval($request->input('autres_retenues', 0));
+        $primesTotales = (float) ($data['primes_totales'] ?? 0);
+        $indemnites = (float) ($data['indemnites_totales'] ?? 0);
+        $autresRetenues = (float) ($data['autres_retenues'] ?? 0);
 
         // 3. Récupérer le salaire de base de l'employé
-        $salaireBase = $employe->getSalaireBase();
+        $salaireBase = $salaireExistant ? $salaireExistant->salaire_base : $employe->getSalaireBase();
 
         // 4. Calculer le salaire brut
         $salaireBrut = $salaireBase + $primesTotales + $indemnites;
@@ -625,7 +792,7 @@ class PayrollEmployerController extends Controller
                 'annee'      => $annee,
             ],
             [
-                'ulid'               => strtolower((string) \Illuminate\Support\Str::ulid()),
+                'ulid'               => $salaireExistant->ulid ?? strtolower((string) \Illuminate\Support\Str::ulid()),
                 'salaire_base'       => $salaireBase,
                 'primes_totales'     => $primesTotales,
                 'indemnites_totales' => $indemnites,

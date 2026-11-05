@@ -17,5 +17,6 @@ return [
         'Modifier données',
         'Supprimer données',
         'Activer/Désactiver',
+        'Gérer Salaires',
     ],
 ];

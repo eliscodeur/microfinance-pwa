@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('salary_advances', function (Blueprint $table) {
             $table->id();
             $table->char('advance_uid', 26)->unique();
-            $table->foreignId('agent_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('agent_id')->nullable()->constrained('agents')->onDelete('cascade');
 
             $table->integer('montant_total');
             $table->integer('montant_mensuel');

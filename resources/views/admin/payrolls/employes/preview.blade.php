@@ -30,6 +30,16 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
+        @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                @foreach ($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
 
         <!-- Ligne supérieure : Informations agent & Traçabilité -->
         <div class="row g-4 mb-4">
@@ -85,6 +95,9 @@
             @csrf
             <input type="hidden" name="mois" value="{{ $mois }}">
             <input type="hidden" name="annee" value="{{ $annee }}">
+            @unless ($isEditable)
+                <div class="alert alert-info">Ce bulletin est figé après validation et affiché depuis les montants enregistrés.</div>
+            @endunless
 
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-dark text-white py-3">
@@ -120,6 +133,7 @@
                                     <td style="width: 250px;">
                                         <input type="number" step="any" class="form-control form-control-sm"
                                             name="primes_totales"
+                                            @unless ($isEditable) readonly @endunless
                                             value="{{ old('primes_totales', $payrollDetails->primes_totales) }}">
                                     </td>
                                     <td class="text-end pe-4 text-primary fw-bold">+
@@ -133,6 +147,7 @@
                                     <td style="width: 250px;">
                                         <input type="number" step="any" class="form-control form-control-sm"
                                             name="indemnites_totales"
+                                            @unless ($isEditable) readonly @endunless
                                             value="{{ old('indemnites_totales', $payrollDetails->indemnites_totales) }}">
                                     </td>
                                     <td class="text-end pe-4 text-info fw-bold">+
@@ -155,6 +170,7 @@
                                     <td style="width: 250px;">
                                         <input type="number" step="any" class="form-control form-control-sm"
                                             name="autres_retenues"
+                                            @unless ($isEditable) readonly @endunless
                                             value="{{ old('autres_retenues', $payrollDetails->autres_retenues) }}">
                                     </td>
                                     <td class="text-end pe-4 text-danger fw-bold">-
@@ -173,7 +189,7 @@
                     </div>
                 </div>
                 <div class="card-footer bg-white py-3 text-end">
-                    <button type="button" id="btn-save-brouillon" class="btn btn-primary px-4">
+                    <button type="button" id="btn-save-brouillon" class="btn btn-primary px-4" @unless ($isEditable) disabled @endunless>
                         <i class="fas fa-save me-1"></i> Enregistrer en brouillon & recalculer
                     </button>
                 </div>
@@ -212,6 +228,7 @@
                                     </td>
                                     <td class="text-end pe-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
+                                            @unless ($isEditable) disabled @endunless
                                             data-bs-toggle="modal" data-bs-target="#modalAvance-{{ $avance->id }}">
                                             <i class="fas fa-list me-1"></i> Gérer les tranches
                                         </button>
@@ -283,7 +300,7 @@
                                                         <input type="checkbox" name="tranches_ids[]"
                                                             value="{{ $tranche['numero'] }}" class="form-check-input"
                                                             {{ $tranche['selectionne'] ?? false ? 'checked' : '' }}
-                                                            {{ $tranche['deja_paye'] ?? false ? 'disabled' : '' }}>
+                                                            {{ (($tranche['deja_paye'] ?? false) || ! $isEditable) ? 'disabled' : '' }}>
                                                     </div>
                                                 </td>
                                                 <td class="fw-bold">

@@ -25,6 +25,7 @@ class Salaire extends Model
         'commission_carnet',
         'commission_cycle',
         'bonus',
+        'taux_carnet',
         'total_avances',
         'montant_net',
         'statut',
@@ -41,6 +42,7 @@ class Salaire extends Model
         'commission_carnet'  => 'decimal:2',
         'commission_cycle'   => 'decimal:2',
         'bonus'              => 'decimal:2',
+        'taux_carnet'        => 'decimal:2',
         'total_avances'      => 'decimal:2',
         'montant_net'        => 'decimal:2',
     ];

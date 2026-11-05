@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Carnet extends Model
+class Carnet extends Model implements Auditable
 {
     use HasFactory, HasUlids;
+    use \OwenIt\Auditing\Auditable;
 
     /**
      * Les attributs personnalisés à ajouter aux tableaux/JSON.

@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 class SalaryGrid extends Model
 {
@@ -56,25 +57,27 @@ class SalaryGrid extends Model
 
     public function getGrilleForAmount(float $montant, $date = null)
     {
-        // On s'appuie sur ton scope pour être sûr de cibler la grille active à la période voulue
-        return SalaryGrid::activeAt($date)
+        $grilles = SalaryGrid::activeAt($date)
             ->where(function ($query) use ($montant) {
-
-                // Cas 1 : Les lignes normales avec un intervalle min et max (ex: 50000 - 59999)
                 $query->where(function ($q) use ($montant) {
                     $q->whereNotNull('seuil_min')
                         ->where('seuil_min', '<=', $montant)
                         ->where('seuil_max', '>=', $montant);
                 })
-
-                // Cas 2 : La première ligne où seuil_min est NULL (ex: <= 40000)
                     ->orWhere(function ($q) use ($montant) {
                         $q->whereNull('seuil_min')
                             ->where('seuil_max', '>=', $montant);
                     });
-
             })
-            ->first();
+            ->get();
+
+        if ($grilles->count() > 1) {
+            throw ValidationException::withMessages([
+                'salary_grid' => 'Plusieurs tranches actives correspondent au montant. Corrigez la grille avant de calculer la paie.',
+            ]);
+        }
+
+        return $grilles->first();
     }
 
 }

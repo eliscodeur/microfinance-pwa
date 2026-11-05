@@ -2,6 +2,25 @@
 
 @section('content')
     <div class="container-fluid px-4 py-4">
+@if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>{{ session('error') }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="fw-bold mb-1"><i class="bi bi-exclamation-octagon me-1"></i> Veuillez corriger les erreurs suivantes :</div>
+                <ul class="mb-0 ps-3">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
         <!-- En-tête de la page -->
         <div class="d-flex justify-content-between align-items-center mb-1">
             <div>
@@ -369,16 +388,16 @@
             <!-- D. Historique des Avances sur Salaire -->
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white py-3">
+                    <!-- <div class="card-header bg-white py-3">
                         <h5 class="card-title h6 fw-bold mb-0 text-danger">
                             <i class="bi bi-wallet2 me-2"></i> D. Historique des avances sur salaire déduites
                         </h5>
-                    </div>
+                    </div> -->
 
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-white py-3 border-bottom">
                             <h6 class="mb-0 fw-bold text-danger"><i class="fas fa-file-invoice-dollar me-2"></i>
-                                Historique des avances sur salaire déduites pour ce mois</h6>
+                                D. Historique des avances sur salaire déduites pour ce mois</h6>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -409,6 +428,7 @@
                                                 <td class="text-end pe-4">
                                                     <!-- Bouton pour ouvrir le modal spécifique à cette avance -->
                                                     <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        @unless ($salaire->is_editable) disabled @endunless
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#modalAvance-{{ $avance->id }}">
                                                         <i class="bi bi-list-check me-1"></i> Gérer les tranches
@@ -474,14 +494,12 @@
                                             <tr class="{{ $tranche['deja_paye'] ? 'table-light' : '' }}">
                                                 <td class="text-center">
                                                     @if ($tranche['deja_paye'])
-                                                        {{-- Champ caché indispensable car un input disabled n'est pas envoyé par le formulaire --}}
-                                                        <input type="hidden" name="tranches_ids[]"
-                                                            value="{{ $tranche['numero'] }}">
                                                         <input type="checkbox" class="form-check-input" checked disabled>
                                                     @else
                                                         <input type="checkbox" name="tranches_ids[]"
                                                             value="{{ $tranche['numero'] }}" class="form-check-input"
-                                                            {{ $tranche['selectionne'] ? 'checked' : '' }}>
+                                                            {{ $tranche['selectionne'] ? 'checked' : '' }}
+                                                            {{ ! $salaire->is_editable ? 'disabled' : '' }}>
                                                     @endif
                                                 </td>
                                                 <td class="fw-bold">
@@ -511,7 +529,7 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary btn-sm"
                                 data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-danger btn-sm">Enregistrer les tranches</button>
+                            <button type="submit" class="btn btn-danger btn-sm" @unless ($salaire->is_editable) disabled @endunless>Enregistrer les tranches</button>
                         </div>
                     </form>
                 </div>

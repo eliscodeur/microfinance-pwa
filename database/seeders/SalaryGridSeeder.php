@@ -9,8 +9,10 @@ class SalaryGridSeeder extends Seeder
 {
     public function run(): void
     {
-        // Vider la table avant de insérer pour éviter les doublons lors des re-seed
-        DB::table('salary_grids')->truncate();
+        // Keep administrator-managed grids and payroll history intact on existing databases.
+        if (DB::table('salary_grids')->exists()) {
+            return;
+        }
 
         $grilles = [
             [

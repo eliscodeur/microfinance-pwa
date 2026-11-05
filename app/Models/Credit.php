@@ -4,10 +4,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Credit extends Model
+class Credit extends Model implements Auditable
 {
-    use HasFactory;
+    use HasFactory;use \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'credit_uid',

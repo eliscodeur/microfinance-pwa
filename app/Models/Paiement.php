@@ -4,10 +4,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Paiement extends Model
+class Paiement extends Model implements Auditable
 {
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids;use \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'ulid',

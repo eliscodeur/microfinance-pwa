@@ -1,18 +1,18 @@
 @php
-    // Logique d'ouverture des menus
-$usersMenuOpen = request()->routeIs('admin.roles.*') || request()->routeIs('admin.users.*');
-$bonusMenuOpen = request()->routeIs('admin.bonuses.*');
-$agentsMenuOpen = request()->routeIs('admin.agents.*');
-$personnelMenuOpen = request()->routeIs('admin.employes.*') || request()->routeIs('admin.fonctions.*'); // <-- Ajout pour le personnel & fonctions
-$clientsMenuOpen = request()->routeIs('admin.clients.*');
-$creditsMenuOpen = request()->routeIs('admin.credits.*') || request()->routeIs('admin.prets.*');
-$carnetsMenuOpen = request()->routeIs('admin.carnets.*') || request()->routeIs('admin.categories.*');
-$collecteMenuOpen = request()->routeIs('admin.sync-batches.*') || request()->routeIs('admin.cycles.*');
-$payrollMenuOpen = request()->routeIs('admin.payrolls.*');
-$chargesMenuOpen =
-    request()->routeIs('admin.charges.*') ||
-    request()->routeIs('admin.depenses.*') ||
-    request()->routeIs('admin.recettes.*');
+    $usersMenuOpen = request()->routeIs('admin.roles.*') || request()->routeIs('admin.users.*');
+    $bonusMenuOpen = request()->routeIs('admin.bonuses.*');
+    $agentsMenuOpen = request()->routeIs('admin.agents.*');
+    $personnelMenuOpen = request()->routeIs('admin.employes.*') || request()->routeIs('admin.fonctions.*') || request()->routeIs('admin.salary-grids.*');
+    $clientsMenuOpen = request()->routeIs('admin.clients.*');
+    $creditsMenuOpen = request()->routeIs('admin.credits.*') || request()->routeIs('admin.prets.*') || request()->routeIs('admin.credit-settings.*');
+    $carnetsMenuOpen = request()->routeIs('admin.carnets.*') || request()->routeIs('admin.categories.*');
+    $caisseMenuOpen = request()->routeIs('admin.caisse.*');
+    $collecteMenuOpen = request()->routeIs('admin.sync-batches.*') || request()->routeIs('admin.cycles.*');
+    $payrollMenuOpen = request()->routeIs('admin.payrolls.*');
+    $chargesMenuOpen =
+        request()->routeIs('admin.charges.*') ||
+        request()->routeIs('admin.depenses.*') ||
+        request()->routeIs('admin.recettes.*');
 @endphp
 
 <style>
@@ -122,12 +122,11 @@ $chargesMenuOpen =
 <div class="sidebar" id="sidebarNav">
     <div class="sidebar-nav">
 
-        <!-- ================= PILOTAGE ================= -->
-        <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+        <a href="{{ route('admin.dashboard') }}"
+            class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
             <i class="bi bi-grid-1x2"></i> <span>Tableau de Bord</span>
         </a>
 
-        <!-- ================= OPÉRATIONS & TERRAIN ================= -->
         <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">Opérations & Terrain</div>
 
         @can('Gérer Clients')
@@ -161,8 +160,7 @@ $chargesMenuOpen =
                 class="menu-toggle {{ $carnetsMenuOpen ? 'active' : '' }}">
                 <i class="bi bi-book"></i> <span>Carnets & Tontines</span>
             </a>
-            <div class="collapse {{ $carnetsMenuOpen ? 'show' : '' }} submenu" id="carnetsSub"
-                data-bs-parent="#sidebarNav">
+            <div class="collapse {{ $carnetsMenuOpen ? 'show' : '' }} submenu" id="carnetsSub" data-bs-parent="#sidebarNav">
                 <a href="{{ route('admin.carnets.index') }}"
                     class="{{ request()->routeIs('admin.carnets.index') ? 'active' : '' }}">Gestion Carnets</a>
                 <a href="{{ route('admin.categories.index') }}"
@@ -170,7 +168,6 @@ $chargesMenuOpen =
             </div>
         @endcan
 
-        <!-- SYNCHRONISATION (Accès quotidien direct) -->
         @can('Valider Synchros')
             <a href="{{ route('admin.sync-batches.index') }}"
                 class="{{ request()->routeIs('admin.sync-batches.*') ? 'active' : '' }}">
@@ -183,38 +180,47 @@ $chargesMenuOpen =
                 class="menu-toggle {{ $creditsMenuOpen ? 'active' : '' }}">
                 <i class="bi bi-cash-stack"></i> <span>Crédits & Prêts</span>
             </a>
-            <div class="collapse {{ $creditsMenuOpen ? 'show' : '' }} submenu" id="creditsSub"
-                data-bs-parent="#sidebarNav">
+            <div class="collapse {{ $creditsMenuOpen ? 'show' : '' }} submenu" id="creditsSub" data-bs-parent="#sidebarNav">
                 <a href="{{ route('admin.credits.index') }}"
                     class="{{ request()->routeIs('admin.credits.index') ? 'active' : '' }}">Suivi Crédits</a>
                 <a href="{{ route('admin.prets.index') }}"
                     class="{{ request()->routeIs('admin.prets.*') ? 'active' : '' }}">Instruction Crédit</a>
                 <a href="{{ route('admin.credits.create') }}"
                     class="{{ request()->routeIs('admin.credits.create') ? 'active' : '' }}">Nouvelle Demande</a>
+                <a href="{{ route('admin.credit-settings.index') }}"
+                    class="{{ request()->routeIs('admin.credit-settings.*') ? 'active' : '' }}">Paramétrage des crédits</a>
             </div>
         @endcan
 
-        <!-- ================= TRÉSORERIE & CAISSE ================= -->
         <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">Trésorerie & Caisse</div>
 
-        <a href="#tresorerieSub" data-bs-toggle="collapse" aria-expanded="false" class="menu-toggle">
+        <a href="#tresorerieSub"
+           data-bs-toggle="collapse"
+           aria-expanded="{{ $caisseMenuOpen ? 'true' : 'false' }}"
+           class="menu-toggle {{ $caisseMenuOpen ? 'active' : '' }}">
             <i class="bi bi-wallet"></i> <span>Mouvements de Caisse</span>
         </a>
-        <div class="collapse submenu" id="tresorerieSub" data-bs-parent="#sidebarNav">
+
+        <div class="collapse {{ $caisseMenuOpen ? 'show' : '' }} submenu" id="tresorerieSub" data-bs-parent="#sidebarNav">
             <a href="{{ route('admin.caisse.ouvrir') }}"
-                class="{{ request()->routeIs('admin.caisse.ouvrir*') ? 'active' : '' }}">Ouverture de Caisse</a>
+               class="{{ request()->routeIs('admin.caisse.ouvrir') ? 'active' : '' }}">
+                Ouverture de Caisse
+            </a>
             <a href="{{ route('admin.caisse.journal') }}"
-                class="{{ request()->routeIs('admin.caisse.journal') ? 'active' : '' }}">Journal de Caisse</a>
+               class="{{ request()->routeIs('admin.caisse.journal') ? 'active' : '' }}">
+                Journal de Caisse
+            </a>
             <a href="{{ route('admin.caisse.cloture') }}"
-                class="{{ request()->routeIs('admin.caisse.cloture') ? 'active' : '' }}">Clôture de Caisse</a>
+               class="{{ request()->routeIs('admin.caisse.cloture') ? 'active' : '' }}">
+                Clôture de Caisse
+            </a>
         </div>
 
         <a href="#chargesSub" data-bs-toggle="collapse" aria-expanded="{{ $chargesMenuOpen ? 'true' : 'false' }}"
             class="menu-toggle {{ $chargesMenuOpen ? 'active' : '' }}">
             <i class="bi bi-receipt-cutoff"></i> <span>Recettes & Dépenses</span>
         </a>
-        <div class="collapse {{ $chargesMenuOpen || request()->routeIs('admin.recettes.*') ? 'show' : '' }} submenu"
-            id="chargesSub" data-bs-parent="#sidebarNav">
+        <div class="collapse {{ $chargesMenuOpen ? 'show' : '' }} submenu" id="chargesSub" data-bs-parent="#sidebarNav">
             <a href="{{ route('admin.recettes.index') }}"
                 class="{{ request()->routeIs('admin.recettes.index') ? 'active' : '' }}">Recettes d'Exploitation</a>
             <a href="{{ route('admin.depenses.index') }}"
@@ -223,19 +229,20 @@ $chargesMenuOpen =
                 class="{{ request()->routeIs('admin.charges.index') ? 'active' : '' }}">Types & Catégories</a>
         </div>
 
-        <!-- ================= RESSOURCES HUMAINES & PAIE ================= -->
         <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">RH & Rémunération</div>
 
         <a href="#personnelSub" data-bs-toggle="collapse" aria-expanded="{{ $personnelMenuOpen ? 'true' : 'false' }}"
             class="menu-toggle {{ $personnelMenuOpen ? 'active' : '' }}">
             <i class="bi bi-people-fill"></i> <span>Personnel & Fonctions</span>
         </a>
-        <div class="collapse {{ $personnelMenuOpen ? 'show' : '' }} submenu" id="personnelSub"
-            data-bs-parent="#sidebarNav">
+        <div class="collapse {{ $personnelMenuOpen ? 'show' : '' }} submenu" id="personnelSub" data-bs-parent="#sidebarNav">
             <a href="{{ route('admin.employes.index') }}"
                 class="{{ request()->routeIs('admin.employes.*') ? 'active' : '' }}">Liste du Personnel</a>
             <a href="{{ route('admin.fonctions.index') }}"
                 class="{{ request()->routeIs('admin.fonctions.*') ? 'active' : '' }}">Postes & Fonctions</a>
+            <a href="{{ route('admin.salary-grids.index') }}"
+                class="{{ request()->routeIs('admin.salary-grids.*') ? 'active' : '' }}">Grille de Salaire
+            </a>
         </div>
 
         @can('Gérer Commissions')
@@ -243,8 +250,7 @@ $chargesMenuOpen =
                 class="menu-toggle {{ $bonusMenuOpen ? 'active' : '' }}">
                 <i class="bi bi-cash-coin"></i> <span>Commissions agents</span>
             </a>
-            <div class="collapse {{ $bonusMenuOpen ? 'show' : '' }} submenu" id="commissionsSub"
-                data-bs-parent="#sidebarNav">
+            <div class="collapse {{ $bonusMenuOpen ? 'show' : '' }} submenu" id="commissionsSub" data-bs-parent="#sidebarNav">
                 <a href="{{ route('admin.bonuses.index') }}"
                     class="{{ request()->routeIs('admin.bonuses.index') ? 'active' : '' }}">À valider</a>
                 <a href="{{ route('admin.bonuses.history') }}"
@@ -257,18 +263,16 @@ $chargesMenuOpen =
                 class="menu-toggle {{ $payrollMenuOpen ? 'active' : '' }}">
                 <i class="bi bi-wallet2"></i> <span>Salaires & Avances</span>
             </a>
-            <div class="collapse {{ $payrollMenuOpen ? 'show' : '' }} submenu" id="payrollSub"
-                data-bs-parent="#sidebarNav">
+            <div class="collapse {{ $payrollMenuOpen ? 'show' : '' }} submenu" id="payrollSub" data-bs-parent="#sidebarNav">
                 <a href="{{ route('admin.payrolls.index') }}"
-                    class="{{ request()->routeIs('admin.payrolls.index*') ? 'active' : '' }}">Salaires agents</a>
+                    class="{{ request()->routeIs('admin.payrolls.index') ? 'active' : '' }}">Salaires agents</a>
                 <a href="{{ route('admin.payrolls.employes.index') }}"
                     class="{{ request()->routeIs('admin.payrolls.employes.*') ? 'active' : '' }}">Salaires employés</a>
                 <a href="{{ route('admin.payrolls.avance') }}"
-                    class="{{ request()->routeIs('admin.payrolls.avance*') ? 'active' : '' }}">Avances sur salaire</a>
+                    class="{{ request()->routeIs('admin.payrolls.avance') ? 'active' : '' }}">Avances sur salaire</a>
             </div>
         @endcan
 
-        <!-- ================= PARAMÈTRES & SYSTÈME ================= -->
         <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">Paramètres & Système</div>
 
         @can('Gérer Utilisateurs')
@@ -276,8 +280,7 @@ $chargesMenuOpen =
                 class="menu-toggle {{ $usersMenuOpen ? 'active' : '' }}">
                 <i class="bi bi-shield-check"></i> <span>Administrateurs</span>
             </a>
-            <div class="collapse {{ $usersMenuOpen ? 'show' : '' }} submenu" id="usersSub"
-                data-bs-parent="#sidebarNav">
+            <div class="collapse {{ $usersMenuOpen ? 'show' : '' }} submenu" id="usersSub" data-bs-parent="#sidebarNav">
                 <a href="{{ route('admin.roles.index') }}"
                     class="{{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">Rôles & Droits</a>
                 <a href="{{ route('admin.users.index') }}"

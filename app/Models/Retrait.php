@@ -1,13 +1,13 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Retrait extends Model
+class Retrait extends Model implements Auditable
 {
-    use HasFactory;
+    use HasFactory;use \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'cycle_id',
@@ -22,10 +22,10 @@ class Retrait extends Model
     ];
 
     protected $casts = [
-        'date_retrait' => 'datetime',
+        'date_retrait'  => 'datetime',
         'montant_total' => 'decimal:2',
-        'commission' => 'decimal:2',
-        'montant_net' => 'decimal:2',
+        'commission'    => 'decimal:2',
+        'montant_net'   => 'decimal:2',
     ];
 
     public function cycle()

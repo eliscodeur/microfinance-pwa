@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ChargeController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\CollecteController;
 use App\Http\Controllers\Admin\CreditController;
+use App\Http\Controllers\Admin\CreditConfigurationController;
 use App\Http\Controllers\Admin\CycleController as AdminCycleController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepenseController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Admin\PayrollEmployerController;
 use App\Http\Controllers\Admin\RecetteController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SalaryAdvanceController;
+use App\Http\Controllers\Admin\SalaryGridController;
 use App\Http\Controllers\Admin\StockCarnetController;
 use App\Http\Controllers\Admin\SyncBatchController;
 use App\Http\Controllers\Admin\UserController;
@@ -217,7 +219,9 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
         Route::post('prets/{id}/decaisser', [PretInstructionController::class, 'decaisser'])->name('prets.decaisser')->middleware('can:Gérer Crédits');
 
         // Validation / Paiement des Avances sur Salaires
-        Route::patch('/payrolls/avance/{id}/valider', [SalaryAdvanceController::class, 'validerAvance'])->name('payrolls.avance.valider');
+        Route::patch('/payrolls/avance/{id}/valider', [SalaryAdvanceController::class, 'validerAvance'])
+            ->name('payrolls.avance.valider')
+            ->middleware('can:Gérer Salaires');
     });
 
     // ==========================================
@@ -255,28 +259,34 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     })->name('agents.sync-status');
     Route::get('/agents-list/{historyUlid}', [AgentController::class, 'getAgentsExceptCurrent'])->name('agents.list.except');
     Route::post('agents/{agent}/reset-pin', [AgentController::class, 'resetPin'])->name('agents.reset-pin');
-    Route::post('/agents/{agent}/avances', [SalaryAdvanceController::class, 'storeAgent'])->name('agents.avances.store');
-    Route::post('/employes/{employe}/avances', [SalaryAdvanceController::class, 'storeEmploye'])->name('employes.avances.store');
+    // Paies et avances
+    Route::middleware('can:Gérer Salaires')->group(function () {
+        Route::post('/agents/{agent}/avances', [SalaryAdvanceController::class, 'storeAgent'])->name('agents.avances.store');
+        Route::post('/employes/{employe}/avances', [SalaryAdvanceController::class, 'storeEmploye'])->name('employes.avances.store');
 
-    // Paies et Avances (Payroll)
-    Route::get('/payroll', [PayrollController::class, 'index'])->name('payrolls.index');
-    Route::post('/payroll/store', [PayrollController::class, 'store'])->name('payrolls.store');
-    Route::get('/payrolls/bulletin/{id}', [PayrollController::class, 'showValidated'])->name('payrolls.validated');
-    Route::get('/payrolls/bulletin/{id}/employe', [PayrollEmployerController::class, 'showValidated'])->name('payrolls.employe.validated');
-    Route::put('/payrolls/avances/{avance}/tranches', [PayrollController::class, 'updateTranches'])->name('payrolls.avances.updateTranches');
-    Route::get('/payrolls/preview-details', [PayrollController::class, 'previewDetails'])->name('payrolls.details');
-    Route::get('/payrolls/employes', [PayrollEmployerController::class, 'index'])->name('payrolls.employes.index');
-    Route::get('payrolls/employes/{ulid}', [PayrollEmployerController::class, 'previewDetails'])->name('payrolls.employes.details');
-    Route::post('/payrolls/employes/store', [PayrollEmployerController::class, 'store'])->name('payrolls.employes.store');
-    Route::put('/payrolls/avances/employe/{avance}/tranches', [PayrollEmployerController::class, 'updateTranches'])->name('payrolls.avances.employe.updateTranches');
-    Route::post('/payrolls/employes/{ulid}/payroll/store-brouillon', [PayrollEmployerController::class, 'storeBrouillon'])->name('payrolls.employe.store-brouillon');
+        Route::resource('salary-grids', SalaryGridController::class)
+            ->only(['index', 'store', 'update']);
+        Route::patch('/salary-grids/{salary_grid}/close', [SalaryGridController::class, 'close'])
+            ->name('salary-grids.close');
+        Route::get('/payrolls/agents', [PayrollController::class, 'index'])->name('payrolls.index');
+        Route::post('/payroll/store', [PayrollController::class, 'store'])->name('payrolls.store');
+        Route::get('/payrolls/bulletin/{id}', [PayrollController::class, 'showValidated'])->name('payrolls.validated');
+        Route::get('/payrolls/bulletin/{id}/employe', [PayrollEmployerController::class, 'showValidated'])->name('payrolls.employe.validated');
+        Route::put('/payrolls/avances/{avance}/tranches', [PayrollController::class, 'updateTranches'])->name('payrolls.avances.updateTranches');
+        Route::get('/payrolls/preview-details', [PayrollController::class, 'previewDetails'])->name('payrolls.details');
+        Route::get('/payrolls/employes', [PayrollEmployerController::class, 'index'])->name('payrolls.employes.index');
+        Route::get('payrolls/employes/{ulid}', [PayrollEmployerController::class, 'previewDetails'])->name('payrolls.employes.details');
+        Route::post('/payrolls/employes/store', [PayrollEmployerController::class, 'store'])->name('payrolls.employes.store');
+        Route::put('/payrolls/avances/employe/{avance}/tranches', [PayrollEmployerController::class, 'updateTranches'])->name('payrolls.avances.employe.updateTranches');
+        Route::post('/payrolls/employes/{ulid}/payroll/store-brouillon', [PayrollEmployerController::class, 'storeBrouillon'])->name('payrolls.employe.store-brouillon');
 
-    // Gestion des Avances (CRUD divers)
-    Route::get('/payrolls/avances', [SalaryAdvanceController::class, 'index'])->name('payrolls.avance');
-    Route::get('/avances/{id}/edit', [SalaryAdvanceController::class, 'edit'])->name('avances.edit');
-    Route::put('/avances/{uid}', [SalaryAdvanceController::class, 'update'])->name('avances.update');
-    Route::delete('/avances/{id}', [SalaryAdvanceController::class, 'destroy'])->name('avances.destroy');
-    Route::patch('/payrolls/avance/{id}/rejeter', [SalaryAdvanceController::class, 'rejeterAvance'])->name('payrolls.avance.rejeter');
+        // Gestion des Avances (CRUD divers)
+        Route::get('/payrolls/avances', [SalaryAdvanceController::class, 'index'])->name('payrolls.avance');
+        Route::get('/avances/{id}/edit', [SalaryAdvanceController::class, 'edit'])->name('avances.edit');
+        Route::put('/avances/{uid}', [SalaryAdvanceController::class, 'update'])->name('avances.update');
+        Route::delete('/avances/{id}', [SalaryAdvanceController::class, 'destroy'])->name('avances.destroy');
+        Route::patch('/payrolls/avance/{id}/rejeter', [SalaryAdvanceController::class, 'rejeterAvance'])->name('payrolls.avance.rejeter');
+    });
 
     // ==========================================
     // 6. CLIENTS, CARNETS & CRÉDITS (Général)
@@ -287,6 +297,13 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::post('/client-carnets', [ClientController::class, 'storeNumCarnet'])->name('client-carnets.store');
 
     Route::resource('credits', CreditController::class)->only(['index', 'create', 'store', 'show'])->middleware('can:Gérer Crédits');
+    Route::get('/credit-settings', [CreditConfigurationController::class, 'index'])->name('credit-settings.index')->middleware('can:Gérer Crédits');
+    Route::post('/credit-settings/types', [CreditConfigurationController::class, 'storeType'])->name('credit-settings.types.store')->middleware('can:Gérer Crédits');
+    Route::put('/credit-settings/types/{creditType}', [CreditConfigurationController::class, 'updateType'])->name('credit-settings.types.update')->middleware('can:Gérer Crédits');
+    Route::post('/credit-settings/products', [CreditConfigurationController::class, 'storeProduct'])->name('credit-settings.products.store')->middleware('can:Gérer Crédits');
+    Route::put('/credit-settings/products/{creditProduct}', [CreditConfigurationController::class, 'updateProduct'])->name('credit-settings.products.update')->middleware('can:Gérer Crédits');
+    Route::post('/credit-settings/objects', [CreditConfigurationController::class, 'storeObject'])->name('credit-settings.objects.store')->middleware('can:Gérer Crédits');
+    Route::put('/credit-settings/objects/{creditObject}', [CreditConfigurationController::class, 'updateObject'])->name('credit-settings.objects.update')->middleware('can:Gérer Crédits');
     Route::get('/credits/check-pending/{carnetId}', [CreditController::class, 'checkPending'])->name('credits.check-pending');
 
     // Carnets & API associées

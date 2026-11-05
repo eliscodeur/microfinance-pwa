@@ -4,10 +4,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class EmployeAdministratif extends Model
+class EmployeAdministratif extends Model implements Auditable
 {
-    use HasFactory;
+    use HasFactory;use \OwenIt\Auditing\Auditable;
 
     protected $table = 'employe_administratifs';
 

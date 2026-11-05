@@ -2,7 +2,17 @@
 
 @section('content')
     <div class="container-fluid">
-        <!-- En-tête de page -->
+        @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                @foreach ($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
+    <!-- En-tête de page -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="h4 mb-1">Salaires & Paie - Employés Administratifs</h2>

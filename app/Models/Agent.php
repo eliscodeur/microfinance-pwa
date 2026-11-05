@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Agent extends Model
+class Agent extends Model implements Auditable
 {
     use HasFactory, HasUlids;
+    use \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'ulid',

@@ -96,7 +96,10 @@ class CreditController extends Controller
 
         return Inertia::render('Credits/Create', [
             'clients'        => $clients,
-            'creditProducts' => CreditProduct::with('creditObjects')->get(),
+            'creditProducts' => CreditProduct::where('is_active', true)
+                ->whereHas('type', fn ($query) => $query->where('is_active', true))
+                ->with(['type', 'creditObjects' => fn ($query) => $query->where('credit_objects.is_active', true)])
+                ->get(),
         ]);
     }
     public function store(Request $request)
@@ -150,6 +153,22 @@ class CreditController extends Controller
             'date_debut.after_or_equal' => 'La date de début doit être aujourd’hui ou ultérieure.',
             'piece_identite.required'   => 'La pièce d’identité du garant est obligatoire.',
         ]);
+
+        $product = CreditProduct::with(['type', 'creditObjects'])->findOrFail($request->input('credit_product_id'));
+        if (! $product->is_active || ! $product->type?->is_active || $product->type_carnet_requis !== $request->input('type_support')) {
+            throw ValidationException::withMessages([
+                'credit_product_id' => 'Ce produit de crédit est inactif ou ne correspond pas au support sélectionné.',
+            ]);
+        }
+
+        if ($request->filled('credit_object_id')) {
+            $object = $product->creditObjects->firstWhere('id', (int) $request->input('credit_object_id'));
+            if (! $object || ! $object->is_active) {
+                throw ValidationException::withMessages([
+                    'credit_object_id' => 'Le motif sélectionné n’est pas actif ou n’est pas autorisé pour ce produit.',
+                ]);
+            }
+        }
 
         $guaranteeBase = 0;
 

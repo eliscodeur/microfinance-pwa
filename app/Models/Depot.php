@@ -1,13 +1,13 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Depot extends Model
+class Depot extends Model implements Auditable
 {
-    use HasFactory;
+    use HasFactory;use \OwenIt\Auditing\Auditable;
 
     // Champs que l'admin peut remplir via le formulaire
     protected $fillable = [
@@ -17,7 +17,7 @@ class Depot extends Model
         'user_id',
         'montant',
         'date_depot',
-        'commentaire'
+        'commentaire',
     ];
 
     // On indique à Laravel de traiter date_depot comme une date Carbon

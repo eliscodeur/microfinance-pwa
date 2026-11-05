@@ -89,7 +89,7 @@ class CreditSystemSeeder extends Seeder
                 'duree_max_mois'       => 6,
             ]
         );
-        $produitTontine->objects()->sync([$objCommerce->id, $objArtisanat->id, $objAutre->id]);
+        $produitTontine->objects()->syncWithoutDetaching([$objCommerce->id, $objArtisanat->id, $objAutre->id]);
 
         $produitScolaire = CreditProduct::firstOrCreate(
             ['code' => 'CRE-SCO'],
@@ -103,7 +103,7 @@ class CreditSystemSeeder extends Seeder
                 'duree_max_mois'       => 10,
             ]
         );
-        $produitScolaire->objects()->sync([$objScolaire->id, $objAutre->id]);
+        $produitScolaire->objects()->syncWithoutDetaching([$objScolaire->id, $objAutre->id]);
 
         $produitDecouvert = CreditProduct::firstOrCreate(
             ['code' => 'DEC-FLASH'],
@@ -117,6 +117,6 @@ class CreditSystemSeeder extends Seeder
                 'type_carnet_requis'   => 'compte',
             ]
         );
-        $produitDecouvert->objects()->sync([$objCommerce->id, $objSante->id, $objAutre->id]);
+        $produitDecouvert->objects()->syncWithoutDetaching([$objCommerce->id, $objSante->id, $objAutre->id]);
     }
 }

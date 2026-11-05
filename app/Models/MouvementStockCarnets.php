@@ -4,13 +4,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use OwenIt\Auditing\Contracts\Auditable;
 
 // Importe Str pour générer l'ULID automatiquement
 
-class MouvementStockCarnets extends Model
+class MouvementStockCarnets extends Model implements Auditable
 {
-    use HasFactory;
-    // Note : On retire "HasUlids" d'ici pour garder l'ID en auto-increment classique !
+    use HasFactory;use \OwenIt\Auditing\Auditable;
 
     protected $table = 'mouvement_stock_carnets';
 

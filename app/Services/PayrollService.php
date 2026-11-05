@@ -75,6 +75,15 @@ class PayrollService
         // 5. Calculer le montant total de la commission
         $montantTotalCommission = ($totalCarnetVendus * $tauxCarnet) / 100;
 
+        // if (! $grille) {
+        //     throw ValidationException::withMessages([
+        //         'salary_grid' => sprintf(
+        //             'Aucune grille salariale active ne correspond à la commission de cycle de %s FCFA pour la période sélectionnée.',
+        //             number_format($totalCommissionCycle, 2, ',', ' ')
+        //         ),
+        //     ]);
+        // }
+
         return [
             'salaire_base'                   => (float) $salaireBase,
             'commission_travail'             => (float) $commissionTravail,
