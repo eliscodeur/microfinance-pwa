@@ -9,10 +9,10 @@
                 <p class="text-muted mb-0">Visualisation, calcul automatique et validation des éléments de paie mensuelle.
                 </p>
             </div>
-            @php
+            <!-- @php
             $christiane = collect($payrolls)->first(fn($p) => str_contains(strtolower($p->agent->nom), 'christiane'));
         @endphp
-        @dump($christiane)
+        @dump($christiane) -->
         </div>
         {{-- @dump($payrolls) --}}
         @if (session('error'))

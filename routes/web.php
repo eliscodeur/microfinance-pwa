@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AgentController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BonusController;
 use App\Http\Controllers\Admin\CarnetController;
 use App\Http\Controllers\Admin\cashclosingController;
@@ -186,6 +187,12 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])
+        ->name('audit-logs.index')
+        ->middleware('can:Consulter les audits');
+    Route::get('/audit-logs/export', [AuditLogController::class, 'export'])
+        ->name('audit-logs.export')
+        ->middleware('can:Exporter les audits');
 
     // ==========================================
     // 2. GESTION DES SESSIONS & CAISSE (Ouverture & Clôture)

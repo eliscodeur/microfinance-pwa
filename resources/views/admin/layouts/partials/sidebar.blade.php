@@ -288,6 +288,13 @@
             </div>
         @endcan
 
+        @can('Consulter les audits')
+            <a href="{{ route('admin.audit-logs.index') }}"
+                class="{{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                <i class="bi bi-shield-lock"></i> <span>Journal d’audit</span>
+            </a>
+        @endcan
+
         @can('Gérer Carnets')
             <a href="{{ route('admin.stocks.index') }}"
                 class="{{ request()->routeIs('admin.stocks.index') ? 'active' : '' }}">

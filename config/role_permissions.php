@@ -18,5 +18,7 @@ return [
         'Supprimer données',
         'Activer/Désactiver',
         'Gérer Salaires',
+        'Consulter les audits',
+        'Exporter les audits',
     ],
 ];

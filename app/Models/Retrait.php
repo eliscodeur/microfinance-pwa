@@ -21,6 +21,11 @@ class Retrait extends Model implements Auditable
         'note',
     ];
 
+    protected $auditExclude = [
+        'note',
+        'updated_at',
+    ];
+
     protected $casts = [
         'date_retrait'  => 'datetime',
         'montant_total' => 'decimal:2',

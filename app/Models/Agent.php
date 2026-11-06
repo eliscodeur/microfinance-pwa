@@ -26,6 +26,10 @@ class Agent extends Model implements Auditable
         'portefeuille_virtuel',
     ];
 
+    protected $auditExclude = [
+        'pin_hash',
+    ];
+
     protected $casts = [
         'actif'                => 'boolean',
         'can_sync'             => 'boolean',

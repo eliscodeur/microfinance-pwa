@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->ulid('ulid')->unique(); // Identifiant ULID (sécurité/URL/API)
+            $table->ulid('ulid')->unique();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('username')->unique()->nullable();
-            $table->string('type')->default('admin'); // Type d'utilisateur (admin, super_admin, etc.)
+            $table->string('type')->default('admin');
             $table->string('password');
             $table->foreignId('role_id')->nullable()->constrained()->nullOnDelete();
             $table->boolean('is_active')->default(true);

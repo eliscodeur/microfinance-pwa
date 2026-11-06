@@ -37,6 +37,11 @@ class User extends Authenticatable implements Auditable
         'remember_token',
     ];
 
+    protected $auditExclude = [
+        'password',
+        'remember_token',
+    ];
+
     protected $casts = [
         'email_verified_at' => 'datetime',
         'is_active'         => 'boolean',
