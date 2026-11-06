@@ -210,6 +210,10 @@
                class="{{ request()->routeIs('admin.caisse.journal') ? 'active' : '' }}">
                 Journal de Caisse
             </a>
+            <a href="{{ route('admin.caisse.approvisionner') }}"
+               class="{{ request()->routeIs('admin.caisse.approvisionner*') ? 'active' : '' }}">
+                Approvisionner la Caisse
+            </a>
             <a href="{{ route('admin.caisse.cloture') }}"
                class="{{ request()->routeIs('admin.caisse.cloture') ? 'active' : '' }}">
                 Clôture de Caisse

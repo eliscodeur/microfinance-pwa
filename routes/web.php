@@ -203,6 +203,8 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     // Routes de clôture et journal (protégées par la session ouverte)
     Route::get('/caisse/journal', [JournalCaisseController::class, 'index'])->name('caisse.journal');
     Route::middleware(['cash.open'])->group(function () {
+        Route::get('/caisse/approvisionner', [CashSessionController::class, 'replenish'])->name('caisse.approvisionner');
+        Route::post('/caisse/approvisionner', [CashSessionController::class, 'storeReplenishment'])->name('caisse.approvisionner.store');
         Route::get('/caisse/cloture', [CashClosingController::class, 'index'])->name('caisse.cloture');
         Route::post('/caisse/cloture', [CashClosingController::class, 'store'])->name('caisse.cloture.store');
     });
@@ -223,13 +225,14 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
 
         // Prêts (Validation et Décaissement)
         Route::post('prets/{id}/valider', [PretInstructionController::class, 'valider'])->name('prets.valider')->middleware('can:Gérer Crédits');
-        Route::post('prets/{id}/decaisser', [PretInstructionController::class, 'decaisser'])->name('prets.decaisser')->middleware('can:Gérer Crédits');
-
         // Validation / Paiement des Avances sur Salaires
         Route::patch('/payrolls/avance/{id}/valider', [SalaryAdvanceController::class, 'validerAvance'])
             ->name('payrolls.avance.valider')
             ->middleware('can:Gérer Salaires');
     });
+    Route::post('prets/{id}/decaisser', [PretInstructionController::class, 'decaisser'])
+        ->name('prets.decaisser')
+        ->middleware('can:Gérer Crédits');
 
     // ==========================================
     // 4. SYNCHRONISATIONS & CYCLES

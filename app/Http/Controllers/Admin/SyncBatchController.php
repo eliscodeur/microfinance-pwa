@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\DB;
 use App\Events\SyncBatchCreated;
 class SyncBatchController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('cash.open')->only('approve');
+    }
+
     public function index(Request $request)
     {
         $status = $request->query('status', 'pending_review');

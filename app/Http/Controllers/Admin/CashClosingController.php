@@ -40,7 +40,7 @@ class CashClosingController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'solde_physique' => 'required|numeric|min:0',
+            'solde_physique' => 'required|integer|min:0',
             'commentaire'    => 'nullable|string|max:500',
         ]);
 

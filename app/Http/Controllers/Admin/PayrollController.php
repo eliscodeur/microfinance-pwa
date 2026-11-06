@@ -11,6 +11,7 @@ use App\Models\Depense;
 use App\Models\MouvementCaisse;
 use App\Models\Salaire;
 use App\Models\SalaryAdvance;
+use App\Services\CashOperationAuditService;
 use App\Services\PayrollService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -361,8 +362,34 @@ class PayrollController extends Controller
                 'annee' => $annee,
             ])->with('success', 'Tous les salaires du mois ont été validés, comptabilisés en dépenses et verrouillés avec succès !');
         } catch (ValidationException $e) {
+            app(CashOperationAuditService::class)->recordRejectedExpense(
+                (int) auth()->id(),
+                null,
+                [
+                    'operation' => 'agent_payroll',
+                    'periode' => $request->input('periode'),
+                    'mode_paiement' => 'Virement Bancaire',
+                ],
+                $e,
+                $request->fullUrl(),
+                $request->ip(),
+                $request->userAgent()
+            );
             throw $e;
         } catch (\Throwable $e) {
+            app(CashOperationAuditService::class)->recordRejectedExpense(
+                (int) auth()->id(),
+                null,
+                [
+                    'operation' => 'agent_payroll',
+                    'periode' => $request->input('periode'),
+                    'mode_paiement' => 'Virement Bancaire',
+                ],
+                $e,
+                $request->fullUrl(),
+                $request->ip(),
+                $request->userAgent()
+            );
             Log::error('Erreur lors de la validation des salaires agents.', [
                 'periode'   => $request->input('periode'),
                 'exception' => $e,

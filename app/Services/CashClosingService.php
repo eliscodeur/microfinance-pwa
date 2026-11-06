@@ -9,29 +9,52 @@ use Illuminate\Support\Str;
 
 class CashClosingService
 {
+    private const CASH_PAYMENT_MODES = [
+        'especes', 'Especes', 'ESPECES',
+        'espèces', 'Espèces', 'ESPÈCES',
+        'espece', 'Espece', 'ESPECE',
+        'espèce', 'Espèce', 'ESPÈCE',
+    ];
+
     /**
      * Calcule le bilan théorique de la session active.
      */
     public function calculateSummary(CashSession $session): array
     {
-        $query = MouvementCaisse::where('user_id', $session->user_id)
-            ->where('date_mouvement', '>=', $session->date_ouverture);
+        $query = MouvementCaisse::where('cash_session_id', $session->id);
 
-        if ($session->date_fermeture) {
-            $query->where('date_mouvement', '<=', $session->date_fermeture);
-        }
+        $cashQuery = (clone $query)->whereIn('mode_paiement', self::CASH_PAYMENT_MODES);
+        $nonCashQuery = (clone $query)->whereNotIn('mode_paiement', self::CASH_PAYMENT_MODES);
 
-        $totalEntrees = (clone $query)->where('sens', 'entree')->sum('montant');
-        $totalSorties = (clone $query)->where('sens', 'sortie')->sum('montant');
+        $totalEntrees = (clone $cashQuery)->where('sens', 'entree')->sum('montant');
+        $totalSorties = (clone $cashQuery)->where('sens', 'sortie')->sum('montant');
+        $totalEntreesHorsEspeces = (clone $nonCashQuery)->where('sens', 'entree')->sum('montant');
+        $totalSortiesHorsEspeces = (clone $nonCashQuery)->where('sens', 'sortie')->sum('montant');
 
         $soldeTheorique = $session->fond_caisse_initial + $totalEntrees - $totalSorties;
 
         return [
-            'fond_initial'    => $session->fond_caisse_initial,
-            'total_entrees'   => $totalEntrees,
-            'total_sorties'   => $totalSorties,
-            'solde_theorique' => $soldeTheorique,
+            'fond_initial'               => $session->fond_caisse_initial,
+            'total_entrees'              => $totalEntrees,
+            'total_sorties'              => $totalSorties,
+            'total_entrees_hors_especes' => $totalEntreesHorsEspeces,
+            'total_sorties_hors_especes' => $totalSortiesHorsEspeces,
+            'solde_theorique'            => $soldeTheorique,
         ];
+    }
+
+    public function assertSufficientCash(CashSession $session, float $amount): void
+    {
+        $summary = $this->calculateSummary($session);
+        $available = (float) $summary['solde_theorique'];
+
+        if ($amount > $available) {
+            throw new \DomainException(
+                'Fonds espèces insuffisants. Solde théorique : '
+                . number_format($available, 0, ',', ' ')
+                . ' FCFA. Approvisionnez la caisse avant cette opération.'
+            );
+        }
     }
 
     /**
@@ -39,14 +62,19 @@ class CashClosingService
      */
     public function closeSession(CashSession $session, float $soldePhysique, ?string $commentaire = null): CashClosing
     {
-        if ($session->statut === 'fermee') {
-            throw new \Exception("Cette session de caisse est déjà fermée.");
-        }
-
         return DB::transaction(function () use ($session, $soldePhysique, $commentaire) {
+            $session = CashSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
+
+            if ($session->statut === 'fermee') {
+                throw new \Exception("Cette session de caisse est déjà fermée.");
+            }
 
             $summary = $this->calculateSummary($session);
             $ecart   = round($soldePhysique - $summary['solde_theorique'], 2);
+
+            if ($ecart !== 0.0 && trim((string) $commentaire) === '') {
+                throw new \InvalidArgumentException('Une justification est obligatoire lorsqu’un écart est constaté.');
+            }
 
             $closing = CashClosing::create([
                 'ulid'                => strtolower((string) Str::ulid()),
@@ -55,6 +83,8 @@ class CashClosingService
                 'fond_caisse_initial' => $summary['fond_initial'],
                 'total_entrees'       => $summary['total_entrees'],
                 'total_sorties'       => $summary['total_sorties'],
+                'total_entrees_hors_especes' => $summary['total_entrees_hors_especes'],
+                'total_sorties_hors_especes' => $summary['total_sorties_hors_especes'],
                 'solde_theorique'     => $summary['solde_theorique'],
                 'solde_physique'      => $soldePhysique,
                 'ecart'               => $ecart,

@@ -8,6 +8,7 @@ use App\Models\EmployeAdministratif;
 use App\Models\MouvementCaisse;
 use App\Models\SalaireEmploye;
 use App\Models\SalaryAdvance;
+use App\Services\CashOperationAuditService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -461,8 +462,34 @@ class PayrollEmployerController extends Controller
             ])->with('success', 'Validation globale effectuée et enregistrée avec succès !');
 
         } catch (ValidationException $e) {
+            app(CashOperationAuditService::class)->recordRejectedExpense(
+                (int) auth()->id(),
+                null,
+                [
+                    'operation' => 'administrative_payroll',
+                    'periode' => $request->input('periode'),
+                    'mode_paiement' => 'Virement Bancaire',
+                ],
+                $e,
+                $request->fullUrl(),
+                $request->ip(),
+                $request->userAgent()
+            );
             throw $e;
         } catch (\Throwable $e) {
+            app(CashOperationAuditService::class)->recordRejectedExpense(
+                (int) auth()->id(),
+                null,
+                [
+                    'operation' => 'administrative_payroll',
+                    'periode' => $request->input('periode'),
+                    'mode_paiement' => 'Virement Bancaire',
+                ],
+                $e,
+                $request->fullUrl(),
+                $request->ip(),
+                $request->userAgent()
+            );
             Log::error('Erreur lors de la validation des salaires employés.', [
                 'periode' => $request->input('periode'),
                 'exception' => $e,

@@ -13,8 +13,11 @@
                         @csrf
                         <div class="mb-3">
                             <label for="fond_caisse_initial" class="form-label">Fond de Caisse Initial (FCFA) <span class="text-danger">*</span></label>
-                            <input type="number" step="1" name="fond_caisse_initial" id="fond_caisse_initial" class="form-control form-control-lg" value="{{ $dernierSolde ?? 0 }}" required>
-                            <small class="text-muted">Montant physique disponible dans le tiroir au démarrage de la journée.</small>
+                            <input type="number" min="0" step="1" name="fond_caisse_initial" id="fond_caisse_initial" class="form-control form-control-lg" value="{{ old('fond_caisse_initial') }}" required>
+                            <small class="text-muted">Saisissez le montant réellement compté dans le tiroir avant toute opération. Ne reprenez pas automatiquement le solde théorique de la veille.</small>
+                            @error('fond_caisse_initial')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="d-grid">

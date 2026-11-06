@@ -3,11 +3,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CategoriesCharge;
+use App\Models\CashSession;
 use App\Models\Depense;
 use App\Models\MouvementCaisse;
+use App\Services\CashExpenseGuard;
+use App\Services\CashOperationAuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 class DepenseController extends Controller
 {
@@ -51,47 +56,90 @@ class DepenseController extends Controller
      */
     public function store(Request $request)
     {
-        $request->merge([
-            'montant' => str_replace(' ', '', $request->montant),
-        ]);
-        $request->validate([
-            'categories_charge_id' => 'required|exists:categories_charges,id',
-            'montant'              => 'required|numeric|min:0.01',
-            'date_depense'         => 'required|date',
-            'beneficiaire'         => 'nullable|string|max:255',
-            'mode_paiement'        => 'required|string|max:50',
-            'reference_piece'      => 'nullable|string|max:100',
-            'motif'                => 'required|string',
-        ]);
+        $cashSessionId = null;
 
-        $depense = Depense::create([
-            'ulid'                 => strtolower((string) Str::ulid()),
-            'categories_charge_id' => $request->categories_charge_id,
-            'montant'              => $request->montant,
-            'date_depense'         => $request->date_depense,
-            'beneficiaire'         => $request->beneficiaire,
-            'mode_paiement'        => $request->mode_paiement,
-            'reference_piece'      => $request->reference_piece,
-            'motif'                => $request->motif,
-            'user_id'              => Auth::id(),
-        ]);
+        try {
+            $request->merge([
+                'montant' => str_replace(' ', '', $request->montant),
+            ]);
 
-        MouvementCaisse::create([
-            'ulid'           => strtolower((string) Str::ulid()),
-            'type_operation' => 'depense operationnelle',
-            'sens'           => 'sortie',
-            'montant'        => $request->montant,
-            'date_mouvement' => $request->date_depense . ' ' . now()->format('H:i:s'),
-            'mode_paiement'  => $request->mode_paiement,
-            'reference'      => $request->reference_piece ?? 'DEP-' . $depense->id,
-            'libelle'        => 'Dépense : ' . $request->motif . ($request->beneficiaire ? ' ( Bénéficiaire: ' . $request->beneficiaire . ')' : ''),
-            'source_type'    => Depense::class,
-            'source_id'      => $depense->id,
-            'user_id'        => Auth::id(),
-        ]);
+            $request->validate([
+                'categories_charge_id' => 'required|exists:categories_charges,id',
+                'montant'              => 'required|numeric|min:0.01',
+                'date_depense'         => 'required|date',
+                'beneficiaire'         => 'nullable|string|max:255',
+                'mode_paiement'        => 'required|string|max:50',
+                'reference_piece'      => 'nullable|string|max:100',
+                'motif'                => 'required|string|max:2000',
+            ]);
 
-        return redirect()->route('admin.depenses.index')
-            ->with('success', 'Dépense enregistrée avec succès.');
+            return DB::transaction(function () use ($request, &$cashSessionId) {
+                $session = app(CashExpenseGuard::class)->assertForAuthenticatedUser(
+                    $request->mode_paiement,
+                    (float) $request->montant
+                );
+                $cashSessionId = $session ? $session->id : null;
+
+                $depense = Depense::create([
+                    'ulid'                 => strtolower((string) Str::ulid()),
+                    'categories_charge_id' => $request->categories_charge_id,
+                    'montant'              => $request->montant,
+                    'date_depense'         => $request->date_depense,
+                    'beneficiaire'         => $request->beneficiaire,
+                    'mode_paiement'        => $request->mode_paiement,
+                    'reference_piece'      => $request->reference_piece,
+                    'motif'                => $request->motif,
+                    'user_id'              => Auth::id(),
+                ]);
+
+                MouvementCaisse::create([
+                    'ulid'           => strtolower((string) Str::ulid()),
+                    'type_operation' => 'depense operationnelle',
+                    'sens'           => 'sortie',
+                    'montant'        => $request->montant,
+                    'date_mouvement' => $request->date_depense . ' ' . now()->format('H:i:s'),
+                    'mode_paiement'  => $request->mode_paiement,
+                    'reference'      => $request->reference_piece ?? 'DEP-' . $depense->id,
+                    'libelle'        => 'Dépense : ' . $request->motif . ($request->beneficiaire ? ' ( Bénéficiaire: ' . $request->beneficiaire . ')' : ''),
+                    'source_type'    => Depense::class,
+                    'source_id'      => $depense->id,
+                    'user_id'        => Auth::id(),
+                ]);
+
+                return redirect()->route('admin.depenses.index')
+                    ->with('success', 'Dépense enregistrée avec succès.');
+            });
+        } catch (Throwable $exception) {
+            $cashSessionId = $cashSessionId ?: CashSession::where('user_id', Auth::id())
+                ->where('statut', 'ouverte')
+                ->value('id');
+
+            app(CashOperationAuditService::class)->recordRejectedExpense(
+                Auth::id(),
+                $cashSessionId,
+                $request->only([
+                    'categories_charge_id',
+                    'montant',
+                    'date_depense',
+                    'beneficiaire',
+                    'mode_paiement',
+                    'reference_piece',
+                    'motif',
+                ]),
+                $exception,
+                $request->fullUrl(),
+                $request->ip(),
+                $request->userAgent()
+            );
+
+            if ($exception instanceof \DomainException) {
+                return redirect()->route('admin.depenses.index')
+                    ->withErrors(['caisse' => $exception->getMessage()])
+                    ->withInput();
+            }
+
+            throw $exception;
+        }
     }
 
     /**

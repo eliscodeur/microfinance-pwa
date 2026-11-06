@@ -7,7 +7,10 @@ use App\Models\CreditProduct;
 use App\Models\Depense;
 use App\Models\MouvementCaisse;
 use App\Models\Recette;
+use App\Models\CashSession;
 use App\Services\CreditCalculator;
+use App\Services\CashExpenseGuard;
+use App\Services\CashOperationAuditService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -207,13 +210,30 @@ class PretInstructionController extends Controller
     public function decaisser(int $id)
     {
         $credit = Credit::with(['payments', 'client', 'creditProduct'])->findOrFail($id);
+        $cashSessionId = null;
 
         if ($credit->statut !== 'approved') {
             return redirect()->back()->with('error', 'Le crédit doit être approuvé avant décaissement.');
         }
 
         try {
-            return DB::transaction(function () use ($credit) {
+            return DB::transaction(function () use ($credit, &$cashSessionId) {
+                $credit = Credit::with(['payments', 'client', 'creditProduct'])
+                    ->whereKey($credit->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($credit->statut !== 'approved') {
+                    throw new \DomainException('Le crédit doit être approuvé avant décaissement.');
+                }
+
+                $montantDecaissement = $credit->montant_accorde ?? $credit->montant_demande;
+                $session = app(CashExpenseGuard::class)->assertForAuthenticatedUser(
+                    'especes',
+                    (float) $montantDecaissement
+                );
+                $cashSessionId = $session ? $session->id : null;
+
                 $scheduleData = [
                     'montant_demande'  => $credit->montant_accorde ?? $credit->montant_demande,
                     'taux'             => $credit->taux,
@@ -248,8 +268,6 @@ class PretInstructionController extends Controller
                         'status'            => 'pending',
                     ]);
                 }
-
-                $montantDecaissement = $credit->montant_accorde ?? $credit->montant_demande;
 
                 // Récupération sécurisée d'une catégorie de charge par défaut
                 $categorieChargeId = CategoriesCharge::where('libelle', 'like', '%credit%')
@@ -325,6 +343,28 @@ class PretInstructionController extends Controller
                     ->with('success', 'Crédit décaissé avec succès, flux comptables mis à jour.');
             });
         } catch (\Throwable $e) {
+            $cashSessionId = $cashSessionId ?: CashSession::where('user_id', Auth::id())
+                ->where('statut', 'ouverte')
+                ->value('id');
+
+            app(CashOperationAuditService::class)->recordRejectedExpense(
+                (int) Auth::id(),
+                $cashSessionId,
+                [
+                    'operation' => 'credit_disbursement',
+                    'credit_id' => $credit->id,
+                    'montant' => $credit->montant_accorde ?? $credit->montant_demande,
+                    'mode_paiement' => 'especes',
+                    'reference_piece' => 'DEC-PRET-' . date('Ymd') . '-' . $credit->id,
+                    'beneficiaire' => optional($credit->client)->nom . ' ' . optional($credit->client)->prenom,
+                    'motif' => 'Décaissement du crédit #' . $credit->id,
+                ],
+                $e,
+                request()->fullUrl(),
+                request()->ip(),
+                request()->userAgent()
+            );
+
             Log::error("Erreur lors du décaissement du crédit #{$id} : " . $e->getMessage());
             return redirect()->back()->with('error', "Erreur lors du décaissement : " . $e->getMessage());
         }

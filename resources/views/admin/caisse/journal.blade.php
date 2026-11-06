@@ -6,7 +6,7 @@
         <div class="d-flex justify-content-between align-items-center my-4">
             <div>
                 <h1 class="h3 mb-0 text-gray-800">Journal de Caisse</h1>
-                <p class="text-muted small mb-0">Suivi en temps réel de tous les flux physiques de liquidités de la caisse.
+                <p class="text-muted small mb-0">Registre des mouvements financiers enregistrés, avec leurs modes de paiement et sessions de caisse.
                 </p>
             </div>
             <div>
@@ -16,6 +16,35 @@
             </div>
         </div>
 
+        @if ($session && $sessionSummary)
+            <div class="alert alert-primary d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div>
+                    <strong>Votre session de caisse est ouverte</strong>
+                    <div class="small">Ouverte le {{ $session->date_ouverture->format('d/m/Y à H:i') }} · Fonds initial : {{ number_format($sessionSummary['fond_initial'], 0, ',', ' ') }} FCFA</div>
+                </div>
+                <div class="text-md-end">
+                    <span class="small d-block">Solde espèces théorique de la session</span>
+                    <strong class="fs-5 {{ $sessionSummary['solde_theorique'] < 0 ? 'text-danger' : '' }}">{{ number_format($sessionSummary['solde_theorique'], 0, ',', ' ') }} FCFA</strong>
+                </div>
+                <a href="{{ route('admin.caisse.approvisionner') }}" class="btn btn-success">Approvisionner</a>
+                <a href="{{ route('admin.caisse.cloture') }}" class="btn btn-outline-primary">Clôturer la caisse</a>
+            </div>
+            @if ($sessionSummary['solde_theorique'] < 0)
+                <div class="alert alert-danger">
+                    <strong>Décaissements espèces suspendus :</strong> le solde de caisse est négatif. Vérifiez le journal et enregistrez un approvisionnement réel avant toute nouvelle sortie.
+                </div>
+            @elseif ($sessionSummary['solde_theorique'] == 0)
+                <div class="alert alert-warning">
+                    Le solde espèces est épuisé. Enregistrez un approvisionnement avant tout décaissement en espèces.
+                </div>
+            @endif
+        @else
+            <div class="alert alert-warning mb-4">
+                Aucune session de caisse n’est ouverte pour votre compte. Le journal reste consultable, mais le solde net affiché n’est pas le solde physique d’une caisse.
+                <a href="{{ route('admin.caisse.ouvrir') }}" class="alert-link">Ouvrir une session</a>
+            </div>
+        @endif
+
         <!-- 1. CARTES KPI DE CAISSE -->
         <div class="row mb-4">
             <!-- Total Entrées -->
@@ -24,8 +53,7 @@
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Entrées
-                                    (Encaissements)</div>
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total entrées (tous modes)</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">
                                     {{ number_format($totalEntrees, 0, ',', ' ') }} FCFA</div>
                             </div>
@@ -43,8 +71,7 @@
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Sorties
-                                    (Décaissements)</div>
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total sorties (tous modes)</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">
                                     {{ number_format($totalSorties, 0, ',', ' ') }} FCFA</div>
                             </div>
@@ -62,8 +89,7 @@
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Solde Net de la
-                                    Période</div>
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Solde net des flux filtrés</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">
                                     {{ number_format($soldeTheorique, 0, ',', ' ') }} FCFA</div>
                             </div>
@@ -84,45 +110,47 @@
             <div class="card-body">
                 <form method="GET" action="{{ route('admin.caisse.journal') }}" class="row g-3 align-items-end">
                     <!-- Filtre Période -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="periode" class="form-label small font-weight-bold">Période</label>
                         <input type="text" class="form-control" name="periode" id="periode"
-                            value="{{ request('periode') }}">
+                            value="{{ request('periode') }}" placeholder="JJ/MM/AAAA au JJ/MM/AAAA">
                     </div>
 
                     <!-- Filtre Type d'Opération -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="type_operation" class="form-label small font-weight-bold">Type d'Opération</label>
                         <select name="type_operation" id="type_operation" class="form-control">
                             <option value="">-- Toutes les opérations --</option>
-                            <option value="depot compte"
-                                {{ request('type_operation') == 'depot compte' ? 'selected' : '' }}>Dépôt d'épargne
-                            </option>
-                            <option value="retrait compte"
-                                {{ request('type_operation') == 'retrait compte' ? 'selected' : '' }}>Retrait d'épargne
-                            </option>
-                            <option value="depot tontine"
-                                {{ request('type_operation') == 'depot tontine' ? 'selected' : '' }}>Dépôt de tontine
-                            </option>
-                            <option value="retrait tontine"
-                                {{ request('type_operation') == 'retrait tontine' ? 'selected' : '' }}>Retrait de tontine
-                            </option>
-                            <option value="remboursement_credit"
-                                {{ request('type_operation') == 'remboursement_credit' ? 'selected' : '' }}>Remboursement
-                                de
-                                crédit</option>
-                            <option value="decaissement_credit"
-                                {{ request('type_operation') == 'decaissement_credit' ? 'selected' : '' }}>Décaissement de
-                                crédit</option>
-                            <option value="recette" {{ request('type_operation') == 'recette' ? 'selected' : '' }}>Recette
-                                d'exploitation</option>
-                            <option value="depense" {{ request('type_operation') == 'depense' ? 'selected' : '' }}>Dépense
-                            </option>
+                            @foreach ($operations as $operation)
+                                <option value="{{ $operation }}" {{ request('type_operation') === $operation ? 'selected' : '' }}>
+                                    {{ ucfirst(str_replace('_', ' ', $operation)) }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
-                    <!-- Boutons d'action -->
-                    <div class="col-md-4 d-flex gap-2">
+                    <div class="col-md-2">
+                        <label for="sens" class="form-label small font-weight-bold">Sens</label>
+                        <select name="sens" id="sens" class="form-control">
+                            <option value="">Entrées et sorties</option>
+                            <option value="entree" {{ request('sens') === 'entree' ? 'selected' : '' }}>Entrées</option>
+                            <option value="sortie" {{ request('sens') === 'sortie' ? 'selected' : '' }}>Sorties</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="mode_paiement" class="form-label small font-weight-bold">Mode de paiement</label>
+                        <select name="mode_paiement" id="mode_paiement" class="form-control">
+                            <option value="">Tous les modes</option>
+                            @foreach ($modesPaiement as $mode)
+                                <option value="{{ $mode }}" {{ request('mode_paiement') === $mode ? 'selected' : '' }}>
+                                    {{ ucfirst(str_replace('_', ' ', $mode)) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 d-flex gap-2">
                         <button type="submit" class="btn btn-primary px-4 py-2 shadow-sm flex-grow-1">
                             <i class="bi bi-filter me-1"></i> Filtrer
                         </button>
@@ -152,6 +180,7 @@
                                 <th class="text-center">Mode</th>
                                 <th class="text-end text-success">Entrée (FCFA)</th>
                                 <th class="text-end text-danger">Sortie (FCFA)</th>
+                                <th class="text-center">Session</th>
                                 <th class="text-center">Caissier</th>
                             </tr>
                         </thead>
@@ -161,24 +190,7 @@
                                     <td>{{ \Carbon\Carbon::parse($mouvement->date_mouvement)->format('d/m/Y H:i') }}</td>
                                     <td>
                                         @php
-                                            $badgeClass = 'bg-secondary';
-                                            if (
-                                                in_array($mouvement->type_operation, [
-                                                    'depot_epargne',
-                                                    'remboursement_credit',
-                                                    'recette',
-                                                ])
-                                            ) {
-                                                $badgeClass = 'bg-success';
-                                            } elseif (
-                                                in_array($mouvement->type_operation, [
-                                                    'retrait_epargne',
-                                                    'decaissement_credit',
-                                                    'depense',
-                                                ])
-                                            ) {
-                                                $badgeClass = 'bg-danger';
-                                            }
+                                            $badgeClass = $mouvement->sens === 'entree' ? 'bg-success' : 'bg-danger';
                                         @endphp
                                         <span class="badge {{ $badgeClass }}">
                                             {{ ucfirst(str_replace('_', ' ', $mouvement->type_operation)) }}
@@ -207,12 +219,15 @@
                                         @endif
                                     </td>
                                     <td class="text-center small">
+                                        {{ $mouvement->cashSession ? 'Session #' . $mouvement->cashSession->id : 'Non rattaché' }}
+                                    </td>
+                                    <td class="text-center small">
                                         {{ $mouvement->user->name ?? 'Système' }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">
+                                    <td colspan="8" class="text-center py-4 text-muted">
                                         <i class="fas fa-folder-open fa-2x mb-2"></i>
                                         <p class="mb-0">Aucun mouvement de caisse enregistré pour cette période.</p>
                                     </td>
@@ -225,6 +240,44 @@
                 <!-- Pagination -->
                 <div class="d-flex justify-content-end mt-3">
                     {{ $mouvements->links() }}
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Dix dernières clôtures</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date de clôture</th>
+                                <th>Caissier</th>
+                                <th class="text-end">Solde théorique</th>
+                                <th class="text-end">Solde compté</th>
+                                <th class="text-end">Écart</th>
+                                <th>Justification</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($clotures as $cloture)
+                                <tr>
+                                    <td>{{ $cloture->date_cloture->format('d/m/Y H:i') }}</td>
+                                    <td>{{ $cloture->user->name ?? 'Utilisateur supprimé' }}</td>
+                                    <td class="text-end">{{ number_format($cloture->solde_theorique, 0, ',', ' ') }} FCFA</td>
+                                    <td class="text-end">{{ number_format($cloture->solde_physique, 0, ',', ' ') }} FCFA</td>
+                                    <td class="text-end {{ $cloture->ecart < 0 ? 'text-danger' : ($cloture->ecart > 0 ? 'text-success' : '') }}">
+                                        {{ $cloture->ecart > 0 ? '+' : '' }}{{ number_format($cloture->ecart, 0, ',', ' ') }} FCFA
+                                    </td>
+                                    <td>{{ $cloture->commentaire ?: '—' }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="6" class="text-center text-muted">Aucune clôture enregistrée.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

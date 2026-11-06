@@ -7,6 +7,7 @@
             'updated' => 'Modification',
             'deleted' => 'Suppression',
             'restored' => 'Restauration',
+            'cash_expense_rejected' => 'Dépense refusée',
         ];
     @endphp
 
@@ -168,6 +169,7 @@
                                         'updated' => 'text-bg-primary',
                                         'deleted' => 'text-bg-danger',
                                         'restored' => 'text-bg-warning',
+                                        'cash_expense_rejected' => 'text-bg-danger',
                                         default => 'text-bg-secondary',
                                     };
                                 @endphp

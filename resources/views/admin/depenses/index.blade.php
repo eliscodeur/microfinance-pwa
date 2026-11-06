@@ -247,6 +247,11 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-4">
+                        @if ($errors->has('caisse'))
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $errors->first('caisse') }}
+                            </div>
+                        @endif
                         <div class="row">
                             <div class="col-md-7 mb-3">
                                 <label for="categories_charge_id" class="form-label fw-semibold">Poste de charge /
@@ -255,7 +260,7 @@
                                     required>
                                     <option value="">-- Sélectionner un poste comptable --</option>
                                     @foreach ($categories as $cat)
-                                        <option value="{{ $cat->id }}">
+                                        <option value="{{ $cat->id }}" {{ (string) old('categories_charge_id') === (string) $cat->id ? 'selected' : '' }}>
                                             [{{ $cat->typeCharge->libelle ?? 'Général' }}] {{ $cat->libelle }}
                                             @if ($cat->code_analytique)
                                                 ({{ $cat->code_analytique }})
@@ -269,7 +274,7 @@
                                         class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input type="text" name="montant" id="montant" class="form-control" required
-                                        placeholder="0">
+                                        placeholder="0" value="{{ old('montant') }}">
                                     <span class="input-group-text bg-light">XOF</span>
                                 </div>
                             </div>
@@ -280,17 +285,17 @@
                                 <label for="date_depense" class="form-label fw-semibold">Date de l'opération <span
                                         class="text-danger">*</span></label>
                                 <input type="date" name="date_depense" id="date_depense" class="form-control"
-                                    value="{{ date('Y-m-d') }}" required>
+                                    value="{{ old('date_depense', date('Y-m-d')) }}" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label for="mode_paiement" class="form-label fw-semibold">Mode de décaissement <span
                                         class="text-danger">*</span></label>
                                 <select name="mode_paiement" id="mode_paiement" class="form-select" required>
-                                    <option value="Espèces">Espèces (Caisse)</option>
-                                    <option value="Virement Bancaire">Virement bancaire</option>
-                                    <option value="Chèque">Chèque</option>
-                                    <option value="Mobile Money">Mobile money (T-Money / Flooz)</option>
+                                    <option value="Espèces" {{ old('mode_paiement', 'Espèces') === 'Espèces' ? 'selected' : '' }}>Espèces (Caisse)</option>
+                                    <option value="Virement Bancaire" {{ old('mode_paiement') === 'Virement Bancaire' ? 'selected' : '' }}>Virement bancaire</option>
+                                    <option value="Chèque" {{ old('mode_paiement') === 'Chèque' ? 'selected' : '' }}>Chèque</option>
+                                    <option value="Mobile Money" {{ old('mode_paiement') === 'Mobile Money' ? 'selected' : '' }}>Mobile money (T-Money / Flooz)</option>
                                 </select>
                             </div>
                         </div>
@@ -300,14 +305,14 @@
                                 <label for="beneficiaire" class="form-label fw-semibold">Bénéficiaire /
                                     Fournisseur</label>
                                 <input type="text" name="beneficiaire" id="beneficiaire" class="form-control"
-                                    placeholder="Nom de l'entreprise ou personne payée">
+                                    placeholder="Nom de l'entreprise ou personne payée" value="{{ old('beneficiaire') }}">
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label for="reference_piece" class="form-label fw-semibold">Pièce justificative (N°
                                     Facture/Reçu)</label>
                                 <input type="text" name="reference_piece" id="reference_piece" class="form-control"
-                                    placeholder="Ex: FAC-2026-894">
+                                    placeholder="Ex: FAC-2026-894" value="{{ old('reference_piece') }}">
                             </div>
                         </div>
 
@@ -315,7 +320,7 @@
                             <label for="motif" class="form-label fw-semibold">Motif / Justification détaillée <span
                                     class="text-danger">*</span></label>
                             <textarea name="motif" id="motif" rows="3" class="form-control" required
-                                placeholder="Décrivez clairement l'objet de la dépense pour l'audit interne..."></textarea>
+                                placeholder="Décrivez clairement l'objet de la dépense pour l'audit interne...">{{ old('motif') }}</textarea>
                         </div>
                     </div>
                     <div class="modal-footer bg-light">

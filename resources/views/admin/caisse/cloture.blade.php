@@ -34,20 +34,34 @@
                     <div class="alert alert-info text-center">
                         <strong>Solde théorique attendu :</strong>
                         <span class="fs-4 fw-bold">{{ number_format($summary['solde_theorique'], 0, ',', ' ') }} FCFA</span>
+                        <div class="small">Calculé sur les espèces de cette session : fonds initial + entrées − sorties.</div>
                     </div>
+                    @if ($summary['total_entrees_hors_especes'] > 0 || $summary['total_sorties_hors_especes'] > 0)
+                        <div class="alert alert-secondary">
+                            <strong>Opérations hors espèces, exclues du comptage du tiroir :</strong>
+                            Entrées : {{ number_format($summary['total_entrees_hors_especes'], 0, ',', ' ') }} FCFA ·
+                            Sorties : {{ number_format($summary['total_sorties_hors_especes'], 0, ',', ' ') }} FCFA
+                        </div>
+                    @endif
 
                     <!-- Formulaire de Clôture -->
                     <form id="formCloture" action="{{ route('admin.caisse.cloture.store') }}" method="POST">
                         @csrf
                         <div class="mb-3">
                             <label for="solde_physique" class="form-label">Comptage Physique Réel (FCFA) <span class="text-danger">*</span></label>
-                            <input type="number" step="1" name="solde_physique" id="solde_physique" class="form-control form-control-lg" required>
-                            <small class="text-muted">Saisissez le montant total trouvé après comptage manuel des billets et pièces.</small>
+                            <input type="number" min="0" step="1" name="solde_physique" id="solde_physique" class="form-control form-control-lg" value="{{ old('solde_physique') }}" required>
+                            <small class="text-muted">Comptez uniquement les billets et pièces présents dans le tiroir.</small>
+                            @error('solde_physique')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="mb-3">
-                            <label for="commentaire" class="form-label">Commentaire / Justification d'écart (Optionnel)</label>
-                            <textarea name="commentaire" id="commentaire" class="form-control" rows="3" placeholder="Expliquez en cas d'écart constaté..."></textarea>
+                            <label for="commentaire" class="form-label">Commentaire / Justification d'écart</label>
+                            <textarea name="commentaire" id="commentaire" class="form-control" rows="3" placeholder="Obligatoire en cas d'écart constaté...">{{ old('commentaire') }}</textarea>
+                            @error('commentaire')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="d-grid">
@@ -70,6 +84,7 @@
 
     document.getElementById('btnCloturer').addEventListener('click', function() {
         const soldePhysiqueInput = document.getElementById('solde_physique').value;
+        const commentaire = document.getElementById('commentaire').value.trim();
 
         if (!soldePhysiqueInput) {
             Swal.fire('Erreur', 'Veuillez saisir le solde physique compté.', 'error');
@@ -79,10 +94,15 @@
         const soldePhysique = parseFloat(soldePhysiqueInput);
         const ecart = soldePhysique - soldeTheorique;
 
+        if (Math.abs(ecart) >= 0.005 && !commentaire) {
+            Swal.fire('Justification requise', 'Veuillez expliquer l’écart avant de clôturer la caisse.', 'warning');
+            return;
+        }
+
         let iconType = 'warning';
         let messageText = `Solde théorique : ${soldeTheorique.toLocaleString()} FCFA<br>Solde physique : ${soldePhysique.toLocaleString()} FCFA<br>`;
 
-        if (ecart === 0) {
+        if (Math.abs(ecart) < 0.005) {
             iconType = 'success';
             messageText += '<b class="text-success">Aucun écart constaté. Caisse parfaite !</b>';
         } else if (ecart < 0) {
