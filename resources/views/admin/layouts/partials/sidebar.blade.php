@@ -7,7 +7,7 @@
     $creditsMenuOpen = request()->routeIs('admin.credits.*') || request()->routeIs('admin.prets.*') || request()->routeIs('admin.credit-settings.*');
     $carnetsMenuOpen = request()->routeIs('admin.carnets.*') || request()->routeIs('admin.categories.*');
     $caisseMenuOpen = request()->routeIs('admin.caisse.*');
-    $collecteMenuOpen = request()->routeIs('admin.sync-batches.*') || request()->routeIs('admin.cycles.*');
+    $cyclesMenuOpen = request()->routeIs('admin.cycles.*');
     $payrollMenuOpen = request()->routeIs('admin.payrolls.*');
     $chargesMenuOpen =
         request()->routeIs('admin.charges.*') ||
@@ -17,73 +17,166 @@
 
 <style>
     .sidebar {
+        box-sizing: border-box;
         width: var(--sidebar-width);
         height: 100vh;
         position: fixed;
         top: 0;
         left: 0;
         padding-top: var(--topbar-height);
-        background: linear-gradient(180deg, var(--secondary-bg) 0%, var(--primary-bg) 100%);
+        background: linear-gradient(180deg, #203735 0%, var(--primary-bg) 100%);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1050;
         display: flex;
         flex-direction: column;
+        box-shadow: 8px 0 30px rgba(19, 39, 38, 0.08);
+    }
+
+    .sidebar a.sidebar-brand {
+        min-height: 78px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        margin: 0;
+        color: #fff;
+        text-decoration: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar-brand:hover {
+        color: #fff;
+    }
+
+    .sidebar-brand-mark {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        border-radius: 13px;
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+    }
+
+    .sidebar-brand-mark img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .sidebar-brand-copy {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+    }
+
+    .sidebar-brand-copy strong {
+        font-size: 0.86rem;
+        letter-spacing: 0.055em;
+    }
+
+    .sidebar-brand-copy small {
+        margin-top: 4px;
+        color: #b7c8be;
+        font-size: 0.7rem;
     }
 
     .sidebar.mini {
         width: var(--sidebar-mini-width);
     }
 
-    .sidebar.mini span,
+    .sidebar.mini .sidebar-nav > a > span,
     .sidebar.mini .menu-toggle::after,
     .sidebar.mini .sidebar-footer,
-    .sidebar.mini .nav-section-title {
+    .sidebar.mini .sidebar-header,
+    .sidebar.mini .sidebar-brand-copy,
+    .sidebar.mini .submenu {
         display: none !important;
+    }
+
+    .sidebar.mini .sidebar-brand {
+        justify-content: center;
+        padding-right: 8px;
+        padding-left: 8px;
+    }
+
+    .sidebar.mini .sidebar-brand-mark {
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+    }
+
+    .sidebar.mini .sidebar-nav {
+        padding-right: 8px;
+        padding-left: 8px;
+    }
+
+    .sidebar.mini .sidebar-nav > a {
+        justify-content: center;
+        padding-right: 4px;
+        padding-left: 4px;
     }
 
     .sidebar-nav {
         flex: 1;
-        padding: 15px 12px;
+        padding: 12px 12px 16px;
         overflow-y: auto;
     }
 
+    .sidebar-nav::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-thumb {
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.16);
+    }
+
     .sidebar a {
-        color: #b8c1db;
+        color: #c1d0cb;
         text-decoration: none;
         display: flex;
         align-items: center;
-        padding: 12px 15px;
-        border-radius: 8px;
-        margin-bottom: 4px;
-        transition: 0.2s;
+        padding: 10px 12px;
+        border-radius: 9px;
+        margin-bottom: 3px;
+        transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
         white-space: nowrap;
     }
 
     .sidebar a i {
-        font-size: 1.2rem;
-        min-width: 35px;
+        width: 32px;
+        flex: 0 0 32px;
+        font-size: 1.08rem;
+        text-align: center;
     }
 
     .sidebar a:hover {
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.075);
         color: #fff;
     }
 
     .sidebar a.active {
-        background: rgba(99, 138, 253, 0.15);
+        background: rgba(154, 199, 107, 0.14);
         color: var(--accent-color);
         font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--accent-color);
     }
 
     .submenu {
-        background: rgba(0, 0, 0, 0.15);
-        margin: 2px 5px 10px 10px;
-        border-radius: 8px;
+        background: rgba(9, 23, 23, 0.24);
+        margin: 3px 4px 9px 8px;
+        padding: 4px 0;
+        border-radius: 9px;
     }
 
     .submenu a {
-        padding-left: 50px !important;
-        font-size: 0.85rem;
+        padding: 8px 10px 8px 43px !important;
+        margin: 1px 5px;
+        font-size: 0.82rem;
     }
 
     .menu-toggle::after {
@@ -92,6 +185,7 @@
         margin-left: auto;
         font-size: 0.7rem;
         transition: 0.3s;
+        color: #8fa79a;
     }
 
     .menu-toggle[aria-expanded="true"]::after {
@@ -99,18 +193,29 @@
     }
 
     .nav-section-title {
-        color: #566181;
-        font-size: 0.65rem;
+        color: #9db5a8;
+        font-size: 0.64rem;
         text-transform: uppercase;
         font-weight: 700;
-        padding: 15px 15px 5px;
-        letter-spacing: 1px;
+        padding: 18px 12px 7px;
+        letter-spacing: 0.09em;
+    }
+
+    .sidebar .sidebar-dashboard {
+        margin-top: 10px;
+        margin-bottom: 8px;
+    }
+
+    .sidebar .sidebar-footer {
+        color: #a9beb4 !important;
+        background: rgba(9, 23, 23, 0.18);
     }
 
     @media (max-width: 991px) {
         .sidebar {
             transform: translateX(-100%);
             width: var(--sidebar-width) !important;
+            box-shadow: 12px 0 35px rgba(10, 25, 24, 0.22);
         }
 
         .sidebar.open {
@@ -120,18 +225,29 @@
 </style>
 
 <div class="sidebar" id="sidebarNav">
+    <a class="sidebar-brand" href="{{ route('admin.dashboard') }}" aria-label="Nana Eco Consulting, tableau de bord">
+        <span class="sidebar-brand-mark">
+            <img src="{{ asset('icons/icon-192x192.png') }}" alt="">
+        </span>
+        <span class="sidebar-brand-copy">
+            <strong>NANA ECO</strong>
+            <small>Microfinance & gestion</small>
+        </span>
+    </a>
+
     <div class="sidebar-nav">
 
         <a href="{{ route('admin.dashboard') }}"
-            class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            class="sidebar-dashboard {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
+            title="Tableau de bord">
             <i class="bi bi-grid-1x2"></i> <span>Tableau de Bord</span>
         </a>
 
-        <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">Opérations & Terrain</div>
+        <div class="sidebar-header nav-section-title">Opérations terrain</div>
 
         @can('Gérer Clients')
             <a href="#clientsSub" data-bs-toggle="collapse" aria-expanded="{{ $clientsMenuOpen ? 'true' : 'false' }}"
-                class="menu-toggle {{ $clientsMenuOpen ? 'active' : '' }}">
+                class="menu-toggle {{ $clientsMenuOpen ? 'active' : '' }}" title="Clients">
                 <i class="bi bi-people"></i> <span>Clients</span>
             </a>
             <div class="collapse {{ $clientsMenuOpen ? 'show' : '' }} submenu" id="clientsSub" data-bs-parent="#sidebarNav">
@@ -144,7 +260,7 @@
 
         @can('Gérer Agents')
             <a href="#agentsSub" data-bs-toggle="collapse" aria-expanded="{{ $agentsMenuOpen ? 'true' : 'false' }}"
-                class="menu-toggle {{ $agentsMenuOpen ? 'active' : '' }}">
+                class="menu-toggle {{ $agentsMenuOpen ? 'active' : '' }}" title="Agents Terrain">
                 <i class="bi bi-person-gear"></i> <span>Agents Terrain</span>
             </a>
             <div class="collapse {{ $agentsMenuOpen ? 'show' : '' }} submenu" id="agentsSub" data-bs-parent="#sidebarNav">
@@ -157,7 +273,7 @@
 
         @can('Gérer Carnets')
             <a href="#carnetsSub" data-bs-toggle="collapse" aria-expanded="{{ $carnetsMenuOpen ? 'true' : 'false' }}"
-                class="menu-toggle {{ $carnetsMenuOpen ? 'active' : '' }}">
+                class="menu-toggle {{ $carnetsMenuOpen ? 'active' : '' }}" title="Carnets & Tontines">
                 <i class="bi bi-book"></i> <span>Carnets & Tontines</span>
             </a>
             <div class="collapse {{ $carnetsMenuOpen ? 'show' : '' }} submenu" id="carnetsSub" data-bs-parent="#sidebarNav">
@@ -166,18 +282,27 @@
                 <a href="{{ route('admin.categories.index') }}"
                     class="{{ request()->routeIs('admin.categories.index') ? 'active' : '' }}">Catégories de tontine</a>
             </div>
+            <a href="{{ route('admin.stocks.index') }}"
+                class="{{ request()->routeIs('admin.stocks.*') ? 'active' : '' }}" title="Stock de carnets">
+                <i class="bi bi-box-seam"></i> <span>Stock de carnets</span>
+            </a>
         @endcan
+
+        <a href="{{ route('admin.cycles.index') }}"
+            class="{{ $cyclesMenuOpen ? 'active' : '' }}" title="Cycles de tontine">
+            <i class="bi bi-arrow-left-right"></i> <span>Cycles de tontine</span>
+        </a>
 
         @can('Valider Synchros')
             <a href="{{ route('admin.sync-batches.index') }}"
-                class="{{ request()->routeIs('admin.sync-batches.*') ? 'active' : '' }}">
+                class="{{ request()->routeIs('admin.sync-batches.*') ? 'active' : '' }}" title="Synchronisation">
                 <i class="bi bi-arrow-repeat"></i> <span>Synchronisation</span>
             </a>
         @endcan
 
         @can('Gérer Crédits')
             <a href="#creditsSub" data-bs-toggle="collapse" aria-expanded="{{ $creditsMenuOpen ? 'true' : 'false' }}"
-                class="menu-toggle {{ $creditsMenuOpen ? 'active' : '' }}">
+                class="menu-toggle {{ $creditsMenuOpen ? 'active' : '' }}" title="Crédits & Prêts">
                 <i class="bi bi-cash-stack"></i> <span>Crédits & Prêts</span>
             </a>
             <div class="collapse {{ $creditsMenuOpen ? 'show' : '' }} submenu" id="creditsSub" data-bs-parent="#sidebarNav">
@@ -192,12 +317,12 @@
             </div>
         @endcan
 
-        <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">Trésorerie & Caisse</div>
+        <div class="sidebar-header nav-section-title">Trésorerie & comptabilité</div>
 
         <a href="#tresorerieSub"
            data-bs-toggle="collapse"
            aria-expanded="{{ $caisseMenuOpen ? 'true' : 'false' }}"
-           class="menu-toggle {{ $caisseMenuOpen ? 'active' : '' }}">
+           class="menu-toggle {{ $caisseMenuOpen ? 'active' : '' }}" title="Mouvements de Caisse">
             <i class="bi bi-wallet"></i> <span>Mouvements de Caisse</span>
         </a>
 
@@ -221,7 +346,7 @@
         </div>
 
         <a href="#chargesSub" data-bs-toggle="collapse" aria-expanded="{{ $chargesMenuOpen ? 'true' : 'false' }}"
-            class="menu-toggle {{ $chargesMenuOpen ? 'active' : '' }}">
+            class="menu-toggle {{ $chargesMenuOpen ? 'active' : '' }}" title="Recettes & Dépenses">
             <i class="bi bi-receipt-cutoff"></i> <span>Recettes & Dépenses</span>
         </a>
         <div class="collapse {{ $chargesMenuOpen ? 'show' : '' }} submenu" id="chargesSub" data-bs-parent="#sidebarNav">
@@ -233,10 +358,10 @@
                 class="{{ request()->routeIs('admin.charges.index') ? 'active' : '' }}">Types & Catégories</a>
         </div>
 
-        <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">RH & Rémunération</div>
+        <div class="sidebar-header nav-section-title">Ressources humaines</div>
 
         <a href="#personnelSub" data-bs-toggle="collapse" aria-expanded="{{ $personnelMenuOpen ? 'true' : 'false' }}"
-            class="menu-toggle {{ $personnelMenuOpen ? 'active' : '' }}">
+            class="menu-toggle {{ $personnelMenuOpen ? 'active' : '' }}" title="Personnel & Fonctions">
             <i class="bi bi-people-fill"></i> <span>Personnel & Fonctions</span>
         </a>
         <div class="collapse {{ $personnelMenuOpen ? 'show' : '' }} submenu" id="personnelSub" data-bs-parent="#sidebarNav">
@@ -251,7 +376,7 @@
 
         @can('Gérer Commissions')
             <a href="#commissionsSub" data-bs-toggle="collapse" aria-expanded="{{ $bonusMenuOpen ? 'true' : 'false' }}"
-                class="menu-toggle {{ $bonusMenuOpen ? 'active' : '' }}">
+                class="menu-toggle {{ $bonusMenuOpen ? 'active' : '' }}" title="Commissions agents">
                 <i class="bi bi-cash-coin"></i> <span>Commissions agents</span>
             </a>
             <div class="collapse {{ $bonusMenuOpen ? 'show' : '' }} submenu" id="commissionsSub" data-bs-parent="#sidebarNav">
@@ -264,7 +389,7 @@
 
         @can('Gérer Salaires')
             <a href="#payrollSub" data-bs-toggle="collapse" aria-expanded="{{ $payrollMenuOpen ? 'true' : 'false' }}"
-                class="menu-toggle {{ $payrollMenuOpen ? 'active' : '' }}">
+                class="menu-toggle {{ $payrollMenuOpen ? 'active' : '' }}" title="Salaires & Avances">
                 <i class="bi bi-wallet2"></i> <span>Salaires & Avances</span>
             </a>
             <div class="collapse {{ $payrollMenuOpen ? 'show' : '' }} submenu" id="payrollSub" data-bs-parent="#sidebarNav">
@@ -277,11 +402,11 @@
             </div>
         @endcan
 
-        <div class="sidebar-header text-white small px-3 pt-3 pb-1 text-uppercase fw-bold">Paramètres & Système</div>
+        <div class="sidebar-header nav-section-title">Administration & sécurité</div>
 
         @can('Gérer Utilisateurs')
             <a href="#usersSub" data-bs-toggle="collapse" aria-expanded="{{ $usersMenuOpen ? 'true' : 'false' }}"
-                class="menu-toggle {{ $usersMenuOpen ? 'active' : '' }}">
+                class="menu-toggle {{ $usersMenuOpen ? 'active' : '' }}" title="Administrateurs">
                 <i class="bi bi-shield-check"></i> <span>Administrateurs</span>
             </a>
             <div class="collapse {{ $usersMenuOpen ? 'show' : '' }} submenu" id="usersSub" data-bs-parent="#sidebarNav">
@@ -294,15 +419,8 @@
 
         @can('Consulter les audits')
             <a href="{{ route('admin.audit-logs.index') }}"
-                class="{{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                class="{{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}" title="Journal d’audit">
                 <i class="bi bi-shield-lock"></i> <span>Journal d’audit</span>
-            </a>
-        @endcan
-
-        @can('Gérer Carnets')
-            <a href="{{ route('admin.stocks.index') }}"
-                class="{{ request()->routeIs('admin.stocks.index') ? 'active' : '' }}">
-                <i class="bi bi-box-seam"></i> <span>Stock de carnets</span>
             </a>
         @endcan
 

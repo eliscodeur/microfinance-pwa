@@ -20,12 +20,12 @@
         .swal2-popup { border-radius: 1rem !important; }
         .swal2-styled { border-radius: 0.5rem !important; }
         :root {
-            --sidebar-width: 260px;
+            --sidebar-width: 286px;
             --sidebar-mini-width: 75px;
             --topbar-height: 70px;
-            --primary-bg: #1f2432;
-            --secondary-bg: #2a2f3f;
-            --accent-color: #638afd;
+            --primary-bg: #182b2b;
+            --secondary-bg: #223838;
+            --accent-color: #9ac76b;
         }
 
         body { 
@@ -79,8 +79,10 @@
             <button class="hamburger-btn me-3" id="hamburgerBtn">
                 <i class="bi bi-list fs-4"></i>
             </button>
-            <img src="{{ asset('icons/icon-192x192.png') }}" alt="Logo" style="height: 35px;" class="me-2">
-            <span class="fw-bold d-none d-sm-inline">NANA ECO CONSULTING</span>
+            <div class="d-flex flex-column">
+                <span class="fw-semibold">Espace d’administration</span>
+                <small class="text-muted d-none d-sm-block">Gestion de microfinance</small>
+            </div>
         </div>
         
         <div class="d-flex align-items-center">
