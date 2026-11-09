@@ -1,9 +1,42 @@
 @php
     $totalPointagesActuels = $cycleEnCours ? $cycleEnCours->collectes->sum('pointage') : 0;
-    $restants = max(0, 31 - $totalPointagesActuels);
+    $objectif = (int) ($cycleEnCours?->nombre_jours_objectif ?? 31);
+    $restants = max(0, $objectif - $totalPointagesActuels);
 @endphp
 <div class="modal fade" id="modalCollecteBureau" tabindex="-1" aria-labelledby="modalCollecteBureauLabel" aria-hidden="true"
-    data-mise="{{ $cycleEnCours?->montant_journalier ?? 0 }}" data-restants="{{ $restants }}">
+    data-mise="{{ $cycleEnCours?->montant_journalier ?? 0 }}" data-restants="{{ $restants }}"
+    data-objectif="{{ $objectif }}">
+    <style>
+        #modalCollecteBureau .modal-content {
+            max-height: calc(100vh - 2rem);
+            max-height: calc(100dvh - 2rem);
+        }
+
+        #modalCollecteBureau .modal-content > form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        #modalCollecteBureau .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        #modalCollecteBureau .modal-footer {
+            flex: 0 0 auto;
+        }
+
+        @media (max-width: 575.98px) {
+            #modalCollecteBureau .modal-dialog {
+                margin: 0.5rem;
+            }
+        }
+    </style>
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content border-0 shadow">
 
@@ -20,6 +53,7 @@
             <form id="formCollecteBureau" action="{{ route('admin.collectes.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="cycle_id" id="collecte_cycle_id" value="{{ $cycleEnCours?->id }}">
+                <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 
                 <div class="modal-body p-3">
                     {{-- Informations contextuelles & Mise fixe en haut --}}
@@ -54,9 +88,10 @@
                                         $totalPointagesActuels = $cycleEnCours
                                             ? $cycleEnCours->collectes->sum('pointage')
                                             : 0;
-                                        $restants = max(0, 31 - $totalPointagesActuels);
+                                        $objectif = (int) ($cycleEnCours?->nombre_jours_objectif ?? 31);
+                                        $restants = max(0, $objectif - $totalPointagesActuels);
                                     @endphp
-                                    {{ $restants }} / 31 restants
+                                    {{ $restants }} / {{ $objectif }} restants
                                 </span>
                             </div>
                         </div>
@@ -81,6 +116,31 @@
                                 name="montant" value="{{ $cycleEnCours?->montant_journalier ?? 0 }}" readonly required>
                             <span class="input-group-text bg-light">F CFA</span>
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="col_payeur_type" class="form-label fw-bold text-uppercase text-muted"
+                            style="font-size: 0.75rem;">Personne ayant remis les fonds</label>
+                        <select class="form-select" id="col_payeur_type" name="payeur_type" required>
+                            <option value="client" selected>Le titulaire du carnet</option>
+                            <option value="tiers">Une autre personne</option>
+                        </select>
+                    </div>
+                    <div id="col_payeur_tiers" class="row g-2 mb-3 d-none">
+                        <div class="col-md-6">
+                            <label for="col_payeur_nom" class="form-label small fw-bold">Nom du payeur</label>
+                            <input type="text" class="form-control" id="col_payeur_nom" name="payeur_nom" maxlength="150">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="col_payeur_telephone" class="form-label small fw-bold">Téléphone (facultatif)</label>
+                            <input type="tel" class="form-control" id="col_payeur_telephone" name="payeur_telephone" maxlength="30">
+                        </div>
+                        <div class="col-12">
+                            <label for="col_payeur_lien" class="form-label small fw-bold">Lien avec le titulaire</label>
+                            <input type="text" class="form-control" id="col_payeur_lien" name="payeur_lien" maxlength="80"
+                                placeholder="Ex. conjoint, parent, représentant">
+                        </div>
+                        <div class="col-12 small text-muted">Identité déclarée lors de l’opération ; ne vaut pas vérification d’identité.</div>
                     </div>
 
                 </div>

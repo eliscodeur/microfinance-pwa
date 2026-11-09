@@ -64,7 +64,7 @@ const LABELS_MAPPING = {
 };
 
 export default function Show({ credit }) {
-    const { flash } = usePage().props;
+    const { flash, errors } = usePage().props;
 
     // État local pour bloquer les boutons pendant les requêtes (Anti-double click)
     const [isProcessing, setIsProcessing] = useState(false);
@@ -89,6 +89,18 @@ export default function Show({ credit }) {
         });
         setPenalties(initialPenalties);
     }, [payments]);
+
+    useEffect(() => {
+        const refreshOnHistoryRestore = (event) => {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        };
+
+        window.addEventListener("pageshow", refreshOnHistoryRestore);
+        return () =>
+            window.removeEventListener("pageshow", refreshOnHistoryRestore);
+    }, []);
 
     const formatCurrency = (value) =>
         new Intl.NumberFormat("fr-FR", {
@@ -178,6 +190,64 @@ export default function Show({ credit }) {
                         icon: "success",
                         timer: 1300,
                         showConfirmButton: false,
+                    });
+                },
+            },
+        );
+    };
+
+    const settleWithTontine = async () => {
+        const available = Number(credit.settlement_available_balance ?? 0);
+        if (isProcessing || available <= 0) return;
+        const sourceLabel =
+            credit.carnet?.type === "compte"
+                ? "du carnet d'épargne"
+                : "des cycles tontine terminés";
+
+        setIsProcessing(true);
+        const confirmation = await MySwal.fire({
+            title: "Confirmer la compensation d'épargne ?",
+            html: `<p>Cette opération transférera jusqu'à <strong>${formatCurrency(available)}</strong> ${sourceLabel}vers les échéances du crédit.</p>`,
+            input: "textarea",
+            inputLabel: "Note d'opération (facultative)",
+            inputPlaceholder: "Motif ou précision utile à l'audit",
+            inputAttributes: { maxlength: 500 },
+            showCancelButton: true,
+            confirmButtonText: "Confirmer le transfert interne",
+            cancelButtonText: "Annuler",
+            confirmButtonColor: "#a83232",
+            inputValidator: (value) =>
+                value && value.length > 500
+                    ? "La note ne peut pas dépasser 500 caractères."
+                    : undefined,
+        });
+
+        if (!confirmation.isConfirmed) {
+            setIsProcessing(false);
+            return;
+        }
+
+        const idempotencyKey =
+            window.crypto?.randomUUID?.() ??
+            `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        Inertia.post(
+            `/admin/credits/${credit.credit_uid}/settle-with-savings`,
+            {
+                idempotency_key: idempotencyKey,
+                note: confirmation.value || null,
+            },
+            {
+                preserveScroll: true,
+                onStart: () => setIsProcessing(true),
+                onFinish: () => setIsProcessing(false),
+                onError: (errors) => {
+                    Swal.fire({
+                        title: "Compensation impossible",
+                        text:
+                            errors.settlement ??
+                            Object.values(errors)[0] ??
+                            "L'opération n'a pas pu être effectuée.",
+                        icon: "error",
                     });
                 },
             },
@@ -280,10 +350,9 @@ export default function Show({ credit }) {
                             ? `
                         <div style="text-align: center; padding: 25px; color: #6c757d; font-style: italic;">
                             Aucune transaction enregistrée pour le moment sur cette échéance.
-                        </div>
-                    `
-                            : `
-                        <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;">
+                        </div>`
+                            : 
+                            `<table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;">
                             <thead>
                                 <tr style="background-color: #f1f3f5; text-align: left;">
                                     <th style="padding: 6px; border-bottom: 1px solid #ced4da;">Date</th>
@@ -316,7 +385,7 @@ export default function Show({ credit }) {
             showCancelButton: true,
             confirmButtonText: "Valider l'encaissement",
             cancelButtonText: "Fermer",
-            confirmButtonColor: "#4f5d73", // Design sobre et neutre
+            confirmButtonColor: "#4f5d73", 
             cancelButtonColor: "#6c757d",
             focusConfirm: true,
             didOpen: () => {
@@ -471,8 +540,39 @@ export default function Show({ credit }) {
                         >
                             Retour
                         </Link>
+                        {["active", "in_arrears"].includes(credit.statut) &&
+                            Number(credit.settlement_available_balance ?? 0) >
+                                0 &&
+                            financialSummary.resteARecouvrer > 0 && (
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-danger ms-2"
+                                    disabled={isProcessing}
+                                    onClick={settleWithTontine}
+                                >
+                                    {isProcessing
+                                        ? "Traitement..."
+                                        : `Compenser l'épargne (${formatCurrency(credit.settlement_available_balance)})`}
+                                </button>
+                            )}
                     </div>
                 </div>
+                {credit.settlement_available_balance > 0 && (
+                    <div className="alert alert-warning small shadow-sm">
+                        Épargne disponible pour compensation interne :{" "}
+                        <strong>
+                            {formatCurrency(credit.settlement_available_balance)}
+                        </strong>
+                        . Le transfert requiert une confirmation et sera affecté
+                        aux échéances dans l'ordre chronologique, sans frais
+                        supplémentaires.
+                    </div>
+                )}
+                {errors?.settlement && (
+                    <div className="alert alert-danger small shadow-sm">
+                        {errors.settlement}
+                    </div>
+                )}
 
                 {/* CARTES INDICATEURS STYLE INSTITUTIONNEL */}
                 <div className="row g-3 mb-4">
@@ -705,40 +805,6 @@ export default function Show({ credit }) {
                         </div>
                     </div>
                 </div>
-
-                {/* COMPENSATION COMPENSATOIRE */}
-                {credit.emergency_withdrawal_summary?.length > 0 && (
-                    <div className="card shadow-sm mb-4 border border-secondary">
-                        <div className="card-header bg-light py-2 border-bottom">
-                            <h6 className="text-dark mb-0 fw-bold fs-8">
-                                ⚠️ Recouvrement par Compensation (Épargne de
-                                Garantie)
-                            </h6>
-                        </div>
-                        <div className="card-body py-2">
-                            <div className="row g-2">
-                                {credit.emergency_withdrawal_summary.map(
-                                    (item, index) => (
-                                        <div key={index} className="col-md-4">
-                                            <div className="p-2 rounded bg-light border fs-8 text-dark">
-                                                <strong>
-                                                    Échéance #{item.echeance} :
-                                                </strong>{" "}
-                                                Retrait de{" "}
-                                                <span className="fw-bold">
-                                                    {formatCurrency(
-                                                        item.amount_withdrawn,
-                                                    )}
-                                                </span>
-                                                .
-                                            </div>
-                                        </div>
-                                    ),
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* TABLEAU COMPACT ET NETTOYÉ */}
                 <div className="card shadow-sm border">

@@ -38,4 +38,9 @@ class CashSession extends Model implements Auditable
     {
         return $this->hasMany(MouvementCaisse::class, 'cash_session_id');
     }
+
+    public function withdrawals(): HasMany
+    {
+        return $this->hasMany(Retrait::class, 'cash_session_id');
+    }
 }

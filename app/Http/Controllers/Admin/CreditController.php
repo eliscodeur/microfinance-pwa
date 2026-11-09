@@ -8,11 +8,11 @@ use App\Models\Credit;
 use App\Models\CreditGuarantor;
 use App\Models\CreditPayment;
 use App\Models\CreditProduct;
+use App\Models\CreditSettlement;
 use App\Models\Cycle;
 use App\Models\mouvementcaisse;
 use App\Models\PaymentTransaction;
 use App\Models\Recette;
-use App\Models\Retrait;
 use App\Services\CreditCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -509,28 +509,15 @@ class CreditController extends Controller
     public function show(Credit $credit)
     {
         $credit->load(['client', 'carnet.parent', 'carnet.enfants']);
+        $credit->settlement_available_balance = $credit->carnet
+            ? $credit->carnet->availableCreditSettlementFunds()
+            : 0;
 
         $today                = Carbon::today();
         $totalPenalty         = 0;
         $latePaymentFound     = false;
-        $emergencyWithdrawals = [];
 
         if ($credit->statut === 'active') {
-            $overduePayments = $credit->payments()
-                ->whereIn('status', ['pending', 'partiel'])
-                ->where('due_date', '<', $today)
-                ->orderBy('echeance')
-                ->get();
-
-            foreach ($overduePayments as $payment) {
-                $event = $this->applyEmergencyWithdrawal($credit, $payment);
-                if ($event) {
-                    $emergencyWithdrawals[] = $event;
-                }
-            }
-
-            $credit->refresh();
-
             $hasRemainingOverdue = $credit->payments()
                 ->whereIn('status', ['pending', 'partiel'])
                 ->where('due_date', '<', $today)
@@ -578,105 +565,10 @@ class CreditController extends Controller
 
         $credit->penalty_amount               = round($totalPenalty, 0);
         $credit->payments                     = $payments;
-        $credit->emergency_withdrawal_summary = $emergencyWithdrawals;
 
         return Inertia::render('Credits/Show', [
             'credit' => $credit,
         ]);
-    }
-
-    protected function applyEmergencyWithdrawal(Credit $credit, CreditPayment $payment)
-    {
-        if ($payment->status === 'paid') {
-            return null;
-        }
-
-        $amountDue = ((float) $payment->montant_total + (float) $payment->penalite) - (float) $payment->montant_paye;
-        if ($amountDue <= 0) {
-            return null;
-        }
-
-        $carnet = $credit->carnet;
-        if (! $carnet) {
-            return null;
-        }
-
-        $withdrawn = 0.0;
-
-        DB::beginTransaction();
-        try {
-            foreach ($carnet->allLinkedCarnets() as $linkedCarnet) {
-                $cycles = $linkedCarnet->cycles()
-                    ->where('statut', 'termine')
-                    ->whereNull('retire_at')
-                    ->orderBy('completed_at')
-                    ->lockForUpdate() // Sécurité verrous concurrents
-                    ->get();
-
-                foreach ($cycles as $cycle) {
-                    $totalCollectes = (float) $cycle->collectes()->sum('montant');
-                    $commission     = (float) ($cycle->montant_journalier ?? 0);
-                    $net            = max(0, $totalCollectes - $commission);
-
-                    if ($net <= 0) {
-                        continue;
-                    }
-
-                    Retrait::create([
-                        'cycle_id'      => $cycle->id,
-                        'client_id'     => $cycle->client_id,
-                        'carnet_id'     => $cycle->carnet_id,
-                        'admin_id'      => auth()->id(),
-                        'montant_total' => $totalCollectes,
-                        'commission'    => $commission,
-                        'montant_net'   => $net,
-                        'date_retrait'  => now(),
-                        'note'          => 'Prélèvement de secours automatique pour échéance en défaut',
-                    ]);
-
-                    $cycle->update(['retire_at' => now()]);
-                    $withdrawn += $net;
-
-                    if ($withdrawn >= $amountDue) {
-                        break 2;
-                    }
-                }
-            }
-
-            if ($withdrawn <= 0) {
-                DB::rollBack();
-                return null;
-            }
-
-            $paidBefore = (float) $payment->montant_paye;
-            $newPaid    = min($paidBefore + $withdrawn, (float) $payment->montant_total + (float) $payment->penalite);
-            $paidDiff   = $newPaid - $paidBefore;
-
-            $payment->update([
-                'montant_paye' => round($newPaid, 0),
-                'status'       => $newPaid >= ((float) $payment->montant_total + (float) $payment->penalite) ? 'paid' : 'partiel',
-                'date_paye'    => $newPaid >= ((float) $payment->montant_total + (float) $payment->penalite) ? now() : null,
-                'admin_id'     => auth()->id(),
-            ]);
-
-            if ($paidDiff > 0) {
-                $credit->increment('montant_rembourse', round($paidDiff, 0));
-            }
-
-            DB::commit();
-
-            return [
-                'payment_id'       => $payment->id,
-                'echeance'         => $payment->echeance,
-                'amount_withdrawn' => round($withdrawn, 0),
-                'amount_applied'   => round($paidDiff, 0),
-                'note'             => 'Prélèvement de secours automatique pour échéance en défaut',
-            ];
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('Emergency withdrawal error: ' . $e->getMessage());
-            return null;
-        }
     }
 
     // public function updatePayment(Request $request, Credit $credit, CreditPayment $payment)
@@ -953,17 +845,44 @@ class CreditController extends Controller
         return redirect()->route('admin.credits.show', $credit)->with('success', 'Crédit approuvé et activé avec succès.');
     }
 
-    public function settleCreditWithTontine(Credit $credit)
+    public function settleCreditWithSavings(Request $request, Credit $credit)
     {
-        $result = \App\Services\CreditSettlementService::settleCreditWithAvailableFunds($credit);
+        $validated = $request->validate([
+            'idempotency_key' => ['required', 'string', 'uuid'],
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
 
-        $messageType = $result['success'] ? 'success' : 'warning';
-        $message     = $result['message'];
-
-        if (! empty($result['cycles_used'])) {
-            $message .= ' - Fonds utilisés : ' . number_format($result['amount_used'], 0, ',', ' ') . ' FCFA de ' . count($result['cycles_used']) . ' cycle(s).';
+        try {
+            $settlement = \App\Services\CreditSettlementService::settleCreditWithSavings(
+                $credit,
+                $validated['idempotency_key'],
+                $validated['note'] ?? null
+            );
+        } catch (\DomainException $exception) {
+            throw ValidationException::withMessages([
+                'settlement' => $exception->getMessage(),
+            ]);
         }
 
-        return redirect()->route('admin.credits.show', $credit)->with($messageType, $message);
+        return Inertia::location(route('admin.credits.settlements.receipt', [
+            'credit' => $credit->credit_uid,
+            'settlement' => $settlement->id,
+        ]));
+    }
+
+    public function settlementReceipt(Credit $credit, CreditSettlement $settlement)
+    {
+        abort_unless((int) $settlement->credit_id === (int) $credit->id, 404);
+
+        $settlement->load([
+            'credit.client',
+            'admin',
+            'sources.cycle.carnet',
+            'sources.carnet',
+            'sources.allocations.payment',
+            'allocations.payment',
+        ]);
+
+        return view('admin.credits.settlements.receipt', compact('credit', 'settlement'));
     }
 }

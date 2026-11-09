@@ -8,6 +8,7 @@ use App\Models\CarnetAgentHistory;
 use App\Models\CategoryTontine;
 use App\Models\Client;
 use App\Models\ClientCarnetNumber;
+use App\Models\CashSession;
 use App\Models\Cycle;
 use App\Models\Depot;
 use App\Models\MouvementCaisse;
@@ -15,8 +16,10 @@ use App\Models\Recette;
 use App\Models\Retrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CarnetController extends Controller
@@ -31,6 +34,8 @@ class CarnetController extends Controller
                 'categoryTontine',
                 'parent',
                 'cycles.collectes',
+                'cycles.retraits',
+                'cycles.creditSettlementSources',
                 'credits' => function ($q) {
                     $q->where('statut', 'active');
                 },
@@ -273,6 +278,8 @@ class CarnetController extends Controller
             'cycles.collectes',
             'cycles.agent',
             'cycles.retraits.admin',
+            'cycles.creditSettlementSources',
+            'creditSettlementSources',
             'depots.user',
             'retraits.admin',
             'credits',
@@ -358,74 +365,188 @@ class CarnetController extends Controller
     public function storeDepot(Request $request)
     {
         $validated = $request->validate([
-            'carnet_id'   => 'required|exists:carnets,id',
-            'client_id'   => 'required|exists:clients,id',
-            'montant'     => 'required|numeric|min:1',
-            'date_depot'  => 'required|date',
-            'commentaire' => 'nullable|string',
+            'carnet_id'          => 'required|integer|exists:carnets,id',
+            'montant'            => 'required|integer|min:1|max:9999999999999',
+            'date_depot'         => 'required|date|before_or_equal:now',
+            'mode_paiement'      => 'required|in:especes,mobile_money,virement',
+            'reference_paiement' => 'nullable|required_if:mode_paiement,mobile_money,virement|string|max:100',
+            'payeur_type'        => 'required|in:client,tiers',
+            'payeur_nom'         => 'nullable|required_if:payeur_type,tiers|string|max:150',
+            'payeur_telephone'   => 'nullable|string|max:30',
+            'payeur_lien'        => 'nullable|required_if:payeur_type,tiers|string|max:80',
+            'idempotency_key'    => 'required|uuid',
+            'commentaire'        => 'nullable|string|max:1000',
+        ], [
+            'montant.integer' => 'Le montant doit être un nombre entier en FCFA.',
+            'date_depot.before_or_equal' => 'La date du dépôt ne peut pas être dans le futur.',
+            'reference_paiement.required_if' => 'La référence du paiement est obligatoire pour ce mode de règlement.',
+            'payeur_nom.required_if' => 'Le nom du déposant est obligatoire si le payeur est un tiers.',
+            'payeur_lien.required_if' => 'Le lien du déposant avec le client est obligatoire.',
         ]);
 
+        $existingDepot = Depot::where('idempotency_key', $validated['idempotency_key'])->first();
+        if ($existingDepot) {
+            if ((int) $existingDepot->user_id !== (int) auth()->id()) {
+                $response = response()->json([
+                    'success' => false,
+                    'message' => 'Cette demande a déjà été utilisée. Actualisez la page avant de réessayer.',
+                ], 409);
+                return $request->expectsJson() || $request->ajax()
+                    ? $response
+                    : redirect()->back()->with('error', 'Cette demande a déjà été utilisée. Actualisez la page avant de réessayer.');
+            }
+
+            $response = response()->json([
+                'success' => true,
+                'message' => 'Ce dépôt a déjà été enregistré.',
+                'reference' => $existingDepot->reference_operation,
+                'receipt_url' => route('admin.depots.receipt', $existingDepot),
+            ]);
+            return $request->expectsJson() || $request->ajax()
+                ? $response
+                : redirect()->route('admin.depots.receipt', $existingDepot);
+        }
+
         try {
-            $result = DB::transaction(function () use ($validated, $request) {
+            $depot = DB::transaction(function () use ($validated) {
+                $carnet = Carnet::whereKey($validated['carnet_id'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                $client = Client::whereKey($carnet->client_id)->firstOrFail();
+                $session = CashSession::where('user_id', auth()->id())
+                    ->where('statut', 'ouverte')
+                    ->latest('date_ouverture')
+                    ->lockForUpdate()
+                    ->first();
 
-                $carnet = Carnet::with('client')->findOrFail($validated['carnet_id']);
-
-                $client  = Client::findOrFail($validated['client_id']);
-                $cycleId = null;
-
-                if ($carnet->type === 'tontine') {
-                    // récupérer le dernier cycle non clôturé
-                    $cycleActif = $carnet->cycles()->whereNull('retire_at')->latest()->first();
-                    $cycleId    = $cycleActif ? $cycleActif->id : null;
+                if (! $session) {
+                    throw new \DomainException('Votre session de caisse est fermée. Ouvrez une caisse avant d’effectuer un dépôt.');
+                }
+                if ($carnet->type !== 'compte') {
+                    throw new \DomainException('Un dépôt d’épargne ne peut être enregistré que sur un carnet de compte. Utilisez le formulaire de collecte pour une tontine.');
+                }
+                if ($carnet->statut !== 'actif' || ! $client->is_active) {
+                    throw new \DomainException('Le dépôt est impossible : le carnet ou le compte client est inactif.');
                 }
 
-                // 1. Enregistrement du dépôt
+                $montant = (int) $validated['montant'];
+                $soldeAvant = round(
+                    (float) $carnet->depots()->sum('montant')
+                    - (float) $carnet->retraits()->sum('montant_net')
+                    - (float) $carnet->creditSettlementSources()->sum('montant_affecte'),
+                    2
+                );
+                $payeurEstClient = $validated['payeur_type'] === 'client';
+                $nomPayeur = $payeurEstClient
+                    ? trim($client->nom . ' ' . $client->prenom)
+                    : trim($validated['payeur_nom']);
+
                 $depot = Depot::create([
-                    'client_id'   => $validated['client_id'],
-                    'carnet_id'   => $validated['carnet_id'],
-                    'user_id'     => auth()->id(),
-                    'montant'     => $validated['montant'],
-                    'date_depot'  => $validated['date_depot'],
-                    'commentaire' => $validated['commentaire'] ?? null,
-                    'cycle_id'    => $cycleId,
+                    'client_id'           => $client->id,
+                    'carnet_id'           => $carnet->id,
+                    'user_id'             => auth()->id(),
+                    'cash_session_id'     => $session->id,
+                    'montant'             => $montant,
+                    'date_depot'          => $validated['date_depot'],
+                    'commentaire'         => $validated['commentaire'] ?? null,
+                    'mode_paiement'       => $validated['mode_paiement'],
+                    'reference_paiement'  => $validated['reference_paiement'] ?? null,
+                    'payeur_type'         => $validated['payeur_type'],
+                    'payeur_nom'          => $nomPayeur,
+                    'payeur_telephone'    => $payeurEstClient ? $client->telephone : ($validated['payeur_telephone'] ?? null),
+                    'payeur_lien'         => $payeurEstClient ? 'Titulaire du carnet' : $validated['payeur_lien'],
+                    'idempotency_key'     => $validated['idempotency_key'],
+                    'solde_carnet_avant'  => $soldeAvant,
+                    'solde_carnet_apres'  => $soldeAvant + $montant,
                 ]);
 
-                // 2. ENREGISTREMENT DU MOUVEMENT DE CAISSE (ENTRÉE)
-                $referenceDepot = 'DEP-' . date('Ymd') . '-' . $depot->id;
+                $referenceDepot = 'DEP-' . now()->format('Ymd') . '-' . str_pad((string) $depot->id, 8, '0', STR_PAD_LEFT);
+                $depot->update(['reference_operation' => $referenceDepot]);
 
                 MouvementCaisse::create([
                     'ulid'           => strtolower((string) Str::ulid()),
-                    'type_operation' => 'depot ' . $carnet->type,
+                    'type_operation' => 'depot compte',
                     'sens'           => 'entree',
-                    'montant'        => $validated['montant'],
+                    'montant'        => $montant,
                     'date_mouvement' => $validated['date_depot'],
-                    'mode_paiement'  => 'especes',
+                    'mode_paiement'  => $validated['mode_paiement'],
                     'reference'      => $referenceDepot,
-                    'libelle'        => 'Dépôt (' . $carnet->type . ') - Client ' . $client->nom . ' ' . $client->prenom,
+                    'libelle'        => 'Dépôt épargne carnet #' . $carnet->numero . ' - Client ' . $client->nom . ' ' . $client->prenom,
                     'source_type'    => Depot::class,
                     'source_id'      => $depot->id,
                     'user_id'        => auth()->id(),
+                    'cash_session_id' => $session->id,
                 ]);
 
-                return $validated['montant'];
+                return $depot;
             });
 
-            $message = 'Dépôt de ' . number_format($result, 0, ',', ' ') . ' F enregistré avec succès.';
+            $message = 'Dépôt de ' . number_format((float) $depot->montant, 0, ',', ' ') . ' FCFA enregistré avec succès.';
 
-            if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => $message]);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'reference' => $depot->reference_operation,
+                    'receipt_url' => route('admin.depots.receipt', $depot),
+                ]);
             }
 
-            return redirect()->back()->with('success', $message);
-
-        } catch (\Exception $e) {
-
-            if ($request->ajax()) {
+            return redirect()->route('admin.depots.receipt', $depot);
+        } catch (\DomainException $e) {
+            if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
 
             return redirect()->back()->with('error', $e->getMessage())->withInput();
+        } catch (QueryException $e) {
+            $existingDepot = Depot::where('idempotency_key', $validated['idempotency_key'])->first();
+            if ($existingDepot && (int) $existingDepot->user_id === (int) auth()->id()) {
+                return ($request->expectsJson() || $request->ajax())
+                    ? response()->json([
+                    'success' => true,
+                    'message' => 'Ce dépôt a déjà été enregistré.',
+                    'reference' => $existingDepot->reference_operation,
+                    'receipt_url' => route('admin.depots.receipt', $existingDepot),
+                    ])
+                    : redirect()->route('admin.depots.receipt', $existingDepot);
+            }
+
+            Log::error('Échec de l’enregistrement d’un dépôt d’épargne.', [
+                'user_id' => auth()->id(),
+                'carnet_id' => $validated['carnet_id'],
+                'exception' => $e->getMessage(),
+            ]);
+
+            $response = response()->json([
+                'success' => false,
+                'message' => 'Le dépôt n’a pas pu être enregistré. Vérifiez la connexion et réessayez.',
+            ], 500);
+            return $request->expectsJson() || $request->ajax()
+                ? $response
+                : redirect()->back()->withInput()->with('error', 'Le dépôt n’a pas pu être enregistré. Vérifiez la connexion et réessayez.');
+        } catch (\Throwable $e) {
+            Log::error('Échec de l’enregistrement d’un dépôt d’épargne.', [
+                'user_id' => auth()->id(),
+                'carnet_id' => $validated['carnet_id'],
+                'exception' => $e->getMessage(),
+            ]);
+
+            $response = response()->json([
+                'success' => false,
+                'message' => 'Une erreur technique a empêché l’enregistrement du dépôt.',
+            ], 500);
+            return $request->expectsJson() || $request->ajax()
+                ? $response
+                : redirect()->back()->withInput()->with('error', 'Une erreur technique a empêché l’enregistrement du dépôt.');
         }
+    }
+
+    public function depotReceipt(Depot $depot)
+    {
+        $depot->load(['client', 'carnet', 'user']);
+
+        return view('admin.carnets.depot-recu', compact('depot'));
     }
 
     /**
@@ -434,112 +555,235 @@ class CarnetController extends Controller
      */
     public function storeRetrait(Request $request)
     {
-        $request->validate([
-            'carnet_id'     => 'required|exists:carnets,id',
-            'client_id'     => 'required|exists:clients,id',
-            'cycle_id'      => 'nullable|exists:cycles,id',
-            'montant_total' => 'required|numeric|min:0',
-            'date_retrait'  => 'required|date',
-            'type_retrait'  => 'required|in:partiel,total',
-            'note'          => 'nullable|string',
+        $validated = $request->validate([
+            'carnet_id'        => 'required|exists:carnets,id',
+            'client_id'        => 'required|exists:clients,id',
+            'cycle_id'         => 'nullable|exists:cycles,id',
+            'montant_total'    => 'required|integer|min:1',
+            'date_retrait'     => 'required|date',
+            'type_retrait'     => 'required|in:partiel,total',
+            'mode_paiement'    => 'required|in:especes,mobile_money,virement',
+            'reference_paiement' => 'nullable|required_if:mode_paiement,mobile_money,virement|string|max:100',
+            'motif'            => 'required|in:retrait_normal,retrait_exceptionnel,cloture_cycle,autre',
+            'idempotency_key'  => 'required|uuid',
+            'note'             => 'nullable|string|max:1000',
         ]);
 
+        $existingRetrait = Retrait::where('idempotency_key', $validated['idempotency_key'])->first();
+        if ($existingRetrait) {
+            if ((int) $existingRetrait->admin_id !== (int) auth()->id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cette demande a déjà été utilisée. Actualisez la page avant de réessayer.',
+                ], 409);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cette opération avait déjà été enregistrée.',
+                'reference' => $existingRetrait->reference_operation,
+                'receipt_url' => route('admin.retraits.receipt', $existingRetrait),
+            ]);
+        }
+
         try {
-            $result = DB::transaction(function () use ($request) {
+            $retrait = DB::transaction(function () use ($validated) {
+                $carnet = Carnet::whereKey($validated['carnet_id'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                $client = Client::whereKey($carnet->client_id)->firstOrFail();
+                $session = CashSession::where('user_id', auth()->id())
+                    ->where('statut', 'ouverte')
+                    ->lockForUpdate()
+                    ->first();
 
-                $carnet              = Carnet::findOrFail($request->carnet_id);
-                $montantNetSaisi     = (float) $request->montant_total;
-                $commissionAppliquee = 0;
-                $soldeDisponible     = 0;
-                $cycle               = null;
-
-                if ($carnet->type === 'tontine') {
-                    if (! $request->cycle_id) {
-                        throw new \Exception("Veuillez sélectionner un cycle pour un carnet de tontine.");
-                    }
-
-                    $cycle           = Cycle::with(['collectes', 'retraits'])->findOrFail($request->cycle_id);
-                    $totalCollecte   = (float) $cycle->collectes->sum('montant');
-                    $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
-                    $commissionFixe  = (float) ($cycle->montant_journalier ?? 0);
-
-                    // Commission prélevée uniquement au premier retrait
-                    $commissionAppliquee = ($cycle->retraits->count() == 0) ? $commissionFixe : 0;
-                    $soldeDisponible     = $totalCollecte - $totalDejaRetire - $commissionAppliquee;
-
-                } else {
-                    $soldeDisponible     = (float) $carnet->solde_disponible;
-                    $commissionAppliquee = 0;
+                if (! $session) {
+                    throw new \DomainException('Votre session de caisse est fermée. Ouvrez une caisse avant d’effectuer un retrait.');
+                }
+                if ((int) $validated['client_id'] !== (int) $carnet->client_id) {
+                    throw new \DomainException('Le client sélectionné ne correspond pas au carnet.');
+                }
+                if (! $client->is_active) {
+                    throw new \DomainException('Le retrait est impossible : le compte du client est inactif.');
+                }
+                if ($carnet->statut !== 'actif') {
+                    throw new \DomainException('Le retrait est impossible : ce carnet n’est pas actif.');
+                }
+                if ($carnet->type !== 'tontine' && $validated['type_retrait'] === 'total') {
+                    throw new \DomainException('Le retrait total avec clôture de cycle ne concerne que les carnets de tontine.');
                 }
 
-                // Vérification de sécurité (marge 1F pour arrondis)
-                if ($montantNetSaisi > ($soldeDisponible + 1)) {
-                    throw new \Exception(
-                        "Fonds insuffisants. Solde disponible : " . number_format($soldeDisponible, 0, ',', ' ') . " F."
+                $montantNetSaisi = (int) $validated['montant_total'];
+                $commissionAppliquee = 0.0;
+                $soldeDisponible = 0.0;
+                $cycle = null;
+                if ($carnet->type === 'tontine') {
+                    if (empty($validated['cycle_id'])) {
+                        throw new \DomainException('Veuillez sélectionner un cycle pour un carnet de tontine.');
+                    }
+
+                    $cycle = Cycle::whereKey($validated['cycle_id'])
+                        ->where('carnet_id', $carnet->id)
+                        ->where('statut', 'termine')
+                        ->whereNull('retire_at')
+                        ->lockForUpdate()
+                        ->first();
+                    if (! $cycle) {
+                        throw new \DomainException('Le cycle sélectionné n’appartient pas à ce carnet ou n’est plus retirable.');
+                    }
+
+                    $totalCollecte = (float) $cycle->collectes()->sum('montant');
+                    $totalDejaRetire = (float) $cycle->retraits()->sum('montant_net');
+                    $commissionsDejaPrelevees = (float) $cycle->retraits()->sum('commission');
+                    $totalAffecteCredit = (float) $cycle->creditSettlementSources()->sum('montant_affecte');
+                    $commissionsCredit = (float) $cycle->creditSettlementSources()->sum('commission');
+                    $cycleAlreadyUsed = $cycle->retraits()->exists()
+                        || $cycle->creditSettlementSources()->exists();
+                    $commissionFixe  = (float) ($cycle->montant_journalier ?? 0);
+
+                    $commissionAppliquee = $cycleAlreadyUsed ? 0 : $commissionFixe;
+                    $soldeDisponible = $totalCollecte
+                        - $totalDejaRetire
+                        - $commissionsDejaPrelevees
+                        - $totalAffecteCredit
+                        - $commissionsCredit
+                        - $commissionAppliquee;
+                } else {
+                    $totalDepots = (float) $carnet->depots()->sum('montant');
+                    $totalRetraits = (float) $carnet->retraits()->sum('montant_net');
+                    $totalAffecteCredit = (float) $carnet->creditSettlementSources()->sum('montant_affecte');
+                    $soldeDisponible = $totalDepots - $totalRetraits - $totalAffecteCredit;
+                }
+
+                $soldeDisponible = round($soldeDisponible, 2);
+                if ($soldeDisponible <= 0 || $montantNetSaisi > $soldeDisponible) {
+                    throw new \DomainException(
+                        'Fonds insuffisants. Solde disponible : '
+                        . number_format(max(0, $soldeDisponible), 0, ',', ' ')
+                        . ' F.'
                     );
                 }
 
-                $retrait = Retrait::create([
-                    'carnet_id'     => $request->carnet_id,
-                    'client_id'     => $request->client_id,
-                    'cycle_id'      => ($carnet->type === 'tontine') ? $request->cycle_id : null,
-                    'admin_id'      => auth()->id(),
-                    'montant_total' => $montantNetSaisi + $commissionAppliquee,
-                    'commission'    => $commissionAppliquee,
-                    'montant_net'   => $montantNetSaisi,
-                    'date_retrait'  => $request->date_retrait,
-                    'note'          => $request->note,
-                ]);
+                if ($carnet->type === 'tontine' && $validated['type_retrait'] === 'total'
+                    && abs($montantNetSaisi - $soldeDisponible) > 0.01) {
+                    throw new \DomainException('Pour une clôture totale, le montant doit être égal au net disponible du cycle.');
+                }
 
-                // ENREGISTREMENT DU MOUVEMENT DE CAISSE (SORTIE)
-                $referenceRetrait = 'RET-' . date('Ymd') . '-' . $retrait->id;
-                $client           = Client::findOrFail($request->client_id);
+                $encoursCredit = $carnet->credits()
+                    ->whereIn('statut', ['active', 'in_arrears'])
+                    ->get(['montant_accorde', 'interet_total', 'penalty_amount', 'montant_rembourse'])
+                    ->sum(function ($credit) {
+                        return (float) $credit->montant_accorde
+                            + (float) $credit->interet_total
+                            + (float) ($credit->penalty_amount ?? 0)
+                            - (float) ($credit->montant_rembourse ?? 0);
+                    });
+                $soldePourCouvertureCredit = $carnet->type === 'tontine'
+                    ? (float) $carnet->solde_tontine_non_retire
+                    : $soldeDisponible;
+                if ($encoursCredit > $soldePourCouvertureCredit) {
+                    throw new \DomainException('Retrait impossible : le solde ne couvre pas l’encours de crédit du client.');
+                }
+
+                $retrait = Retrait::create([
+                    'carnet_id'          => $carnet->id,
+                    'client_id'          => $client->id,
+                    'cycle_id'           => $cycle ? $cycle->id : null,
+                    'admin_id'           => auth()->id(),
+                    'cash_session_id'    => $session->id,
+                    'montant_total'      => $montantNetSaisi + $commissionAppliquee,
+                    'commission'         => $commissionAppliquee,
+                    'montant_net'        => $montantNetSaisi,
+                    'date_retrait'       => $validated['date_retrait'],
+                    'note'               => $validated['note'] ?? null,
+                    'idempotency_key'    => $validated['idempotency_key'],
+                    'mode_paiement'      => $validated['mode_paiement'],
+                    'reference_paiement' => $validated['reference_paiement'] ?? null,
+                    'motif'              => $validated['motif'],
+                    'solde_carnet_avant' => $soldeDisponible,
+                    'solde_carnet_apres' => $soldeDisponible - $montantNetSaisi,
+                ]);
+                $retrait->reference_operation = 'RET-' . now()->format('Ymd') . '-' . str_pad((string) $retrait->id, 6, '0', STR_PAD_LEFT);
+                $retrait->save();
+
                 MouvementCaisse::create([
                     'ulid'           => strtolower((string) Str::ulid()),
                     'type_operation' => 'retrait ' . $carnet->type,
                     'sens'           => 'sortie',
                     'montant'        => $montantNetSaisi, // Le montant effectif décaissé
-                    'date_mouvement' => $request->date_retrait,
-                    'mode_paiement'  => 'especes',
-                    'reference'      => $referenceRetrait,
+                    'date_mouvement' => $validated['date_retrait'],
+                    'mode_paiement'  => $validated['mode_paiement'],
+                    'reference'      => $retrait->reference_operation,
                     'libelle'        => 'Retrait (' . $carnet->type . ') - Client ' . $client->nom . ' ' . $client->prenom,
                     'source_type'    => Retrait::class,
                     'source_id'      => $retrait->id,
                     'user_id'        => auth()->id(),
+                    'cash_session_id' => $session->id,
                 ]);
 
-                // Clôture automatique du cycle (tontine uniquement)
                 if ($carnet->type === 'tontine' && $cycle) {
-                    $commissionFixe   = (float) ($cycle->montant_journalier ?? 0);
-                    $totalCollecte    = (float) $cycle->collectes->sum('montant');
-                    $totalDejaRetire  = (float) $cycle->retraits->sum('montant_net');
-                    $netTotalAttendu  = $totalCollecte - $commissionFixe;
-                    $cumulRetraitsNet = $totalDejaRetire + $montantNetSaisi;
-
-                    if ($request->type_retrait === 'total' || $cumulRetraitsNet >= ($netTotalAttendu - 5)) {
-                        $cycle->update(['retire_at' => $request->date_retrait]);
+                    if (abs($montantNetSaisi - $soldeDisponible) <= 0.01) {
+                        $cycle->update(['retire_at' => $validated['date_retrait']]);
                     }
                 }
 
-                return number_format($montantNetSaisi, 0, ',', ' ');
+                return $retrait;
             });
 
-            $message = "Retrait de {$result} F enregistré avec succès.";
-
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => $message]);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Retrait de ' . number_format((float) $retrait->montant_net, 0, ',', ' ') . ' F enregistré avec succès.',
+                    'reference' => $retrait->reference_operation,
+                    'receipt_url' => route('admin.retraits.receipt', $retrait),
+                ]);
             }
 
-            return redirect()->back()->with('success', $message);
-
-        } catch (\Exception $e) {
-
-            if ($request->ajax()) {
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return redirect()->route('admin.retraits.receipt', $retrait);
+        } catch (\DomainException $exception) {
+            if (! $request->ajax()) {
+                return redirect()->back()->with('error', $exception->getMessage())->withInput();
+            }
+            return response()->json(['success' => false, 'message' => $exception->getMessage()], 422);
+        } catch (QueryException $exception) {
+            $existingRetrait = Retrait::where('idempotency_key', $validated['idempotency_key'])->first();
+            if ($existingRetrait && (int) $existingRetrait->admin_id === (int) auth()->id()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cette opération avait déjà été enregistrée.',
+                    'reference' => $existingRetrait->reference_operation,
+                    'receipt_url' => route('admin.retraits.receipt', $existingRetrait),
+                ]);
             }
 
-            return redirect()->back()->with('error', "Échec : " . $e->getMessage())->withInput();
+            Log::error('Échec de l’enregistrement d’un retrait.', [
+                'user_id' => auth()->id(),
+                'carnet_id' => $validated['carnet_id'],
+                'exception' => $exception,
+            ]);
+            if (! $request->ajax()) {
+                return redirect()->back()->with('error', 'Le retrait n’a pas pu être enregistré. Vérifiez les données puis réessayez.')->withInput();
+            }
+            return response()->json(['success' => false, 'message' => 'Le retrait n’a pas pu être enregistré. Vérifiez les données puis réessayez.'], 500);
+        } catch (\Throwable $exception) {
+            Log::error('Erreur inattendue lors de l’enregistrement d’un retrait.', [
+                'user_id' => auth()->id(),
+                'carnet_id' => $validated['carnet_id'],
+                'exception' => $exception,
+            ]);
+            if (! $request->ajax()) {
+                return redirect()->back()->with('error', 'Une erreur est survenue. Le retrait n’a pas été confirmé.')->withInput();
+            }
+            return response()->json(['success' => false, 'message' => 'Une erreur est survenue. Le retrait n’a pas été confirmé.'], 500);
         }
+    }
+
+    public function receipt(int $retrait)
+    {
+        $retrait = Retrait::with(['client', 'carnet', 'cycle', 'admin', 'cashSession'])
+            ->findOrFail($retrait);
+
+        return view('admin.carnets.recu', compact('retrait'));
     }
 
     public function reassign(Request $request, string $ulid)

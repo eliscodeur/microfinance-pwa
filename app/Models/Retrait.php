@@ -14,11 +14,19 @@ class Retrait extends Model implements Auditable
         'client_id',
         'carnet_id',
         'admin_id',
+        'cash_session_id',
         'montant_total',
         'commission',
         'montant_net',
         'date_retrait',
         'note',
+        'reference_operation',
+        'idempotency_key',
+        'mode_paiement',
+        'reference_paiement',
+        'motif',
+        'solde_carnet_avant',
+        'solde_carnet_apres',
     ];
 
     protected $auditExclude = [
@@ -51,5 +59,10 @@ class Retrait extends Model implements Auditable
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    public function cashSession()
+    {
+        return $this->belongsTo(CashSession::class, 'cash_session_id');
     }
 }

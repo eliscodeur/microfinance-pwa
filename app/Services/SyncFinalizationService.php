@@ -237,7 +237,7 @@ class SyncFinalizationService
             ]);
 
             $lockedCycle->update([
-                'commission_genere' => $montantCommission,
+                'commission_genere' => true,
             ]);
         });
     }

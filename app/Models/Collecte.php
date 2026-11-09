@@ -18,6 +18,13 @@ class Collecte extends Model
         'montant',
         'date_saisie',
         'sync_uuid',
+        'idempotency_key',
+        'reference_operation',
+        'cash_session_id',
+        'payeur_type',
+        'payeur_nom',
+        'payeur_telephone',
+        'payeur_lien',
     ];
 
     protected $casts = [

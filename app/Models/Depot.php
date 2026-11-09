@@ -15,14 +15,28 @@ class Depot extends Model implements Auditable
         'carnet_id',
         'cycle_id',
         'user_id',
+        'cash_session_id',
         'montant',
         'date_depot',
         'commentaire',
+        'mode_paiement',
+        'reference_paiement',
+        'payeur_type',
+        'payeur_nom',
+        'payeur_telephone',
+        'payeur_lien',
+        'reference_operation',
+        'idempotency_key',
+        'solde_carnet_avant',
+        'solde_carnet_apres',
     ];
 
     // On indique à Laravel de traiter date_depot comme une date Carbon
     protected $casts = [
         'date_depot' => 'datetime',
+        'montant' => 'decimal:2',
+        'solde_carnet_avant' => 'decimal:2',
+        'solde_carnet_apres' => 'decimal:2',
     ];
 
     /**

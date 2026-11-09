@@ -82,6 +82,11 @@ class Carnet extends Model implements Auditable
         return $this->hasMany(Retrait::class);
     }
 
+    public function creditSettlementSources(): HasMany
+    {
+        return $this->hasMany(CreditSettlementSource::class);
+    }
+
     public function cycles(): HasMany
     {
         return $this->hasMany(Cycle::class);
@@ -154,8 +159,9 @@ class Carnet extends Model implements Auditable
         $totalDepots = (float) $this->depots->sum('montant');
         // On déduit tous les retraits liés à ce carnet (montant_net pour la sortie réelle client)
         $totalRetraits = (float) $this->retraits->sum('montant_net');
+        $totalAffecteCredit = (float) $this->creditSettlementSources->sum('montant_affecte');
 
-        return round($totalDepots - $totalRetraits, 2);
+        return round($totalDepots - $totalRetraits - $totalAffecteCredit, 2);
     }
 
     /**
@@ -171,11 +177,20 @@ class Carnet extends Model implements Auditable
         return (float) $cyclesPrets->reduce(function ($carry, $cycle) {
             $totalCollectes  = (float) $cycle->collectes->sum('montant');
             $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
-            $commissionFixe  = (float) ($cycle->montant_journalier ?? 0);
+            $creditSources = $cycle->creditSettlementSources;
+            $totalAffecteCredit = (float) $creditSources->sum('montant_affecte');
+            $commissionDejaPrelevee = (float) $cycle->retraits->sum('commission')
+                + (float) $creditSources->sum('commission');
+            $cycleAlreadyUsed = $cycle->retraits->isNotEmpty() || $creditSources->isNotEmpty();
+            $commissionFixe  = ! $cycleAlreadyUsed
+                ? (float) ($cycle->montant_journalier ?? 0)
+                : 0.0;
 
-            // LOGIQUE : Le solde disponible est TOUJOURS :
-            // (Ce qui a été cotisé) - (La commission du cycle) - (Ce qui a déjà été pris)
-            $soldeRestant = $totalCollectes - $commissionFixe - $totalDejaRetire;
+            $soldeRestant = $totalCollectes
+                - $totalAffecteCredit
+                - $commissionDejaPrelevee
+                - $commissionFixe
+                - $totalDejaRetire;
 
             // On retourne le cumul, mais jamais en dessous de 0
             return $carry + max(0, $soldeRestant);
@@ -260,6 +275,33 @@ class Carnet extends Model implements Auditable
     public function withdrawableGuarantee(): float
     {
         return round($this->allLinkedCarnets()->sum(fn(Carnet $c) => $c->terminalWithdrawableSavings()), 2);
+    }
+
+    public function availableTontineSettlementFunds(): float
+    {
+        $linkedCarnets = $this->allLinkedCarnets();
+        $linkedCarnets->load([
+            'cycles.collectes',
+            'cycles.retraits',
+            'cycles.creditSettlementSources',
+        ]);
+
+        return round($linkedCarnets
+            ->where('type', 'tontine')
+            ->where('client_id', $this->client_id)
+            ->sum(function (Carnet $carnet) {
+                return $carnet->cycles
+                    ->where('statut', 'termine')
+                    ->whereNull('retire_at')
+                    ->sum(fn(Cycle $cycle) => $cycle->solde_compensation_restant);
+            }), 2);
+    }
+
+    public function availableCreditSettlementFunds(): float
+    {
+        return $this->type === 'compte'
+            ? max(0, $this->solde_disponible)
+            : $this->availableTontineSettlementFunds();
     }
 
     /* -------------------------------------------------------------------------- */

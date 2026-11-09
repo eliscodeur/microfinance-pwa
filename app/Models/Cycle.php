@@ -69,6 +69,11 @@ class Cycle extends Model
         return $this->hasMany(Retrait::class, 'cycle_id');
     }
 
+    public function creditSettlementSources()
+    {
+        return $this->hasMany(CreditSettlementSource::class);
+    }
+
     public function scopeVisibleForAgentSync(Builder $query): Builder
     {
         return $query->where('statut', 'en_cours');
@@ -76,10 +81,17 @@ class Cycle extends Model
 
     public function getSoldeBrutRestantAttribute()
     {
-        $totalCollecte = $this->collectes()->sum('montant');
-        $totalRetire   = $this->retraits()->sum('montant_net');
+        $totalCollecte = $this->relationLoaded('collectes')
+            ? $this->collectes->sum('montant')
+            : $this->collectes()->sum('montant');
+        $totalRetire = $this->relationLoaded('retraits')
+            ? $this->retraits->sum('montant_net')
+            : $this->retraits()->sum('montant_net');
+        $totalAffecteAuCredit = $this->relationLoaded('creditSettlementSources')
+            ? $this->creditSettlementSources->sum('montant_affecte')
+            : $this->creditSettlementSources()->sum('montant_affecte');
 
-        return $totalCollecte - $totalRetire;
+        return $totalCollecte - $totalRetire - $totalAffecteAuCredit;
     }
 
     /**
@@ -87,9 +99,45 @@ class Cycle extends Model
      */
     public function getSoldeNetRestantAttribute()
     {
-        $commission = $this->montant_journalier ?? 0;
+        $commission = (float) ($this->relationLoaded('retraits')
+            ? $this->retraits->sum('commission')
+            : $this->retraits()->sum('commission'))
+            + (float) ($this->relationLoaded('creditSettlementSources')
+                ? $this->creditSettlementSources->sum('commission')
+                : $this->creditSettlementSources()->sum('commission'));
+        $alreadyUsed = ($this->relationLoaded('retraits')
+            ? $this->retraits->isNotEmpty()
+            : $this->retraits()->exists())
+            || ($this->relationLoaded('creditSettlementSources')
+                ? $this->creditSettlementSources->isNotEmpty()
+                : $this->creditSettlementSources()->exists());
+        if (! $alreadyUsed) {
+            $commission = (float) ($this->montant_journalier ?? 0);
+        }
         return $this->solde_brut_restant - $commission;
     }
+
+    public function getSoldeCompensationRestantAttribute(): float
+    {
+        $collected = (float) ($this->relationLoaded('collectes')
+            ? $this->collectes->sum('montant')
+            : $this->collectes()->sum('montant'));
+        $withdrawn = (float) ($this->relationLoaded('retraits')
+            ? $this->retraits->sum('montant_net')
+            : $this->retraits()->sum('montant_net'));
+        $withdrawalFees = (float) ($this->relationLoaded('retraits')
+            ? $this->retraits->sum('commission')
+            : $this->retraits()->sum('commission'));
+        $settled = (float) ($this->relationLoaded('creditSettlementSources')
+            ? $this->creditSettlementSources->sum('montant_affecte')
+            : $this->creditSettlementSources()->sum('montant_affecte'));
+        $settlementFees = (float) ($this->relationLoaded('creditSettlementSources')
+            ? $this->creditSettlementSources->sum('commission')
+            : $this->creditSettlementSources()->sum('commission'));
+
+        return max(0, round($collected - $withdrawn - $withdrawalFees - $settled - $settlementFees, 2));
+    }
+
     public function calculerCommission(): float
     {
         return (float) ($this->montant_journalier ?? 0);

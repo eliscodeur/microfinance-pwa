@@ -22,14 +22,20 @@
         $cyclesJs = $cyclesDisponibles->values()->map(function ($cycle, $index) {
             $cumulCollectes = $cycle->collectes->sum('montant');
             $dejaRetire = $cycle->retraits->sum('montant_net');
+            $commissionDejaPrelevee = $cycle->retraits->sum('commission')
+                + $cycle->creditSettlementSources->sum('commission');
+            $montantAffecteCredit = $cycle->creditSettlementSources->sum('montant_affecte');
             $soldeBrut = $cumulCollectes - $dejaRetire;
-            $commission = $cycle->montant_journalier ?? 0;
-            $soldeNet = $soldeBrut - $commission;
+            $cycleAlreadyUsed = $cycle->retraits->isNotEmpty() || $cycle->creditSettlementSources->isNotEmpty();
+            $commission = $cycleAlreadyUsed ? 0 : ($cycle->montant_journalier ?? 0);
+            $soldeBrut -= $montantAffecteCredit;
+            $soldeNet = $soldeBrut - $commissionDejaPrelevee - $commission;
             return [
                 'id' => $cycle->id,
                 'label' => 'Cycle #' . ($index + 1) . ' — Net : ' . number_format($soldeNet, 0, ',', ' ') . ' F',
                 'solde_brut' => $soldeBrut,
                 'commission' => $commission,
+                'commission_deja_prelevee' => $commissionDejaPrelevee,
                 'solde_net' => $soldeNet,
             ];
         });
@@ -59,7 +65,8 @@
                     data-solde="{{ $soldeDisponible }}" data-encours="{{ $encoursCreditRestant }}"
                     data-carnet-id="{{ $carnet->id }}" data-client-id="{{ $carnet->client_id }}"
                     data-solde-global="{{ $carnet->type === 'compte' ? $carnet->solde_disponible : 0 }}"
-                    data-csrf="{{ csrf_token() }}" data-retrait-url="{{ route('admin.carnets.retrait') }}">
+                    data-csrf="{{ csrf_token() }}" data-retrait-url="{{ route('admin.carnets.retrait') }}"
+                    data-idempotency-key="{{ (string) \Illuminate\Support\Str::uuid() }}">
                     <i class="bi bi-box-arrow-up me-2"></i>Effectuer un Retrait
                 </button>
 
@@ -67,7 +74,8 @@
                     {{-- Bouton Dépôt pour Épargne/Compte --}}
                     <button type="button" class="btn btn-success fw-bold" id="btnDepot"
                         data-carnet-id="{{ $carnet->id }}" data-client-id="{{ $carnet->client_id }}"
-                        data-csrf="{{ csrf_token() }}" data-depot-url="{{ route('admin.carnets.depot') }}">
+                        data-csrf="{{ csrf_token() }}" data-depot-url="{{ route('admin.carnets.depot') }}"
+                        data-idempotency-key="{{ (string) \Illuminate\Support\Str::uuid() }}">
                         <i class="bi bi-plus-lg me-2"></i>Nouveau Dépôt
                     </button>
                 @elseif($carnet->type === 'tontine')
@@ -198,6 +206,8 @@
                                                             'montant' => number_format($c->montant, 0, ',', ' ') . ' F',
                                                             'pointage' => $c->pointage ?? 1,
                                                             'agent' => $c->agent ? $c->agent->nom . ' ' . $c->agent->prenom : 'Inconnu',
+                                                            'payeur' => $c->payeur_nom ?: 'Titulaire du carnet',
+                                                            'receipt_url' => route('admin.collectes.receipt', $c),
                                                         ];
                                                     }),
                                                 ) }}">
@@ -218,8 +228,10 @@
                                 <tr>
                                     <th>Date & Heure</th>
                                     <th>Montant</th>
-                                    <th>Note / Commentaire</th>
+                                    <th>Payeur</th>
+                                    <th>Mode / Référence</th>
                                     <th>Enregistré par</th>
+                                    <th>Reçu</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -227,12 +239,32 @@
                                     <tr>
                                         <td>{{ $depot->date_depot->format('d/m/Y H:i') }}</td>
                                         <td class="fw-bold text-success">{{ number_format($depot->montant, 0) }} F</td>
-                                        <td class="text-muted small">{{ $depot->commentaire ?? '-' }}</td>
-                                        <td class="text-uppercase small fw-bold">{{ $depot->user->name }}</td>
+                                        <td class="small">
+                                            {{ $depot->payeur_nom ?: $carnet->client->nom . ' ' . $carnet->client->prenom }}
+                                            @if ($depot->payeur_type === 'tiers')
+                                                <span class="badge bg-info-subtle text-info">Tiers</span>
+                                            @endif
+                                            @if ($depot->commentaire)
+                                                <span class="d-block text-muted">{{ $depot->commentaire }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="small">
+                                            {{ ['especes' => 'Espèces', 'mobile_money' => 'Mobile Money', 'virement' => 'Virement'][$depot->mode_paiement] ?? 'Espèces' }}
+                                            @if ($depot->reference_paiement)
+                                                <span class="d-block text-muted">{{ $depot->reference_paiement }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-uppercase small fw-bold">{{ $depot->user->name ?? '—' }}</td>
+                                        <td>
+                                            <a class="btn btn-sm btn-outline-primary"
+                                                href="{{ route('admin.depots.receipt', $depot) }}" target="_blank" rel="noopener">
+                                                <i class="bi bi-receipt"></i> Reçu
+                                            </a>
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-4 text-muted">Aucun dépôt enregistré.
+                                        <td colspan="6" class="text-center py-4 text-muted">Aucun dépôt enregistré.
                                         </td>
                                     </tr>
                                 @endforelse
@@ -246,17 +278,21 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Date</th>
+                                <th>Référence</th>
                                 <th>Type</th>
-                                <th class="text-end">Brut</th>
+                                <th class="text-end">Total débité</th>
                                 <th class="text-end">Commission</th>
                                 <th class="text-end">Net perçu</th>
-                                <th>Validé par</th>
+                                <th>Mode</th>
+                                <th>Agent caisse</th>
+                                <th>Reçu</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($carnet->retraits->sortByDesc('date_retrait') as $retrait)
                                 <tr>
                                     <td>{{ $retrait->date_retrait->format('d/m/Y H:i') }}</td>
+                                    <td class="small">{{ $retrait->reference_operation }}</td>
                                     <td>
                                         <span class="badge {{ $retrait->cycle_id ? 'bg-info' : 'bg-secondary' }}">
                                             {{ $retrait->cycle_id ? 'Tontine' : 'Épargne' }}
@@ -266,11 +302,17 @@
                                     <td class="text-end text-danger">-{{ number_format($retrait->commission, 0) }} F</td>
                                     <td class="text-end fw-bold text-success">
                                         {{ number_format($retrait->montant_net, 0) }} F</td>
+                                    <td>{{ ['especes' => 'Espèces', 'mobile_money' => 'Mobile Money', 'virement' => 'Virement'][$retrait->mode_paiement] ?? '—' }}</td>
                                     <td class="small fw-bold text-uppercase">{{ $retrait->admin->name ?? 'Admin' }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.retraits.receipt', $retrait) }}" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">
+                                            <i class="bi bi-printer"></i><span class="visually-hidden">Imprimer le reçu</span>
+                                        </a>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center py-4 text-muted">Aucun retrait enregistré.</td>
+                                    <td colspan="9" class="text-center py-4 text-muted">Aucun retrait enregistré.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -359,6 +401,11 @@
         document.addEventListener('DOMContentLoaded', function() {
 
             const fmt = n => new Intl.NumberFormat('fr-FR').format(Math.round(n));
+            const escapeHtml = value => {
+                const element = document.createElement('span');
+                element.textContent = value ?? '';
+                return element.innerHTML;
+            };
 
             // ══════════════════════════════════════════════════════
             // HELPER AJAX COMMUN
@@ -380,27 +427,36 @@
                         method: 'POST',
                         body: formData,
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
                         }
                     });
                     const json = await res.json();
 
                     if (json.success) {
-                        await Swal.fire({
+                        const receiptPrompt = await Swal.fire({
                             icon: 'success',
                             title: cfg.titreSucces,
-                            text: json.message,
+                            text: `${json.message}${json.reference ? `\nRéférence : ${json.reference}` : ''}`,
                             confirmButtonColor: cfg.couleur,
-                            timer: 2500,
-                            timerProgressBar: true,
+                            confirmButtonText: json.receipt_url ? 'Ouvrir le reçu' : 'Fermer',
+                            showCancelButton: Boolean(json.receipt_url),
+                            cancelButtonText: 'Fermer',
                             allowOutsideClick: false,
                         });
+                        if (json.receipt_url && receiptPrompt.isConfirmed) {
+                            const receiptWindow = window.open(json.receipt_url, '_blank');
+                            if (!receiptWindow) {
+                                window.location.href = json.receipt_url;
+                                return;
+                            }
+                        }
                         window.location.reload();
                     } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Erreur',
-                            text: json.message || 'Une erreur est survenue.',
+                            text: Object.values(json.errors || {}).flat().join(' ') || json.message || 'Une erreur est survenue.',
                             confirmButtonColor: '#e74a3b'
                         });
                     }
@@ -429,6 +485,7 @@
                         clientId: this.dataset.clientId,
                         csrf: this.dataset.csrf,
                         retraitUrl: this.dataset.retraitUrl,
+                        idempotencyKey: this.dataset.idempotencyKey,
                         soldeGlobal: parseFloat(this.dataset.soldeGlobal) || 0,
                     };
 
@@ -483,12 +540,14 @@
 
             async function afficherFormulaireRetrait(cfg) {
                 const isTontine = cfg.carnetType === 'tontine';
-                const now = new Date().toISOString().slice(0, 16);
+                const currentDate = new Date();
+                currentDate.setMinutes(currentDate.getMinutes() - currentDate.getTimezoneOffset());
+                const now = currentDate.toISOString().slice(0, 16);
 
                 let cycleHtml = '';
                 if (isTontine) {
                     const options = CYCLES_DATA.map(c =>
-                        `<option value="${c.id}" data-solde="${c.solde_brut}" data-commission="${c.commission}" data-net="${c.solde_net}">${c.label}</option>`
+                        `<option value="${c.id}" data-solde="${c.solde_brut}" data-commission="${c.commission}" data-commission-deja="${c.commission_deja_prelevee}" data-net="${c.solde_net}">${c.label}</option>`
                     ).join('');
                     cycleHtml = `
             <div class="mb-3 text-start">
@@ -524,6 +583,9 @@
                                 <span class="text-muted">Brut restant : <strong id="swal_brut">—</strong> F</span>
                                 <span class="text-primary">Net dispo : <strong id="swal_net">—</strong> F</span>
                             </div>
+                            <div class="small text-muted mb-2">Commission appliquée : <strong id="swal_commission">0</strong> F</div>
+                            <div class="small text-muted mb-2">Commission déjà prélevée : <strong id="swal_commission_deja">0</strong> F</div>
+                            <div class="small text-muted mb-2">Solde après retrait : <strong id="swal_restant">—</strong> F</div>
                             <label class="form-label fw-bold small text-muted text-uppercase">Montant à verser (F)</label>
                             <input type="number" id="swal_montant" class="form-control form-control-lg fw-bold"
                                 placeholder="0" min="1" ${!isTontine ? `value="${Math.round(cfg.soldeGlobal)}"` : ''}>
@@ -532,16 +594,36 @@
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Commission (F)</label>
-                            <input type="number" id="swal_commission" class="form-control bg-light" value="0" readonly>
+                            <label class="form-label fw-bold small text-muted text-uppercase">Mode de paiement</label>
+                            <select id="swal_mode_paiement" class="form-select">
+                                <option value="especes">Espèces</option>
+                                <option value="mobile_money">Mobile Money</option>
+                                <option value="virement">Virement bancaire</option>
+                            </select>
                         </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Motif du retrait</label>
+                            <select id="swal_motif" class="form-select">
+                                <option value="retrait_normal">Retrait normal</option>
+                                <option value="retrait_exceptionnel">Retrait exceptionnel</option>
+                                ${isTontine ? '<option value="cloture_cycle">Clôture du cycle</option>' : ''}
+                                <option value="autre">Autre</option>
+                            </select>
+                        </div>
+                        <div class="col-12 d-none" id="swal_reference_paiement_group">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Référence de transaction</label>
+                            <input type="text" id="swal_reference_paiement" class="form-control" maxlength="100"
+                                placeholder="Référence mobile money ou bancaire">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label fw-bold small text-muted text-uppercase">Date d'opération</label>
                             <input type="datetime-local" id="swal_date" class="form-control" value="${now}">
                         </div>
                     </div>
                     <div class="mb-1">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Note / Motif</label>
+                        <label class="form-label fw-bold small text-muted text-uppercase">Note complémentaire</label>
                         <textarea id="swal_note" class="form-control" rows="2" placeholder="Informations complémentaires..."></textarea>
                     </div>
                 </div>`,
@@ -559,22 +641,38 @@
 
                         const cycleSelect = document.getElementById('swal_cycle');
                         const montantInput = document.getElementById('swal_montant');
-                        const commissionInp = document.getElementById('swal_commission');
                         const brutEl = document.getElementById('swal_brut');
                         const netEl = document.getElementById('swal_net');
+                        const restantEl = document.getElementById('swal_restant');
                         const radioTotal = document.getElementById('swal_total');
                         const radioPartiel = document.getElementById('swal_partiel');
+                        const modePaiement = document.getElementById('swal_mode_paiement');
+                        const commissionEl = document.getElementById('swal_commission');
+                        const referenceGroup = document.getElementById('swal_reference_paiement_group');
+                        const referencePaiement = document.getElementById('swal_reference_paiement');
+
+                        if (modePaiement) {
+                            modePaiement.addEventListener('change', () => {
+                                const needsReference = modePaiement.value !== 'especes';
+                                referenceGroup.classList.toggle('d-none', !needsReference);
+                                referencePaiement.required = needsReference;
+                            });
+                        }
 
                         function recalcul() {
-                            if (!isTontine || !cycleSelect || cycleSelect.selectedIndex <= 0)
-                                return;
-                            const opt = cycleSelect.options[cycleSelect.selectedIndex];
-                            const soldeBrut = parseFloat(opt.dataset.solde) || 0;
-                            const commission = parseFloat(opt.dataset.commission) || 0;
-                            const soldeNet = soldeBrut - commission;
-                            brutEl.innerText = fmt(soldeBrut);
-                            netEl.innerText = fmt(soldeNet);
-                            commissionInp.value = Math.round(commission);
+                            let soldeNet = cfg.soldeGlobal;
+                            if (isTontine) {
+                                if (!cycleSelect || cycleSelect.selectedIndex <= 0) return;
+                                const opt = cycleSelect.options[cycleSelect.selectedIndex];
+                                const soldeBrut = parseFloat(opt.dataset.solde) || 0;
+                                const commission = parseFloat(opt.dataset.commission) || 0;
+                                const commissionDejaPrelevee = parseFloat(opt.dataset.commissionDeja) || 0;
+                                soldeNet = soldeBrut - commission - commissionDejaPrelevee;
+                                brutEl.innerText = fmt(soldeBrut);
+                                netEl.innerText = fmt(soldeNet);
+                                commissionEl.innerText = fmt(commission);
+                                document.getElementById('swal_commission_deja').innerText = fmt(commissionDejaPrelevee);
+                            }
                             if (radioTotal && radioTotal.checked) {
                                 montantInput.value = Math.round(soldeNet);
                                 montantInput.readOnly = true;
@@ -583,19 +681,23 @@
                                 montantInput.readOnly = false;
                                 montantInput.classList.remove('bg-light');
                             }
+                            restantEl.innerText = fmt(Math.max(0, soldeNet - (parseFloat(montantInput.value) || 0)));
                         }
 
                         if (cycleSelect) cycleSelect.addEventListener('change', recalcul);
                         if (radioTotal) radioTotal.addEventListener('change', recalcul);
                         if (radioPartiel) radioPartiel.addEventListener('change', recalcul);
+                        montantInput.addEventListener('input', recalcul);
+                        if (!isTontine) recalcul();
                     },
                     preConfirm: () => {
                         const montant = parseFloat(document.getElementById('swal_montant')
                             ?.value) || 0;
                         const date = document.getElementById('swal_date')?.value;
                         const note = document.getElementById('swal_note')?.value || '';
-                        const commission = parseFloat(document.getElementById('swal_commission')
-                            ?.value) || 0;
+                        const modePaiement = document.getElementById('swal_mode_paiement')?.value;
+                        const referencePaiement = document.getElementById('swal_reference_paiement')?.value.trim() || '';
+                        const motif = document.getElementById('swal_motif')?.value;
 
                         let cycleId = null,
                             typeRetrait = 'partiel',
@@ -628,12 +730,18 @@
                             Swal.showValidationMessage('La date est obligatoire.');
                             return false;
                         }
+                        if (modePaiement !== 'especes' && !referencePaiement) {
+                            Swal.showValidationMessage('La référence du paiement mobile ou bancaire est obligatoire.');
+                            return false;
+                        }
 
                         return {
                             montant,
                             date,
                             note,
-                            commission,
+                            modePaiement,
+                            referencePaiement,
+                            motif,
                             cycleId,
                             typeRetrait
                         };
@@ -664,9 +772,12 @@
                     client_id: cfg.clientId,
                     cycle_id: vals.cycleId,
                     montant_total: vals.montant,
-                    commission: vals.commission,
                     date_retrait: vals.date,
                     type_retrait: vals.typeRetrait,
+                    mode_paiement: vals.modePaiement,
+                    reference_paiement: vals.referencePaiement,
+                    motif: vals.motif,
+                    idempotency_key: cfg.idempotencyKey,
                     note: vals.note,
                 }, {
                     titreSucces: 'Retrait effectué !',
@@ -682,30 +793,71 @@
             if (btnDepot) {
                 btnDepot.addEventListener('click', async function() {
                     const carnetId = this.dataset.carnetId;
-                    const clientId = this.dataset.clientId;
                     const csrf = this.dataset.csrf;
                     const depotUrl = this.dataset.depotUrl;
-                    const now = new Date().toISOString().slice(0, 16);
+                    const idempotencyKey = this.dataset.idempotencyKey;
+                    const currentDate = new Date();
+                    currentDate.setMinutes(currentDate.getMinutes() - currentDate.getTimezoneOffset());
+                    const now = currentDate.toISOString().slice(0, 16);
 
                     const {
                         value: vals,
                         isConfirmed
                     } = await Swal.fire({
                         title: '<i class="bi bi-piggy-bank me-2"></i>Nouveau Dépôt Épargne',
-                        width: 460,
+                        width: 560,
                         html: `
                     <div class="text-start">
+                        <div class="alert alert-light border small mb-3">
+                            Le titulaire du carnet reste le bénéficiaire. Les informations du payeur servent à la traçabilité du versement.
+                        </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Montant du dépôt (F CFA)</label>
-                            <input type="number" id="swal_depot_montant" class="form-control form-control-lg fw-bold text-success" placeholder="0" min="1">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Montant versé (FCFA)</label>
+                            <input type="number" id="swal_depot_montant" class="form-control form-control-lg fw-bold text-success" placeholder="0" min="1" max="9999999999999" step="1" required>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Mode de paiement</label>
+                                <select id="swal_depot_mode" class="form-select" required>
+                                    <option value="especes">Espèces</option>
+                                    <option value="mobile_money">Mobile Money</option>
+                                    <option value="virement">Virement bancaire</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Payeur</label>
+                                <select id="swal_depot_payeur_type" class="form-select" required>
+                                    <option value="client">Le titulaire du carnet</option>
+                                    <option value="tiers">Une autre personne</option>
+                                </select>
+                            </div>
+                            <div class="col-12 d-none" id="swal_depot_reference_group">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Référence de transaction</label>
+                                <input type="text" id="swal_depot_reference" class="form-control" maxlength="100" placeholder="Référence mobile money ou bancaire">
+                            </div>
+                        </div>
+                        <div id="swal_depot_tiers_group" class="row g-2 mb-3 d-none">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Nom du payeur</label>
+                                <input type="text" id="swal_depot_payeur_nom" class="form-control" maxlength="150">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Téléphone (facultatif)</label>
+                                <input type="tel" id="swal_depot_payeur_telephone" class="form-control" maxlength="30">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Lien avec le titulaire</label>
+                                <input type="text" id="swal_depot_payeur_lien" class="form-control" maxlength="80" placeholder="Ex. conjoint, parent, représentant">
+                            </div>
+                            <div class="col-12 small text-muted">Identité déclarée lors de l’opération ; ne vaut pas vérification d’identité.</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold small text-muted text-uppercase">Date de l'opération</label>
-                            <input type="datetime-local" id="swal_depot_date" class="form-control" value="${now}">
+                            <input type="datetime-local" id="swal_depot_date" class="form-control" value="${now}" max="${now}" required>
                         </div>
                         <div class="mb-1">
                             <label class="form-label fw-bold small text-muted text-uppercase">Note / Commentaire (Optionnel)</label>
-                            <textarea id="swal_depot_note" class="form-control" rows="2" placeholder="Ex: Dépôt exceptionnel, Reliquat..."></textarea>
+                            <textarea id="swal_depot_note" class="form-control" rows="2" maxlength="1000" placeholder="Information utile à la traçabilité du dépôt"></textarea>
                         </div>
                     </div>`,
                         showCancelButton: true,
@@ -714,26 +866,64 @@
                         confirmButtonColor: '#1cc88a',
                         cancelButtonColor: '#858796',
                         focusConfirm: false,
-                        didOpen: () => setTimeout(() => document.getElementById(
-                            'swal_depot_montant')?.focus(), 100),
+                        didOpen: () => {
+                            const payeurType = document.getElementById('swal_depot_payeur_type');
+                            const tiersGroup = document.getElementById('swal_depot_tiers_group');
+                            const payeurNom = document.getElementById('swal_depot_payeur_nom');
+                            const payeurLien = document.getElementById('swal_depot_payeur_lien');
+                            const mode = document.getElementById('swal_depot_mode');
+                            const referenceGroup = document.getElementById('swal_depot_reference_group');
+                            const reference = document.getElementById('swal_depot_reference');
+                            const syncConditionalFields = () => {
+                                const isThirdParty = payeurType.value === 'tiers';
+                                const needsReference = mode.value !== 'especes';
+                                tiersGroup.classList.toggle('d-none', !isThirdParty);
+                                payeurNom.required = isThirdParty;
+                                payeurLien.required = isThirdParty;
+                                referenceGroup.classList.toggle('d-none', !needsReference);
+                                reference.required = needsReference;
+                            };
+                            payeurType.addEventListener('change', syncConditionalFields);
+                            mode.addEventListener('change', syncConditionalFields);
+                            syncConditionalFields();
+                            setTimeout(() => document.getElementById('swal_depot_montant')?.focus(), 100);
+                        },
                         preConfirm: () => {
-                            const montant = parseFloat(document.getElementById(
-                                'swal_depot_montant')?.value) || 0;
+                            const montantRaw = document.getElementById('swal_depot_montant')?.value;
+                            const montant = Number(montantRaw);
                             const date = document.getElementById('swal_depot_date')?.value;
-                            const note = document.getElementById('swal_depot_note')
-                                ?.value || '';
-                            if (montant <= 0) {
-                                Swal.showValidationMessage(
-                                    'Le montant doit être supérieur à 0.');
+                            const mode = document.getElementById('swal_depot_mode')?.value;
+                            const payeurType = document.getElementById('swal_depot_payeur_type')?.value;
+                            const reference = document.getElementById('swal_depot_reference')?.value.trim() || '';
+                            const payeurNom = document.getElementById('swal_depot_payeur_nom')?.value.trim() || '';
+                            const payeurTelephone = document.getElementById('swal_depot_payeur_telephone')?.value.trim() || '';
+                            const payeurLien = document.getElementById('swal_depot_payeur_lien')?.value.trim() || '';
+                            const note = document.getElementById('swal_depot_note')?.value.trim() || '';
+                            if (!Number.isSafeInteger(montant) || montant <= 0) {
+                                Swal.showValidationMessage('Saisissez un montant entier positif en FCFA.');
                                 return false;
                             }
                             if (!date) {
                                 Swal.showValidationMessage('La date est obligatoire.');
                                 return false;
                             }
+                            if (mode !== 'especes' && !reference) {
+                                Swal.showValidationMessage('La référence de paiement est obligatoire pour ce mode de règlement.');
+                                return false;
+                            }
+                            if (payeurType === 'tiers' && (!payeurNom || !payeurLien)) {
+                                Swal.showValidationMessage('Le nom du payeur et son lien avec le titulaire sont obligatoires.');
+                                return false;
+                            }
                             return {
                                 montant,
                                 date,
+                                mode,
+                                reference,
+                                payeurType,
+                                payeurNom,
+                                payeurTelephone,
+                                payeurLien,
                                 note
                             };
                         }
@@ -743,9 +933,15 @@
 
                     await envoyerFormulaire(depotUrl, csrf, {
                         carnet_id: carnetId,
-                        client_id: clientId,
                         montant: vals.montant,
                         date_depot: vals.date,
+                        mode_paiement: vals.mode,
+                        reference_paiement: vals.reference,
+                        payeur_type: vals.payeurType,
+                        payeur_nom: vals.payeurNom,
+                        payeur_telephone: vals.payeurTelephone,
+                        payeur_lien: vals.payeurLien,
+                        idempotency_key: idempotencyKey,
                         commentaire: vals.note,
                     }, {
                         titreSucces: 'Dépôt enregistré !',
@@ -770,7 +966,7 @@
                     }
 
                     const rows = collectes.length === 0 ?
-                        `<tr><td colspan="4" class="text-center py-4 text-muted">Aucune collecte.</td></tr>` :
+                        `<tr><td colspan="6" class="text-center py-4 text-muted">Aucune collecte.</td></tr>` :
                         collectes.map(c => `
                     <tr>
                         <td class="ps-2">
@@ -782,13 +978,15 @@
                                 <div class="me-2 bg-light rounded-circle text-center" style="width:25px;height:25px;line-height:25px;flex-shrink:0;">
                                     <i class="bi bi-person text-primary" style="font-size:.8rem;"></i>
                                 </div>
-                                <small class="fw-semibold text-truncate" style="max-width:120px;">${c.agent}</small>
+                                <small class="fw-semibold text-truncate" style="max-width:120px;">${escapeHtml(c.agent)}</small>
                             </div>
                         </td>
                         <td class="text-center">
                             <span class="badge rounded-pill bg-info-subtle text-info border border-info px-2">${c.pointage}</span>
                         </td>
+                        <td><small>${escapeHtml(c.payeur)}</small></td>
                         <td class="text-end pe-2 fw-bold">${c.montant}</td>
+                        <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="${c.receipt_url}" target="_blank" rel="noopener">Reçu</a></td>
                     </tr>`).join('');
 
                     Swal.fire({
@@ -802,7 +1000,9 @@
                                     <th class="ps-2">Date / Heure</th>
                                     <th>Agent</th>
                                     <th class="text-center">Pointage</th>
+                                    <th>Payeur</th>
                                     <th class="text-end pe-2">Montant</th>
+                                    <th>Reçu</th>
                                 </tr>
                             </thead>
                             <tbody>${rows}</tbody>
@@ -820,13 +1020,20 @@
             const modalEl = document.getElementById('modalCollecteBureau');
             const pointageInput = document.getElementById('col_pointage');
             const montantInput = document.getElementById('col_montant');
+            const payeurTypeInput = document.getElementById('col_payeur_type');
+            const tiersFields = document.getElementById('col_payeur_tiers');
+            const payeurNomInput = document.getElementById('col_payeur_nom');
+            const payeurLienInput = document.getElementById('col_payeur_lien');
+            const collecteForm = document.getElementById('formCollecteBureau');
 
             if (modalEl && pointageInput && montantInput) {
                 const miseJournaliere = parseFloat(modalEl.getAttribute('data-mise')) || 0;
-                const pointagesRestants = parseInt(modalEl.getAttribute('data-restants')) || 31;
+                const pointagesRestants = parseInt(modalEl.getAttribute('data-restants'), 10);
 
                 // Définir la limite maximale autorisée sur l'input HTML
                 pointageInput.setAttribute('max', pointagesRestants);
+                pointageInput.setAttribute('min', '1');
+                pointageInput.setAttribute('step', '1');
 
                 pointageInput.addEventListener('input', function() {
                     let pointages = parseInt(this.value) || 0;
@@ -839,6 +1046,27 @@
 
                     // Calcul automatique du montant
                     montantInput.value = pointages * miseJournaliere;
+                });
+            }
+
+            if (payeurTypeInput && tiersFields && payeurNomInput && payeurLienInput) {
+                const toggleThirdParty = () => {
+                    const isThirdParty = payeurTypeInput.value === 'tiers';
+                    tiersFields.classList.toggle('d-none', !isThirdParty);
+                    payeurNomInput.required = isThirdParty;
+                    payeurLienInput.required = isThirdParty;
+                };
+                payeurTypeInput.addEventListener('change', toggleThirdParty);
+                toggleThirdParty();
+            }
+
+            if (collecteForm) {
+                collecteForm.addEventListener('submit', function() {
+                    const submitButton = collecteForm.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.innerText = 'Enregistrement...';
+                    }
                 });
             }
         });

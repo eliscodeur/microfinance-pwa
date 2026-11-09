@@ -214,13 +214,21 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     // ==========================================
     Route::middleware(['cash.open'])->group(function () {
         // Collectes et Mouvements Carnets (Dépôts / Retraits)
-        Route::post('/collectes/store', [CollecteController::class, 'store'])->name('collectes.store');
-        Route::post('/carnets/depot', [CarnetController::class, 'storeDepot'])->name('carnets.depot');
-        Route::post('/carnets/retrait', [CarnetController::class, 'storeRetrait'])->name('carnets.retrait');
+        Route::post('/collectes/store', [CollecteController::class, 'store'])
+            ->name('collectes.store')
+            ->middleware('can:Gérer Carnets');
+        Route::post('/carnets/depot', [CarnetController::class, 'storeDepot'])
+            ->name('carnets.depot')
+            ->middleware('can:Gérer Carnets');
+        Route::post('/carnets/retrait', [CarnetController::class, 'storeRetrait'])
+            ->name('carnets.retrait')
+            ->middleware('can:Gérer Carnets');
+        Route::get('/retraits/{retrait}/recu', [CarnetController::class, 'receipt'])
+            ->name('retraits.receipt')
+            ->middleware('can:Gérer Carnets');
 
         // Crédits & Règlements
         Route::post('credits/{credit}/approve', [CreditController::class, 'approve'])->name('credits.approve');
-        Route::post('credits/{credit}/settle-with-tontine', [CreditController::class, 'settleCreditWithTontine'])->name('credits.settle-with-tontine');
         Route::patch('credits/{credit}/payments/{payment}', [CreditController::class, 'updatePayment'])->name('credits.payments.update');
 
         // Prêts (Validation et Décaissement)
@@ -230,6 +238,18 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
             ->name('payrolls.avance.valider')
             ->middleware('can:Gérer Salaires');
     });
+    Route::get('/collectes/{collecte}/recu', [CollecteController::class, 'receipt'])
+        ->name('collectes.receipt')
+        ->middleware('can:Gérer Carnets');
+    Route::get('/depots/{depot}/recu', [CarnetController::class, 'depotReceipt'])
+        ->name('depots.receipt')
+        ->middleware('can:Gérer Carnets');
+    Route::post('credits/{credit}/settle-with-savings', [CreditController::class, 'settleCreditWithSavings'])
+        ->name('credits.settle-with-savings')
+        ->middleware('can:Gérer Crédits');
+    Route::get('credits/{credit}/settlements/{settlement}/receipt', [CreditController::class, 'settlementReceipt'])
+        ->name('credits.settlements.receipt')
+        ->middleware('can:Gérer Crédits');
     Route::post('prets/{id}/decaisser', [PretInstructionController::class, 'decaisser'])
         ->name('prets.decaisser')
         ->middleware('can:Gérer Crédits');
