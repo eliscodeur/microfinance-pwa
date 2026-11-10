@@ -86,10 +86,11 @@
                                     </td>
                                     <td class="text-end pe-4">
                                         <!-- Bouton Avance sur Salaire déclenchant le modal unique -->
+                                   @can('advances.create')
                                    @php
-                                        // Vérifie si l'employé a une avance en cours
-                                        $hasActiveAdvance = $employe->salaryAdvances->contains(function ($advance) {
-                                            return $advance->statut === 'en_attente';
+                                       // Vérifie si l'employé a une avance en cours
+                                       $hasActiveAdvance = $employe->salaryAdvances->contains(function ($advance) {
+                                           return $advance->statut === 'en_attente';
                                         });
                                     @endphp
 
@@ -111,6 +112,7 @@
                                             <i class="bi bi-cash-coin mr-2"></i>Avance sur salaire en attente
                                         </button>
                                     @endif
+                                    @endcan
 
                                         <a href="{{ route('admin.employes.edit', $employe->ulid) }}"
                                             class="btn btn-sm btn-light text-primary me-1" title="Modifier">

@@ -2,13 +2,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\MouvementCaisse;
 use App\Models\SalaryAdvance;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class SalaryAdvanceController extends Controller
 {
@@ -26,7 +24,7 @@ class SalaryAdvanceController extends Controller
     private function enregistrerAvance(Request $request, int $id, string $type)
     {
         $request->validate([
-            'montant_total'   => 'required|numeric|min:0',
+            'montant_total'   => 'required|numeric|min:0.01',
             'nombre_tranches' => 'required|integer|min:1',
             'motif'           => 'nullable|string|max:255',
         ]);
@@ -55,7 +53,7 @@ class SalaryAdvanceController extends Controller
                 $montantMensuel = $montantTotal / $nombreTranches;
 
                 $data = [
-                    'advance_uid'     => Str::uuid(),
+                    'advance_uid'     => null,
                     'montant_total'   => $montantTotal,
                     'montant_mensuel' => $montantMensuel,
                     'nombre_tranches' => $nombreTranches,
@@ -98,7 +96,11 @@ class SalaryAdvanceController extends Controller
     {
         try {
             DB::transaction(function () use ($id) {
-                $avance = SalaryAdvance::where('advance_uid', $id)->firstOrFail();
+                $avance = SalaryAdvance::where('advance_uid', $id)
+                    ->where('statut', 'en_attente')
+                    ->where('approval_status', 'pending')
+                    ->lockForUpdate()
+                    ->firstOrFail();
                 $avance->delete();
             });
 
@@ -117,11 +119,10 @@ class SalaryAdvanceController extends Controller
 
     public function edit($id)
     {
-        // Si vous utilisez un champ personnalisé (ex: advance_uid) :
-        $avance = SalaryAdvance::where('advance_uid', $id)->firstOrFail();
-
-        // OU si vous utilisez l'ID standard de Laravel :
-        // $avance = Avance::findOrFail($id);
+        $avance = SalaryAdvance::where('advance_uid', $id)
+            ->where('statut', 'en_attente')
+            ->where('approval_status', 'pending')
+            ->firstOrFail();
 
         return response()->json([
             'success' => true,
@@ -131,14 +132,25 @@ class SalaryAdvanceController extends Controller
 
     public function update(Request $request, string $uid)
     {
-        return DB::transaction(function () use ($request, $uid) {
-            // Recherche par advance_uid et non par id classique
-            $avance = SalaryAdvance::where('advance_uid', $uid)->firstOrFail();
+        $data = $request->validate([
+            'montant_total' => ['required', 'numeric', 'min:0.01'],
+            'nombre_tranches' => ['required', 'integer', 'min:1'],
+            'motif' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        return DB::transaction(function () use ($data, $uid) {
+            $avance = SalaryAdvance::where('advance_uid', $uid)
+                ->where('statut', 'en_attente')
+                ->where('approval_status', 'pending')
+                ->lockForUpdate()
+                ->firstOrFail();
 
             $avance->update([
-                'montant_total'   => $request->montant_total,
-                'nombre_tranches' => $request->nombre_tranches,
-                'motif'           => $request->motif,
+                'montant_total' => $data['montant_total'],
+                'montant_mensuel' => $data['montant_total'] / $data['nombre_tranches'],
+                'montant_restant' => $data['montant_total'],
+                'nombre_tranches' => $data['nombre_tranches'],
+                'motif' => $data['motif'] ?? null,
             ]);
 
             return response()->json([
@@ -147,59 +159,28 @@ class SalaryAdvanceController extends Controller
             ]);
         });
     }
-    public function validerAvance($uid)
+    public function validerAvance(string $uid, \App\Services\PayrollWorkflowService $workflow)
     {
         try {
-            return DB::transaction(function () use ($uid) {
-                $avance = SalaryAdvance::where('advance_uid', $uid)->firstOrFail();
-
-                // Vérifier si l'avance est bien en attente
-                if ($avance->statut !== 'en_attente') {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Cette avance a déjà été traitée.',
-                    ], 422);
-                }
-
-                // 1. Mise à jour du statut et de l'approbateur
-                $avance->update([
-                    'statut'      => 'en_cours',
-                    'approved_by' => auth()->id(),
-                ]);
-                // dd('Ici');
-                // 2. Enregistrement automatique du mouvement de caisse (Sortie d'argent)
-                MouvementCaisse::create([
-                    'ulid'           => strtolower((string) Str::ulid()),
-                    'type_operation' => 'avance sur salaire',
-                    'sens'           => 'sortie',
-                    'montant'        => $avance->montant_total,
-                    'date_mouvement' => now()->toDateString() . ' ' . now()->format('H:i:s'),
-                    'mode_paiement'  => 'especes',
-                    'reference'      => 'AV-SAL-' . $avance->advance_uid,
-                    'libelle'        => 'Décaissement avance sur salaire (Réf: ' . $avance->advance_uid . ')',
-                    'source_type'    => SalaryAdvance::class,
-                    'source_id'      => $avance->id,
-                    'user_id'        => auth()->id(),
-                ]);
-
-                return redirect()->back()->with('success', 'L\'avance sur salaire a été validée et le décaissement a été enregistré en caisse avec succès !');
-            });
-
-        } catch (\Exception $e) {
-
-            Log::error("Erreur validation avance {$uid} : " . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Une erreur est survenue : ' . $e->getMessage(),
-            ], 500);
+            $workflow->approveAdvance($uid);
+            return back()->with('success', 'La demande d’avance a été approuvée. Elle attend maintenant son décaissement.');
+        } catch (\Throwable $e) {
+            Log::error("Erreur d’approbation de l’avance {$uid} : " . $e->getMessage());
+            throw $e;
         }
+    }
+
+    public function decaisserAvance(string $uid, \App\Services\PayrollWorkflowService $workflow)
+    {
+        $workflow->disburseAdvance($uid);
+
+        return back()->with('success', 'L’avance a été décaissée et enregistrée comme dépense et mouvement de caisse.');
     }
 
     public function index(Request $request)
     {
         // On ajoute 'employe' dans le with() pour charger la relation de l'employé administratif
-        $query = SalaryAdvance::with(['agent', 'employe', 'creator', 'approver']);
+        $query = SalaryAdvance::with(['agent', 'employe', 'creator', 'approver', 'rejecter', 'disburser']);
 
         if ($request->filled('statut')) {
             $query->where('statut', $request->statut);
@@ -222,16 +203,14 @@ class SalaryAdvanceController extends Controller
     //     return back()->with('success', "L'avance sur salaire a été validée avec succès.");
     // }
 
-    public function rejeterAvance($id)
+    public function rejeterAvance(Request $request, string $id, \App\Services\PayrollWorkflowService $workflow)
     {
-        $avance = SalaryAdvance::where('advance_uid', $id)->firstOrFail();
-
-        $avance->update([
-            'statut'      => 'rejetee',
-            'approved_by' => auth()->id(), // Optionnel selon votre base de données
+        $data = $request->validate([
+            'motif_rejet' => ['required', 'string', 'min:3', 'max:1000'],
         ]);
+        $workflow->rejectAdvance($id, $data['motif_rejet'] ?? null);
 
-        return back()->with('success', "L'avance sur salaire a été rejetée.");
+        return back()->with('success', "La demande d’avance a été rejetée.");
     }
 
 }

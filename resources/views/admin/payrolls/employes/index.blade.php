@@ -2,8 +2,15 @@
 
 @section('content')
     <div class="container-fluid">
+        @can('payroll.pay')
+            @php $cashWarningMessage = 'Les salaires approuvés ne peuvent être payés qu’avec une session de caisse ouverte.'; @endphp
+            @include('admin.partials.cash-warning-banner')
+        @endcan
         @if (session('error'))
             <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
+        @if (session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
         @endif
         @if ($errors->any())
             <div class="alert alert-danger">
@@ -15,13 +22,12 @@
     <!-- En-tête de page -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2 class="h4 mb-1">Salaires & Paie - Employés Administratifs</h2>
-                <p class="text-muted mb-0">Visualisation, calcul automatique et validation des bulletins de paie du personnel
-                    administratif.</p>
+                <h2 class="h4 mb-1">Salaires - Employés administratifs</h2>
+                <p class="text-muted mb-0">Les bulletins sont préparés, approuvés puis payés par des actions distinctes.</p>
             </div>
         </div>
 
-        <!-- Formulaire de filtre par mois/année et bouton Valider tout -->
+        <!-- Filtre de période et préparation des bulletins -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <div class="row g-3 align-items-end">
@@ -64,18 +70,17 @@
                     <div class="col-md-4 d-flex align-items-end">
                         @php
                             $contientDesAttentes = collect($payrolls ?? [])->contains(function ($item) {
-                                return strtolower($item->statut ?? 'en attente') === 'en attente' ||
-                                    strtolower($item->statut ?? '') === 'brouillon';
+                                return in_array(strtolower(str_replace(' ', '_', $item->statut ?? 'en_attente')), ['en_attente', 'rejete'], true);
                             });
 
                             $estMoisActuelOuFutur =
                                 $annee > now()->year || ($annee == now()->year && $mois >= now()->month);
                         @endphp
 
-                        @can('payroll.manage')
+                        @can('payroll.prepare')
                             @if ($estMoisActuelOuFutur)
                                 <div class="w-100 alert alert-warning py-2 mb-0 small text-center">
-                                    <i class="bi bi-exclamation-triangle me-1"></i> La validation de la paie n'est possible qu'à
+                                    <i class="bi bi-exclamation-triangle me-1"></i> La préparation de la paie n'est possible qu'à
                                     la fin du mois.
                                 </div>
                             @elseif ($contientDesAttentes)
@@ -86,7 +91,7 @@
                                         value="{{ $annee . '-' . str_pad($mois, 2, '0', STR_PAD_LEFT) }}">
 
                                     <button type="button" class="btn btn-success w-100" id="btnValiderTout">
-                                        <i class="bi bi-check2-all me-1"></i> Valider tout
+                                        <i class="bi bi-calculator me-1"></i> Préparer les salaires
                                     </button>
                                 </form>
 
@@ -95,13 +100,13 @@
                                 <script>
                                     document.getElementById('btnValiderTout').addEventListener('click', function(e) {
                                         Swal.fire({
-                                            title: 'Confirmer la validation globale ?',
-                                            text: "Cette action va valider les salaires des employés administratifs et générer les dépenses associées pour cette période.",
+                                            title: 'Préparer les bulletins ?',
+                                            text: "Cette action calcule les bulletins des employés. Elle ne déclenche aucun paiement.",
                                             icon: 'warning',
                                             showCancelButton: true,
                                             confirmButtonColor: '#28a745',
                                             cancelButtonColor: '#d33',
-                                            confirmButtonText: 'Oui, tout valider',
+                                            confirmButtonText: 'Oui, préparer',
                                             cancelButtonText: 'Annuler'
                                         }).then((result) => {
                                             if (result.isConfirmed) {
@@ -113,7 +118,7 @@
                             @else
                                 <div
                                     class="w-100 d-flex align-items-center justify-content-center bg-success-subtle text-success border border-success rounded px-2 py-2 small fw-bold text-center">
-                                    ✓ Paie validée pour cette période
+                                    ✓ Aucun bulletin à préparer
                                 </div>
                             @endif
                         @endcan
@@ -175,15 +180,34 @@
                                     @php
                                         $statutBrut = strtolower($payroll->statut ?? 'en attente');
                                         $statutClass = match ($statutBrut) {
-                                            'validé', 'valide' => 'bg-light text-dark border border-secondary',
+                                            'valide' => 'bg-primary-subtle text-primary border border-primary-subtle',
+                                            'paye' => 'bg-success-subtle text-success border border-success-subtle',
                                             'brouillon'
                                                 => 'bg-warning-subtle text-warning border border-warning-subtle',
+                                            'rejete', 'rejeté' => 'bg-danger-subtle text-danger border border-danger-subtle',
                                             default => 'bg-light text-muted border',
+                                        };
+                                        $statutLabel = match ($statutBrut) {
+                                            'en attente', 'en_attente' => 'À préparer',
+                                            'brouillon' => 'À approuver',
+                                            'valide' => 'Approuvé - à payer',
+                                            'paye' => 'Payé',
+                                            'rejete', 'rejeté' => 'Rejeté - à reprendre',
+                                            default => ucfirst($payroll->statut ?? ''),
                                         };
                                     @endphp
                                     <span class="badge {{ $statutClass }} fw-normal">
-                                        {{ ucfirst($payroll->statut ?? 'En attente') }}
+                                        {{ $statutLabel }}
                                     </span>
+                                    @if($payroll->created_by_name || $payroll->validated_by_name || $payroll->paid_by_name || $payroll->rejected_by_name)
+                                        <div class="small text-muted mt-1">
+                                            @if($payroll->created_by_name)<div>Préparé : {{ $payroll->created_by_name }}</div>@endif
+                                            @if($payroll->validated_by_name)<div>Approuvé : {{ $payroll->validated_by_name }}</div>@endif
+                                            @if($payroll->paid_by_name)<div>Payé : {{ $payroll->paid_by_name }}</div>@endif
+                                            @if($payroll->rejected_by_name)<div>Rejeté : {{ $payroll->rejected_by_name }}</div>@endif
+                                            @if($payroll->rejection_reason)<div>Motif : {{ $payroll->rejection_reason }}</div>@endif
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="text-end">
                                     <div class="d-inline-flex gap-2 align-items-center justify-content-end">
@@ -193,7 +217,7 @@
                                         @endphp
 
                                         {{-- Si le salaire n'a pas d'ID (pas encore enregistré) ou s'il est en brouillon / en attente --}}
-                                        @if (empty($payroll->id) || $statut == 'brouillon' || $statut == 'en attente')
+                                        @if (empty($payroll->id) || $statut == 'brouillon' || $statut == 'en attente' || $statut == 'en_attente' || $statut == 'rejete' || $statut == 'rejeté')
                                             <a href="{{ route('admin.payrolls.employes.details', $employeUlid) }}?mois={{ $mois }}&annee={{ $annee }}"
                                                 class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-eye me-1"></i> Détails
@@ -204,6 +228,31 @@
                                                 class="btn btn-sm btn-success">
                                                 <i class="bi bi-file-earmark-text me-1"></i> Voir le bulletin
                                             </a>
+                                        @endif
+                                        @if ($statut === 'brouillon' && $payroll->salaire_ulid)
+                                            @can('payroll.approve')
+                                                <form action="{{ route('admin.payrolls.employes.approve', $payroll->salaire_ulid) }}" method="POST" class="d-inline" onsubmit="return confirm('Approuver ce bulletin ? Le paiement restera à effectuer séparément.')">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button class="btn btn-sm btn-outline-primary" type="submit">Approuver</button>
+                                                </form>
+                                            @endcan
+                                            @can('payroll.reject')
+                                                <form action="{{ route('admin.payrolls.employes.reject', $payroll->salaire_ulid) }}" method="POST" class="d-inline" onsubmit="return askRejectionReason(this)">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="motif_rejet">
+                                                    <button class="btn btn-sm btn-outline-danger" type="submit">Rejeter</button>
+                                                </form>
+                                            @endcan
+                                        @elseif ($statut === 'valide' && $payroll->salaire_ulid)
+                                            @can('payroll.pay')
+                                                <form action="{{ route('admin.payrolls.employes.pay', $payroll->salaire_ulid) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirmer le paiement en espèces ? Une dépense et un mouvement de caisse seront créés.')">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button class="btn btn-sm btn-success" type="submit">Payer</button>
+                                                </form>
+                                            @endcan
                                         @endif
                                     </div>
                                 </td>
@@ -298,5 +347,15 @@
                 }
             });
         });
+    </script>
+    <script>
+        function askRejectionReason(form) {
+            const reason = window.prompt('Motif du rejet du bulletin (obligatoire) :');
+            if (!reason || reason.trim().length < 3) {
+                return false;
+            }
+            form.querySelector('[name="motif_rejet"]').value = reason.trim();
+            return confirm('Confirmer le rejet de ce bulletin ?');
+        }
     </script>
 @endsection

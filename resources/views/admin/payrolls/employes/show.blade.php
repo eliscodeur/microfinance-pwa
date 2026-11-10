@@ -74,20 +74,46 @@
                         <div class="p-3 bg-light rounded-3 h-100 border-0">
                             <span class="text-uppercase text-muted fw-bold x-small tracking-wider d-block mb-2">Sécurité &
                                 Traçabilité</span>
+                            @php
+                                $statutPaie = match (strtolower($salaire->statut)) {
+                                    'brouillon' => 'À approuver',
+                                    'valide' => 'Approuvé - à payer',
+                                    'paye' => 'Payé',
+                                    'rejete' => 'Rejeté - à reprendre',
+                                    default => ucfirst($salaire->statut),
+                                };
+                            @endphp
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="text-muted small">Statut :</span>
-                                <span class="badge bg-secondary bg-opacity-15 px-2 py-1">Validé & Clôturé</span>
+                                <span class="badge bg-secondary bg-opacity-15 px-2 py-1">{{ $statutPaie }}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="text-muted small">Validé par :</span>
+                                <span class="text-muted small">Préparé par :</span>
+                                <span class="text-dark fw-medium small">{{ $salaire->creator?->name ?? '—' }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-muted small">Approuvé par :</span>
                                 <span
-                                    class="text-dark fw-medium small">{{ optional($salaire->validator)->name ?? 'Administration' }}</span>
+                                    class="text-dark fw-medium small">{{ optional($salaire->validator)->name ?? '—' }}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="text-muted small">Date de validation :</span>
                                 <span
-                                    class="text-dark fw-medium small">{{ \Carbon\Carbon::parse($salaire->created_at)->format('d/m/Y à H:i') }}</span>
+                                    class="text-dark fw-medium small">{{ $salaire->validated_at?->format('d/m/Y à H:i') ?? '—' }}</span>
                             </div>
+                            @if ($salaire->rejected_at)
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small">Rejeté par :</span>
+                                    <span class="text-dark fw-medium small">{{ $salaire->rejecter?->name ?? '—' }} ({{ $salaire->rejected_at->format('d/m/Y à H:i') }})</span>
+                                </div>
+                                <div class="small text-danger mb-1">Motif : {{ $salaire->rejection_reason }}</div>
+                            @endif
+                            @if($salaire->paid_at)
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small">Payé par :</span>
+                                    <span class="text-dark fw-medium small">{{ $salaire->payer?->name ?? '—' }} ({{ $salaire->paid_at->format('d/m/Y à H:i') }})</span>
+                                </div>
+                            @endif
                             @if ($salaire->depense)
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="text-muted small">Pièce de dépense :</span>

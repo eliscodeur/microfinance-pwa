@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AgentController;
+use App\Http\Controllers\Admin\AgentPerformanceController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BonusController;
 use App\Http\Controllers\Admin\CarnetController;
@@ -254,10 +255,6 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
 
         // Prêts (Validation et Décaissement)
         Route::post('prets/{id}/valider', [PretInstructionController::class, 'valider'])->name('prets.valider')->middleware('can:credits.approve');
-        // Validation / Paiement des Avances sur Salaires
-        Route::patch('/payrolls/avance/{id}/valider', [SalaryAdvanceController::class, 'validerAvance'])
-            ->name('payrolls.avance.valider')
-            ->middleware('can:payroll.manage');
     });
     Route::get('/collectes/{collecte}/recu', [CollecteController::class, 'receipt'])
         ->name('collectes.receipt')
@@ -294,6 +291,12 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::patch('/cycles/{cycle}/mark-withdrawn', [AdminCycleController::class, 'markWithdrawn'])
         ->name('cycles.mark-withdrawn')
         ->middleware('can:cycles.manage');
+    Route::get('/performance-terrain', [AgentPerformanceController::class, 'index'])
+        ->name('performance-terrain.index')
+        ->middleware('can:performance.view');
+    Route::get('/performance-terrain/export', [AgentPerformanceController::class, 'export'])
+        ->name('performance-terrain.export')
+        ->middleware(['can:performance.view', 'can:performance.export']);
 
     // ==========================================
     // 5. GESTION DU PERSONNEL & RESSOURCES HUMAINES
@@ -308,8 +311,8 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
         ->name('employes.toggle-status')
         ->middleware('can:employees.update');
     // Agents
-    Route::resource('agents', AgentController::class)->only(['index', 'show'])->middleware('can:agents.view');
     Route::resource('agents', AgentController::class)->only(['create', 'store'])->middleware('can:agents.create');
+    Route::resource('agents', AgentController::class)->only(['index', 'show'])->middleware('can:agents.view');
     Route::resource('agents', AgentController::class)->only(['edit', 'update'])->middleware('can:agents.update');
     Route::resource('agents', AgentController::class)->only(['destroy'])->middleware('can:agents.delete');
     Route::patch('agents/{agent}/toggle-status', [AgentController::class, 'toggleStatus'])->name('agents.toggleStatus')->middleware('can:agents.activate');
@@ -323,41 +326,45 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     })->name('agents.sync-status')->middleware('can:agents.view');
     Route::get('/agents-list/{historyUlid}', [AgentController::class, 'getAgentsExceptCurrent'])->name('agents.list.except')->middleware('can:agents.view');
     Route::post('agents/{agent}/reset-pin', [AgentController::class, 'resetPin'])->name('agents.reset-pin')->middleware('can:agents.update');
-    // Paies et avances
-    Route::middleware('can:payroll.view')->group(function () {
-        Route::post('/agents/{agent}/avances', [SalaryAdvanceController::class, 'storeAgent'])->name('agents.avances.store')->middleware('can:payroll.manage');
-        Route::post('/employes/{employe}/avances', [SalaryAdvanceController::class, 'storeEmploye'])->name('employes.avances.store')->middleware('can:payroll.manage');
-
-        Route::get('/salary-grids', [SalaryGridController::class, 'index'])->name('salary-grids.index')->middleware('can:payroll.view');
-        Route::post('/salary-grids', [SalaryGridController::class, 'store'])->name('salary-grids.store')->middleware('can:payroll.manage');
-        Route::put('/salary-grids/{salary_grid}', [SalaryGridController::class, 'update'])->name('salary-grids.update')->middleware('can:payroll.manage');
-        Route::patch('/salary-grids/{salary_grid}/close', [SalaryGridController::class, 'close'])
-            ->name('salary-grids.close');
-        Route::get('/payrolls/agents', [PayrollController::class, 'index'])->name('payrolls.index')->middleware('can:payroll.view');
-        Route::post('/payroll/store', [PayrollController::class, 'store'])->name('payrolls.store')->middleware('can:payroll.manage');
-        Route::get('/payrolls/bulletin/{id}', [PayrollController::class, 'showValidated'])->name('payrolls.validated')->middleware('can:payroll.view');
-        Route::get('/payrolls/bulletin/{id}/employe', [PayrollEmployerController::class, 'showValidated'])->name('payrolls.employe.validated')->middleware('can:payroll.view');
-        Route::put('/payrolls/avances/{avance}/tranches', [PayrollController::class, 'updateTranches'])->name('payrolls.avances.updateTranches')->middleware('can:payroll.manage');
-        Route::get('/payrolls/preview-details', [PayrollController::class, 'previewDetails'])->name('payrolls.details')->middleware('can:payroll.view');
-        Route::get('/payrolls/employes', [PayrollEmployerController::class, 'index'])->name('payrolls.employes.index')->middleware('can:payroll.view');
-        Route::get('payrolls/employes/{ulid}', [PayrollEmployerController::class, 'previewDetails'])->name('payrolls.employes.details')->middleware('can:payroll.view');
-        Route::post('/payrolls/employes/store', [PayrollEmployerController::class, 'store'])->name('payrolls.employes.store')->middleware('can:payroll.manage');
-        Route::put('/payrolls/avances/employe/{avance}/tranches', [PayrollEmployerController::class, 'updateTranches'])->name('payrolls.avances.employe.updateTranches')->middleware('can:payroll.manage');
-        Route::post('/payrolls/employes/{ulid}/payroll/store-brouillon', [PayrollEmployerController::class, 'storeBrouillon'])->name('payrolls.employe.store-brouillon')->middleware('can:payroll.manage');
-
-        // Gestion des Avances (CRUD divers)
-        Route::get('/payrolls/avances', [SalaryAdvanceController::class, 'index'])->name('payrolls.avance')->middleware('can:payroll.view');
-        Route::get('/avances/{id}/edit', [SalaryAdvanceController::class, 'edit'])->name('avances.edit');
-        Route::put('/avances/{uid}', [SalaryAdvanceController::class, 'update'])->name('avances.update')->middleware('can:payroll.manage');
-        Route::delete('/avances/{id}', [SalaryAdvanceController::class, 'destroy'])->name('avances.destroy')->middleware('can:payroll.manage');
-        Route::patch('/payrolls/avance/{id}/rejeter', [SalaryAdvanceController::class, 'rejeterAvance'])->name('payrolls.avance.rejeter')->middleware('can:payroll.manage');
-    });
+    // Paies et avances : consultation, préparation, décision et paiement sont séparés.
+    Route::post('/agents/{agent}/avances', [SalaryAdvanceController::class, 'storeAgent'])->name('agents.avances.store')->middleware('can:advances.create');
+    Route::post('/employes/{employe}/avances', [SalaryAdvanceController::class, 'storeEmploye'])->name('employes.avances.store')->middleware('can:advances.create');
+    Route::get('/salary-grids', [SalaryGridController::class, 'index'])->name('salary-grids.index')->middleware('can:payroll.view');
+    Route::post('/salary-grids', [SalaryGridController::class, 'store'])->name('salary-grids.store')->middleware('can:payroll.prepare');
+    Route::put('/salary-grids/{salary_grid}', [SalaryGridController::class, 'update'])->name('salary-grids.update')->middleware('can:payroll.prepare');
+    Route::patch('/salary-grids/{salary_grid}/close', [SalaryGridController::class, 'close'])
+        ->name('salary-grids.close')
+        ->middleware('can:payroll.prepare');
+    Route::get('/payrolls/agents', [PayrollController::class, 'index'])->name('payrolls.index')->middleware('can:payroll.view');
+    Route::post('/payroll/store', [PayrollController::class, 'store'])->name('payrolls.store')->middleware('can:payroll.prepare');
+    Route::get('/payrolls/bulletin/{id}', [PayrollController::class, 'showValidated'])->name('payrolls.validated')->middleware('can:payroll.view');
+    Route::patch('/payrolls/{id}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve')->middleware('can:payroll.approve');
+    Route::patch('/payrolls/{id}/reject', [PayrollController::class, 'reject'])->name('payrolls.reject')->middleware('can:payroll.reject');
+    Route::patch('/payrolls/{id}/pay', [PayrollController::class, 'pay'])->name('payrolls.pay')->middleware('can:payroll.pay');
+    Route::put('/payrolls/avances/{avance}/tranches', [PayrollController::class, 'updateTranches'])->name('payrolls.avances.updateTranches')->middleware('can:payroll.prepare');
+    Route::get('/payrolls/preview-details', [PayrollController::class, 'previewDetails'])->name('payrolls.details')->middleware('can:payroll.view');
+    Route::get('/payrolls/employes', [PayrollEmployerController::class, 'index'])->name('payrolls.employes.index')->middleware('can:payroll.view');
+    Route::get('payrolls/employes/{ulid}', [PayrollEmployerController::class, 'previewDetails'])->name('payrolls.employes.details')->middleware('can:payroll.view');
+    Route::post('/payrolls/employes/store', [PayrollEmployerController::class, 'store'])->name('payrolls.employes.store')->middleware('can:payroll.prepare');
+    Route::get('/payrolls/bulletin/{id}/employe', [PayrollEmployerController::class, 'showValidated'])->name('payrolls.employe.validated')->middleware('can:payroll.view');
+    Route::patch('/payrolls/employes/{ulid}/approve', [PayrollEmployerController::class, 'approve'])->name('payrolls.employes.approve')->middleware('can:payroll.approve');
+    Route::patch('/payrolls/employes/{ulid}/reject', [PayrollEmployerController::class, 'reject'])->name('payrolls.employes.reject')->middleware('can:payroll.reject');
+    Route::patch('/payrolls/employes/{ulid}/pay', [PayrollEmployerController::class, 'pay'])->name('payrolls.employes.pay')->middleware('can:payroll.pay');
+    Route::put('/payrolls/avances/employe/{avance}/tranches', [PayrollEmployerController::class, 'updateTranches'])->name('payrolls.avances.employe.updateTranches')->middleware('can:payroll.prepare');
+    Route::post('/payrolls/employes/{ulid}/payroll/store-brouillon', [PayrollEmployerController::class, 'storeBrouillon'])->name('payrolls.employe.store-brouillon')->middleware('can:payroll.prepare');
+    Route::get('/payrolls/avances', [SalaryAdvanceController::class, 'index'])->name('payrolls.avance')->middleware('can:advances.view');
+    Route::get('/avances/{id}/edit', [SalaryAdvanceController::class, 'edit'])->name('avances.edit')->middleware('can:advances.update');
+    Route::put('/avances/{uid}', [SalaryAdvanceController::class, 'update'])->name('avances.update')->middleware('can:advances.update');
+    Route::delete('/avances/{id}', [SalaryAdvanceController::class, 'destroy'])->name('avances.destroy')->middleware('can:advances.delete');
+    Route::patch('/payrolls/avance/{id}/valider', [SalaryAdvanceController::class, 'validerAvance'])->name('payrolls.avance.valider')->middleware('can:advances.approve');
+    Route::patch('/payrolls/avance/{id}/rejeter', [SalaryAdvanceController::class, 'rejeterAvance'])->name('payrolls.avance.rejeter')->middleware('can:advances.reject');
+    Route::patch('/payrolls/avance/{id}/decaisser', [SalaryAdvanceController::class, 'decaisserAvance'])->name('payrolls.avance.decaisser')->middleware('can:advances.disburse');
 
     // ==========================================
     // 6. CLIENTS, CARNETS & CRÉDITS (Général)
     // ==========================================
-    Route::resource('clients', ClientController::class)->only(['index', 'show'])->middleware('can:clients.view');
     Route::resource('clients', ClientController::class)->only(['create', 'store'])->middleware('can:clients.create');
+    Route::resource('clients', ClientController::class)->only(['index', 'show'])->middleware('can:clients.view');
     Route::resource('clients', ClientController::class)->only(['edit', 'update'])->middleware('can:clients.update');
     Route::resource('clients', ClientController::class)->only(['destroy'])->middleware('can:clients.delete');
     Route::get('clients/export/{format}', [ClientController::class, 'export'])->name('clients.export')->middleware('can:clients.export');

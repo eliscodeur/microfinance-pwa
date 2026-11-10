@@ -80,14 +80,14 @@
 
                             @endphp
 
-                            @if ($hasPendingAdvance)
+                            @if ($hasPendingAdvance && auth()->user()->can('advances.create'))
                                 <!-- Alerte si une avance est en attente : Pas de bouton -->
                                 <div class="alert alert-warning py-2 px-3 mb-0 small d-inline-flex align-items-center">
                                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                                     <span>Une demande d'avance est actuellement <strong>en attente</strong>. Impossible d'en
                                         créer une nouvelle pour l'instant.</span>
                                 </div>
-                            @else
+                            @elseif(auth()->user()->can('advances.create'))
                                 <!-- Bouton affiché s'il n'y a pas d'avance en attente bloquante -->
                                 <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
                                     data-bs-target="#avanceModal">
@@ -187,7 +187,7 @@
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <h5 class="mb-0 text-dark"><i class="bi bi-wallet2 me-2"></i>Avances sur salaire</h5>
             <span class="badge bg-secondary">Total validé :
-                {{ number_format($avancesList->where('statut', 'valide')->sum('montant_total'), 0, ',', ' ') }} FCFA
+                {{ number_format($avancesList->whereIn('statut', ['en_cours', 'soldee'])->sum('montant_total'), 0, ',', ' ') }} FCFA
             </span>
         </div>
         <div class="card-body">
@@ -210,8 +210,10 @@
                                 <td class="fw-bold">{{ number_format($avance->montant_total, 0, ',', ' ') }} FCFA</td>
                                 <td>{{ $avance->motif ?? 'N/A' }}</td>
                                 <td>
-                                    @if ($avance->statut == 'en_cours')
-                                        <span class="badge bg-success">Validé</span>
+                                    @if ($avance->statut == 'en_attente' && $avance->approval_status === 'approved')
+                                        <span class="badge bg-primary">Approuvée - à décaisser</span>
+                                    @elseif ($avance->statut == 'en_cours')
+                                        <span class="badge bg-success">Décaissée - en remboursement</span>
                                     @elseif($avance->statut == 'rejetee')
                                         <span class="badge bg-danger">Rejeté</span>
                                     @else
@@ -219,8 +221,9 @@
                                     @endif
                                 </td>
                                 <td class="text-end">
-                                    @if ($avance->statut === 'en_attente' && $avance->created_by === auth()->id())
+                                    @if ($avance->statut === 'en_attente' && $avance->approval_status === 'pending' && $avance->created_by === auth()->id())
                                         <!-- Bouton Modifier -->
+                                        @can('advances.update')
                                         <button type="button" class="btn btn-sm btn-outline-primary btn-edit-avance"
                                             data-id="{{ $avance->advance_uid }}"
                                             data-montant="{{ $avance->montant_total }}"
@@ -228,12 +231,15 @@
                                             data-motif="{{ $avance->motif }}">Modifier
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
+                                        @endcan
 
                                         <!-- Bouton Supprimer -->
+                                        @can('advances.delete')
                                         <button type="button" class="btn btn-outline-danger btn-sm btn-delete-avance"
                                             data-id="{{ $avance->advance_uid }}" title="Supprimer">Supprimer
                                             <i class="bi bi-trash"></i>
                                         </button>
+                                        @endcan
                                     @else
                                         <span class="text-muted small">Aucune action</span>
                                     @endif

@@ -17,9 +17,26 @@
                 </p>
             </div>
             <div>
-                <span
-                    class="badge bg-{{ strtolower($payrollDetails->statut) == 'brouillon' ? 'warning text-dark' : (strtolower($payrollDetails->statut) == 'validé' ? 'success' : 'secondary') }} px-3 py-2 fs-6">
-                    Statut : {{ $payrollDetails->statut }}
+                @php
+                    $statutKey = strtolower($payrollDetails->statut);
+                    $statutBadge = match ($statutKey) {
+                        'brouillon' => 'bg-warning text-dark',
+                        'valide' => 'bg-primary',
+                        'paye' => 'bg-success',
+                        'rejete' => 'bg-danger',
+                        default => 'bg-secondary',
+                    };
+                    $statutLibelle = match ($statutKey) {
+                        'en attente' => 'À préparer',
+                        'brouillon' => 'À approuver',
+                        'valide' => 'Approuvé - à payer',
+                        'paye' => 'Payé',
+                        'rejete' => 'Rejeté - à reprendre',
+                        default => $payrollDetails->statut,
+                    };
+                @endphp
+                <span class="badge {{ $statutBadge }} px-3 py-2 fs-6">
+                    Statut : {{ $statutLibelle }}
                 </span>
             </div>
         </div>
@@ -73,16 +90,33 @@
                             <li class="d-flex justify-content-between py-1 border-bottom">
                                 <span class="text-muted">Généré le :</span>
                                 <span
-                                    class="fw-bold text-dark">{{ $payrollDetails->salaire_id ? optional($payrollDetails)->created_at ?? now()->format('d/m/Y H:i') : 'En cours de calcul' }}</span>
+                                    class="fw-bold text-dark">{{ $payrollDetails->created_at?->format('d/m/Y à H:i') ?? 'En cours de calcul' }}</span>
+                            </li>
+                            <li class="d-flex justify-content-between py-1 border-bottom">
+                                <span class="text-muted">Préparé par :</span>
+                                <span class="fw-bold text-dark">{{ $payrollDetails->creator?->name ?? '—' }}</span>
                             </li>
                             <li class="d-flex justify-content-between py-1 border-bottom">
                                 <span class="text-muted">Validé par :</span>
-                                <span class="fw-bold text-dark">En attente de validation</span>
+                                <span class="fw-bold text-dark">{{ $payrollDetails->validator?->name ?? '—' }}</span>
                             </li>
                             <li class="d-flex justify-content-between py-1">
                                 <span class="text-muted">Date de validation :</span>
-                                <span class="fw-bold text-dark">---</span>
+                                <span class="fw-bold text-dark">{{ $payrollDetails->validated_at?->format('d/m/Y à H:i') ?? '—' }}</span>
                             </li>
+                            @if ($payrollDetails->paid_at)
+                                <li class="d-flex justify-content-between py-1 border-bottom">
+                                    <span class="text-muted">Payé par :</span>
+                                    <span class="fw-bold text-dark">{{ $payrollDetails->payer?->name ?? '—' }} ({{ $payrollDetails->paid_at->format('d/m/Y à H:i') }})</span>
+                                </li>
+                            @endif
+                            @if ($payrollDetails->rejected_at)
+                                <li class="d-flex justify-content-between py-1 border-bottom">
+                                    <span class="text-muted">Rejeté par :</span>
+                                    <span class="fw-bold text-dark">{{ $payrollDetails->rejecter?->name ?? '—' }} ({{ $payrollDetails->rejected_at->format('d/m/Y à H:i') }})</span>
+                                </li>
+                                <li class="text-danger py-1">Motif du rejet : {{ $payrollDetails->rejection_reason }}</li>
+                            @endif
                         </ul>
                     </div>
                 </div>

@@ -31,12 +31,20 @@ class Salaire extends Model
         'statut',
         'validated_by',
         'validated_at',
+        'created_by',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
+        'paid_by',
+        'paid_at',
     ];
 
     protected $casts = [
         'periode_debut'      => 'date',
         'periode_fin'        => 'date',
         'validated_at'       => 'datetime',
+        'paid_at'            => 'datetime',
+        'rejected_at'        => 'datetime',
         'salaire_base'       => 'decimal:2',
         'commission_travail' => 'decimal:2',
         'commission_carnet'  => 'decimal:2',
@@ -74,6 +82,21 @@ class Salaire extends Model
     public function validator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function rejecter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
+    public function payer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paid_by');
     }
 
     public function depense(): BelongsTo

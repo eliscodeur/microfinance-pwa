@@ -81,12 +81,27 @@
                     <div class="card-body">
                         <h6 class="text-uppercase text-muted fw-bold small mb-3">Traçabilité & sécurité financière</h6>
                         <ul class="list-unstyled mb-0 small">
+                            @php
+                                $statutKey = strtolower($salaire->statut);
+                                $statutBadge = match ($statutKey) {
+                                    'brouillon' => 'bg-warning text-dark',
+                                    'valide' => 'bg-primary',
+                                    'paye' => 'bg-success',
+                                    'rejete' => 'bg-danger',
+                                    default => 'bg-secondary',
+                                };
+                                $statutLibelle = match ($statutKey) {
+                                    'brouillon' => 'À approuver',
+                                    'valide' => 'Approuvé - à payer',
+                                    'paye' => 'Payé',
+                                    'rejete' => 'Rejeté - à reprendre',
+                                    default => $salaire->statut,
+                                };
+                            @endphp
                             <li class="mb-2 d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Statut global :</span>
-                                <span
-                                    class="badge {{ ($salaire->statut ?? '') === 'Valide' ? 'bg-success' : 'bg-warning text-dark' }}">
-                                    {{ $salaire->statut ?? 'En attente' }}
-
+                                <span class="badge {{ $statutBadge }}">
+                                    {{ $statutLibelle }}
                                 </span>
 
                             </li>
@@ -97,9 +112,12 @@
                                 </strong>
                             </li>
                             <li class="mb-2 d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Préparé par :</span>
+                                <strong class="text-dark">{{ $salaire->creator?->name ?? '—' }}</strong>
+                            </li>
+                            <li class="mb-2 d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Validé par :</span>
-                                <strong
-                                    class="text-dark">{{ $salaire->validator->name ?? 'En attente de validation' }}</strong>
+                                <strong class="text-dark">{{ $salaire->validator?->name ?? '—' }}</strong>
                             </li>
                             <li class="d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Date de validation :</span>
@@ -107,6 +125,19 @@
                                     {{ $salaire->validated_at ? \Carbon\Carbon::parse($salaire->validated_at)->format('d/m/Y à H:i') : '---' }}
                                 </strong>
                             </li>
+                            @if ($salaire->paid_at)
+                                <li class="mb-2 d-flex justify-content-between align-items-center">
+                                    <span class="text-muted">Payé par :</span>
+                                    <strong class="text-dark">{{ $salaire->payer?->name ?? '—' }} ({{ $salaire->paid_at->format('d/m/Y à H:i') }})</strong>
+                                </li>
+                            @endif
+                            @if ($salaire->rejected_at)
+                                <li class="mb-2 d-flex justify-content-between align-items-center">
+                                    <span class="text-muted">Rejeté par :</span>
+                                    <strong class="text-dark">{{ $salaire->rejecter?->name ?? '—' }} ({{ $salaire->rejected_at->format('d/m/Y à H:i') }})</strong>
+                                </li>
+                                <li class="text-danger">Motif du rejet : {{ $salaire->rejection_reason }}</li>
+                            @endif
                         </ul>
                     </div>
                 </div>

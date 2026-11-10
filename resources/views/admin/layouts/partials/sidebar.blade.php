@@ -2,6 +2,7 @@
     $usersMenuOpen = request()->routeIs('admin.roles.*') || request()->routeIs('admin.users.*');
     $bonusMenuOpen = request()->routeIs('admin.bonuses.*');
     $agentsMenuOpen = request()->routeIs('admin.agents.*');
+    $performanceMenuOpen = request()->routeIs('admin.performance-terrain.*');
     $personnelMenuOpen = request()->routeIs('admin.employes.*') || request()->routeIs('admin.fonctions.*') || request()->routeIs('admin.salary-grids.*');
     $clientsMenuOpen = request()->routeIs('admin.clients.*');
     $creditsMenuOpen = request()->routeIs('admin.credits.*') || request()->routeIs('admin.prets.*') || request()->routeIs('admin.credit-settings.*');
@@ -276,6 +277,12 @@
                 @endcan
             </div>
         @endcan
+        @can('performance.view')
+            <a href="{{ route('admin.performance-terrain.index') }}"
+                class="{{ $performanceMenuOpen ? 'active' : '' }}" title="Performance terrain">
+                <i class="bi bi-graph-up-arrow"></i> <span>Performance terrain</span>
+            </a>
+        @endcan
 
         @can('carnets.view')
             <a href="#carnetsSub" data-bs-toggle="collapse" aria-expanded="{{ $carnetsMenuOpen ? 'true' : 'false' }}"
@@ -394,11 +401,11 @@
         </div>
         @endif
 
-        @if(auth()->user()->can('employees.view') || auth()->user()->can('employees.create') || auth()->user()->can('employees.update') || auth()->user()->can('payroll.view') || auth()->user()->can('payroll.manage') || auth()->user()->can('commissions.view'))
+        @if(auth()->user()->can('employees.view') || auth()->user()->can('employees.create') || auth()->user()->can('employees.update') || auth()->user()->can('payroll.view') || auth()->user()->can('advances.view') || auth()->user()->can('commissions.view'))
             <div class="sidebar-header nav-section-title">Ressources humaines</div>
         @endif
 
-        @if(auth()->user()->can('employees.view') || auth()->user()->can('employees.create') || auth()->user()->can('employees.update') || auth()->user()->can('payroll.view') || auth()->user()->can('payroll.manage'))
+        @if(auth()->user()->can('employees.view') || auth()->user()->can('employees.create') || auth()->user()->can('employees.update') || auth()->user()->can('payroll.view'))
         <a href="#personnelSub" data-bs-toggle="collapse" aria-expanded="{{ $personnelMenuOpen ? 'true' : 'false' }}"
             class="menu-toggle {{ $personnelMenuOpen ? 'active' : '' }}" title="Personnel & Fonctions">
             <i class="bi bi-people-fill"></i> <span>Personnel & Fonctions</span>
@@ -432,20 +439,24 @@
             </div>
         @endcan
 
-        @can('payroll.view')
+        @if(auth()->user()->can('payroll.view') || auth()->user()->can('advances.view'))
             <a href="#payrollSub" data-bs-toggle="collapse" aria-expanded="{{ $payrollMenuOpen ? 'true' : 'false' }}"
                 class="menu-toggle {{ $payrollMenuOpen ? 'active' : '' }}" title="Salaires & Avances">
                 <i class="bi bi-wallet2"></i> <span>Salaires & Avances</span>
             </a>
             <div class="collapse {{ $payrollMenuOpen ? 'show' : '' }} submenu" id="payrollSub" data-bs-parent="#sidebarNav">
-                <a href="{{ route('admin.payrolls.index') }}"
-                    class="{{ request()->routeIs('admin.payrolls.index') ? 'active' : '' }}">Salaires agents</a>
-                <a href="{{ route('admin.payrolls.employes.index') }}"
-                    class="{{ request()->routeIs('admin.payrolls.employes.*') ? 'active' : '' }}">Salaires employés</a>
-                <a href="{{ route('admin.payrolls.avance') }}"
-                    class="{{ request()->routeIs('admin.payrolls.avance') ? 'active' : '' }}">Avances sur salaire</a>
+                @can('payroll.view')
+                    <a href="{{ route('admin.payrolls.index') }}"
+                        class="{{ request()->routeIs('admin.payrolls.index') ? 'active' : '' }}">Salaires agents</a>
+                    <a href="{{ route('admin.payrolls.employes.index') }}"
+                        class="{{ request()->routeIs('admin.payrolls.employes.*') ? 'active' : '' }}">Salaires employés</a>
+                @endcan
+                @can('advances.view')
+                    <a href="{{ route('admin.payrolls.avance') }}"
+                        class="{{ request()->routeIs('admin.payrolls.avance') ? 'active' : '' }}">Avances sur salaire</a>
+                @endcan
             </div>
-        @endcan
+        @endif
 
         @if(auth()->user()->can('users.view') || auth()->user()->can('roles.view') || auth()->user()->can('audits.view'))
             <div class="sidebar-header nav-section-title">Administration & sécurité</div>

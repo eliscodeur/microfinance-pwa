@@ -24,7 +24,14 @@ class SalaryAdvance extends Model implements Auditable
         'statut',
         'motif',
         'approved_by',
+        'approved_at',
         'created_by',
+        'approval_status',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
+        'disbursed_by',
+        'disbursed_at',
     ];
 
     protected $casts = [
@@ -32,6 +39,9 @@ class SalaryAdvance extends Model implements Auditable
         'montant_mensuel' => 'integer',
         'montant_restant' => 'integer',
         'date_demande'    => 'date',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'disbursed_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -59,6 +69,16 @@ class SalaryAdvance extends Model implements Auditable
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function rejecter()
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
+    public function disburser()
+    {
+        return $this->belongsTo(User::class, 'disbursed_by');
     }
     public function employe()
     {

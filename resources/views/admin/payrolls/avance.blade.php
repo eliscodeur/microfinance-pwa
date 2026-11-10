@@ -2,13 +2,31 @@
 
 @section('content')
     <div class="container-fluid px-4">
-        @php $cashWarningMessage = "Impossible de valider les avances sur salaire sans une caisse ouverte."; @endphp
+        @php $cashWarningMessage = "Le décaissement est impossible sans une caisse ouverte. L’approbation ne décaisse pas l’argent."; @endphp
         @include('admin.partials.cash-warning-banner')
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            </div>
+        @endif
+        @if ($errors->any())
+            <div class="alert alert-danger" role="alert">
+                @foreach ($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
         <div class="d-flex justify-content-between align-items-center my-4">
             <div>
                 <h1 class="h3 text-dark fw-bold mb-0">Gestion des avances sur salaire</h1>
-                <p class="text-muted small mb-0">Suivi, validation et traitement des demandes d'avances indépendantes du
-                    mois.</p>
+                <p class="text-muted small mb-0">Le demandeur, l’approbateur et le caissier sont tracés séparément.</p>
             </div>
         </div>
 
@@ -53,18 +71,17 @@
                                 <th>Tranches</th>
                                 <th>Motif</th>
                                 <th>Statut</th>
-                                @if($hasCashOpen)
+                                <th>Traçabilité</th>
                                 <th class="text-end">Actions</th>
-                                @endif
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($avances as $avance)
                                 @php
                                     // Détermination dynamique du nom et du code/identifiant selon la relation chargée
-                                    $beneficiaireNom =
-                                        $avance->agent->nom ??
-                                        ($avance->employe->nom . ' ' . ($avance->employe->prenoms ?? '') ?? 'N/A');
+                                    $beneficiaireNom = $avance->agent?->nom
+                                        ?? trim(($avance->employe?->nom ?? '') . ' ' . ($avance->employe?->prenoms ?? ''))
+                                        ?: 'N/A';
                                     // $beneficiaireCode = $avance->agent->code_agent ?? ($avance->employe->ulid ?? '-');
                                 @endphp
                                 <tr>
@@ -82,10 +99,12 @@
                                     <td>{{ $avance->tranches_payees }} / {{ $avance->nombre_tranches }}</td>
                                     <td>{{ $avance->motif ?? '-' }}</td>
                                     <td>
-                                        @if ($avance->statut === 'en_attente')
-                                            <span class="badge bg-warning text-dark">En attente</span>
+                                        @if ($avance->statut === 'en_attente' && $avance->approval_status === 'approved')
+                                            <span class="badge bg-primary">Approuvée - à décaisser</span>
+                                        @elseif ($avance->statut === 'en_attente')
+                                            <span class="badge bg-warning text-dark">En attente d’approbation</span>
                                         @elseif($avance->statut === 'en_cours')
-                                            <span class="badge bg-info text-dark">En cours</span>
+                                            <span class="badge bg-info text-dark">Décaissée - remboursement en cours</span>
                                         @elseif($avance->statut === 'soldee')
                                             <span class="badge bg-success">Soldée</span>
                                         @elseif($avance->statut === 'rejetee')
@@ -94,26 +113,48 @@
                                             <span class="badge bg-secondary">{{ ucfirst($avance->statut) }}</span>
                                         @endif
                                     </td>
+                                    <td class="small">
+                                        <div>Demande : {{ $avance->creator?->name ?? '—' }}</div>
+                                        @if($avance->approved_at)
+                                            <div>Approbation : {{ $avance->approver?->name ?? '—' }} ({{ $avance->approved_at->format('d/m/Y H:i') }})</div>
+                                        @endif
+                                        @if($avance->rejected_at)
+                                            <div>Rejet : {{ $avance->rejecter?->name ?? '—' }} ({{ $avance->rejected_at->format('d/m/Y H:i') }})</div>
+                                            @if($avance->rejection_reason)
+                                                <div>Motif : {{ $avance->rejection_reason }}</div>
+                                            @endif
+                                        @endif
+                                        @if($avance->disbursed_at)
+                                            <div>Décaissement : {{ $avance->disburser?->name ?? '—' }} ({{ $avance->disbursed_at->format('d/m/Y H:i') }})</div>
+                                        @endif
+                                    </td>
                                     <td class="text-end">
-                                        @if($hasCashOpen)
-                                        @if ($avance->statut === 'en_attente')
-                                            <button type="button" class="btn btn-success btn-sm btn-valider-avance me-1"
-                                                data-id="{{ $avance->advance_uid }}" title="Valider l'avance">
-                                                <i class="bi bi-check-lg"></i> Valider
-                                            </button>
-                                            <button type="button" class="btn btn-outline-danger btn-sm btn-rejeter-avance"
-                                                data-id="{{ $avance->advance_uid }}" title="Rejeter l'avance">
-                                                <i class="bi bi-x-lg"></i> Rejeter
-                                            </button>
+                                        @if ($avance->statut === 'en_attente' && $avance->approval_status === 'pending')
+                                            @can('advances.approve')
+                                                <button type="button" class="btn btn-outline-primary btn-sm btn-valider-avance me-1"
+                                                    data-id="{{ $avance->advance_uid }}">Approuver</button>
+                                            @endcan
+                                            @can('advances.reject')
+                                                <button type="button" class="btn btn-outline-danger btn-sm btn-rejeter-avance"
+                                                    data-id="{{ $avance->advance_uid }}">Rejeter</button>
+                                            @endcan
+                                        @elseif ($avance->statut === 'en_attente' && $avance->approval_status === 'approved')
+                                            @can('advances.disburse')
+                                                @if($hasCashOpen)
+                                                    <button type="button" class="btn btn-success btn-sm btn-decaisser-avance"
+                                                        data-id="{{ $avance->advance_uid }}">Décaisser</button>
+                                                @else
+                                                    <span class="text-muted small">Caisse à ouvrir</span>
+                                                @endif
+                                            @endcan
                                         @else
                                             <span class="text-muted small">Aucune action</span>
-                                        @endif
                                         @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted py-4">
+                                    <td colspan="9" class="text-center text-muted py-4">
                                         Aucune avance sur salaire trouvée.
                                     </td>
                                 </tr>
@@ -122,17 +163,16 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
-                <!-- <div class="mt-3">
+                <div class="mt-3">
                     {{ $avances->withQueryString()->links() }}
-                </div> -->
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Formulaires cachés pour soumettre les requêtes PATCH via SweetAlert -->
     @foreach ($avances as $avance)
-        @if ($avance->statut === 'en_attente')
+        @if ($avance->statut === 'en_attente' && $avance->approval_status === 'pending')
             <form id="form-valider-{{ $avance->advance_uid }}"
                 action="{{ route('admin.payrolls.avance.valider', $avance->advance_uid) }}" method="POST" class="d-none">
                 @csrf
@@ -140,6 +180,13 @@
             </form>
             <form id="form-rejeter-{{ $avance->advance_uid }}"
                 action="{{ route('admin.payrolls.avance.rejeter', $avance->advance_uid) }}" method="POST" class="d-none">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="motif_rejet">
+            </form>
+        @elseif ($avance->statut === 'en_attente' && $avance->approval_status === 'approved')
+            <form id="form-decaisser-{{ $avance->advance_uid }}"
+                action="{{ route('admin.payrolls.avance.decaisser', $avance->advance_uid) }}" method="POST" class="d-none">
                 @csrf
                 @method('PATCH')
             </form>
@@ -185,10 +232,51 @@
                         confirmButtonColor: '#dc3545',
                         cancelButtonColor: '#6c757d',
                         confirmButtonText: 'Oui, rejeter',
+                        cancelButtonText: 'Annuler',
+                        input: 'textarea',
+                        inputLabel: 'Motif du rejet',
+                        inputPlaceholder: 'Expliquez pourquoi la demande est rejetée...',
+                        inputValidator: (value) => !value || value.trim().length < 3 ? 'Veuillez saisir un motif (3 caractères minimum).' : undefined
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const form = document.getElementById(`form-rejeter-${id}`);
+                            form.querySelector('[name="motif_rejet"]').value = result.value.trim();
+                            form.submit();
+                        }
+                    });
+                });
+            });
+
+            // Le gestionnaire de décaissement est indépendant de celui du rejet.
+            document.querySelectorAll('.btn-decaisser-avance').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const form = document.getElementById(`form-decaisser-${id}`);
+                    if (!form) {
+                        window.alert('Le formulaire de décaissement est introuvable. Actualisez la page.');
+                        return;
+                    }
+
+                    const submitForm = () => form.submit();
+                    if (typeof Swal === 'undefined') {
+                        if (window.confirm('La dépense et le mouvement de caisse seront créés immédiatement. Confirmer le décaissement ?')) {
+                            submitForm();
+                        }
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Confirmer le décaissement ?',
+                        text: "La dépense et le mouvement de caisse seront créés immédiatement.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#198754',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Oui, décaisser',
                         cancelButtonText: 'Annuler'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            document.getElementById(`form-rejeter-${id}`).submit();
+                            submitForm();
                         }
                     });
                 });

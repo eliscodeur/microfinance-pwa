@@ -29,6 +29,13 @@ return [
                         'agents.commissions' => 'Gérer les commissions',
                     ],
                 ],
+                'performance' => [
+                    'label' => 'Performance terrain',
+                    'permissions' => [
+                        'performance.view' => 'Consulter le classement',
+                        'performance.export' => 'Exporter le classement',
+                    ],
+                ],
                 'carnets' => [
                     'label' => 'Carnets & tontines',
                     'permissions' => [
@@ -125,7 +132,22 @@ return [
                     'label' => 'Salaires & avances',
                     'permissions' => [
                         'payroll.view' => 'Consulter',
-                        'payroll.manage' => 'Gérer les salaires et avances',
+                        'payroll.prepare' => 'Préparer les bulletins',
+                        'payroll.approve' => 'Approuver les bulletins',
+                        'payroll.reject' => 'Rejeter les bulletins',
+                        'payroll.pay' => 'Payer les salaires approuvés',
+                    ],
+                ],
+                'salary_advances' => [
+                    'label' => 'Avances sur salaire',
+                    'permissions' => [
+                        'advances.view' => 'Consulter les demandes',
+                        'advances.create' => 'Créer une demande',
+                        'advances.update' => 'Modifier une demande en attente',
+                        'advances.approve' => 'Approuver une demande',
+                        'advances.reject' => 'Rejeter une demande',
+                        'advances.disburse' => 'Décaisser une demande approuvée',
+                        'advances.delete' => 'Supprimer une demande en attente',
                     ],
                 ],
             ],
@@ -194,7 +216,16 @@ return [
         'Valider Synchros' => ['sync.view', 'sync.validate'],
         'Gérer Synchros' => ['sync.view', 'sync.validate'],
         'Voir Rapports' => ['reports.view', 'reports.export'],
-        'Gérer Salaires' => ['payroll.view', 'payroll.manage', 'employees.view'],
+        'Gérer Salaires' => [
+            'payroll.view', 'payroll.prepare', 'payroll.approve', 'payroll.reject', 'payroll.pay',
+            'advances.view', 'advances.create', 'advances.update', 'advances.approve',
+            'advances.reject', 'advances.disburse', 'advances.delete', 'employees.view',
+        ],
+        'payroll.manage' => [
+            'payroll.view', 'payroll.prepare', 'payroll.approve', 'payroll.reject', 'payroll.pay',
+            'advances.view', 'advances.create', 'advances.update', 'advances.approve',
+            'advances.reject', 'advances.disburse', 'advances.delete',
+        ],
         'Consulter la trésorerie' => ['treasury.view'],
         'Consulter les audits' => ['audits.view'],
         'Exporter les audits' => ['audits.export'],

@@ -14,6 +14,12 @@ class SalaireEmploye extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'validated_at' => 'datetime',
+        'paid_at' => 'datetime',
+        'rejected_at' => 'datetime',
+    ];
+
     public function uniqueIds(): array
     {
         return ['ulid'];
@@ -40,5 +46,20 @@ class SalaireEmploye extends Model
     public function validator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function rejecter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
+    public function payer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paid_by');
     }
 }

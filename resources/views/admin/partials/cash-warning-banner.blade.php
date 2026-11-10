@@ -16,9 +16,13 @@
                 </div>
             </div>
             <div>
-                <a href="{{ route('admin.caisse.ouvrir') }}" class="btn btn-warning btn-sm fw-bold px-3 shadow-sm">
-                    <i class="fas fa-key me-1"></i> Ouvrir ma caisse
-                </a>
+                @can('treasury.open')
+                    <a href="{{ route('admin.caisse.ouvrir') }}" class="btn btn-warning btn-sm fw-bold px-3 shadow-sm">
+                        <i class="fas fa-key me-1"></i> Ouvrir ma caisse
+                    </a>
+                @else
+                    <span class="small fw-semibold">Contactez un responsable de caisse.</span>
+                @endcan
             </div>
         </div>
     </div>

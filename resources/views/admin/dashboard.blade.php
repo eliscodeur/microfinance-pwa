@@ -160,7 +160,7 @@
     <div class="row g-4">
         {{-- GRAPHIQUE DYNAMIQUE --}}
         @can('treasury.view')
-            <div class="col-lg-8">
+            <div class="col-lg-12">
                 <div class="card border-0 shadow-sm p-4 h-100">
                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                         <h5 class="fw-bold mb-0">Mouvements de trésorerie</h5>
@@ -213,7 +213,7 @@
         @endcan
 
         {{-- ALERTES ET ACTIONS RAPIDES --}}
-        <div class="{{ auth()->user()->can('treasury.view') ? 'col-lg-4' : 'col-12' }}">
+        <!-- <div class="{{ auth()->user()->can('treasury.view') ? 'col-lg-4' : 'col-12' }}">
             <div class="card border-0 shadow-sm p-4 h-100">
                 @can('credits.view')
                 <h5 class="fw-bold mb-4 text-danger"><i class="bi bi-shield-exclamation me-2"></i>Alertes Pénalités</h5>
@@ -248,7 +248,7 @@
 
                 @can('agents.view')
                 {{-- ALERTES AGENTS PLAFOND --}}
-                <!-- <div class="mt-4">
+                <div class="mt-4">
                     <h5 class="fw-bold mb-3 text-warning"><i class="bi bi-exclamation-triangle me-2"></i>Alertes Agents</h5>
                     <div class="table-responsive mb-3" style="max-height: 200px;">
                         <table class="table table-sm table-hover align-middle">
@@ -280,7 +280,7 @@
                             </tbody>
                         </table>
                     </div>
-                </div> -->
+                </div>
 
                 @endcan
 
@@ -313,7 +313,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 </div>
 
