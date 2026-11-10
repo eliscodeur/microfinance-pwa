@@ -1,20 +1,18 @@
 @extends('admin.layouts.app')
 
 @section('content')
-@php
-    $legacyPermissionMap = ['Supprimer Données' => 'Supprimer données'];
-@endphp
-
 <div class="container-fluid px-0">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-4">
         <div>
             <h2 class="h4 mb-1">Rôles et permissions</h2>
             <p class="text-muted small mb-0">Créez des profils d’accès et attribuez les droits aux administrateurs.</p>
+            <p class="text-muted small mb-0">Les permissions sont vérifiées sur les routes et les actions. Le compte superadministrateur conserve tous les droits.</p>
         </div>
     </div>
 
     <div class="row g-4 align-items-start">
         {{-- Formulaire création / édition --}}
+        @if($roleToEdit ? auth()->user()->can('roles.update') : auth()->user()->can('roles.create'))
         <div class="col-12 col-xl-6">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white py-3 border-bottom">
@@ -47,9 +45,8 @@
                         </div>
 
                         @include('admin.roles.partials.permission-checkboxes', [
-                            'permissionLabels' => $permissionLabels,
+                            'permissionGroups' => $permissionGroups,
                             'roleToEdit' => $roleToEdit,
-                            'legacyPermissionMap' => $legacyPermissionMap,
                         ])
 
                         <div class="d-grid gap-2">
@@ -66,6 +63,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
         {{-- Liste --}}
         <div class="col-12 col-xl-6">
@@ -92,9 +90,9 @@
                                             <i class="bi bi-shield-lock-fill text-primary me-2" aria-hidden="true"></i>{{ $role->nom }}
                                         </td>
                                         <td>
-                                            @if(!empty($role->permissions))
+                                            @if(!empty($rolePermissionLabels[$role->id]))
                                                 <div class="d-flex flex-wrap gap-1">
-                                                    @foreach($role->permissions as $permission)
+                                                    @foreach($rolePermissionLabels[$role->id] as $permission)
                                                         <span class="badge rounded-pill bg-info-subtle text-info-emphasis border border-info-subtle small">
                                                             {{ $permission }}
                                                         </span>
@@ -106,14 +104,14 @@
                                         </td>
                                         <td class="text-end pe-4">
                                             <div class="d-inline-flex justify-content-end gap-1">
-                                                @can('Modifier données')
+                                                @can('roles.update')
                                                     <a href="{{ route('admin.roles.index', ['id' => $role->id]) }}"
                                                        class="btn btn-sm btn-outline-primary"
                                                        title="Modifier">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                 @endcan
-                                                @can('Supprimer données')
+                                                @can('roles.delete')
                                                     <button type="button"
                                                             class="btn btn-sm btn-outline-danger"
                                                             title="Supprimer"

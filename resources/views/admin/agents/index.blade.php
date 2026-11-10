@@ -10,7 +10,7 @@
                 <p class="text-muted mb-0">Liste complète et pilotage des accès agents.</p>
             </div>
             <div class="d-flex gap-2">
-                @can('Gérer Agents')
+                @can('agents.create')
                     <a href="{{ route('admin.agents.create') }}" class="btn btn-primary">Ajouter agent</a>
                 @endcan
             </div>
@@ -47,11 +47,11 @@
                                 <th>Code Agent</th>
                                 <th>Nom</th>
                                 <th>Téléphone</th>
-                                @can('Activer/Désactiver')
+                                @can('agents.activate')
                                     <th class="text-center">Actif</th>
                                 @endcan
                                 @if($hasCashOpen)
-                                @can('Gérer Synchros')
+                                @can('sync.validate')
                                     <th class="text-center">Synchro</th>
                                 @endcan
                                 @endif
@@ -65,7 +65,7 @@
                                     <td><strong>{{ $agent->nom }}</strong></td>
                                     <td>{{ $agent->telephone }}</td>
 
-                                    @can('Activer/Désactiver')
+                                    @can('agents.activate')
                                         <td class="text-center">
                                             <button type="button" id="btn-status-{{ $agent->id }}"
                                                 class="btn btn-link p-0 border-0 shadow-none"
@@ -76,7 +76,7 @@
                                         </td>
                                     @endcan
                                     @if($hasCashOpen)
-                                    @can('Gérer Synchros')
+                                    @can('sync.validate')
                                         <td class="text-center">
                                             <button type="button" id="btn-sync-{{ $agent->id }}"
                                                 class="btn btn-link p-0 border-0"
@@ -93,7 +93,7 @@
                                             <a href="{{ route('admin.agents.show', $agent->ulid) }}"
                                                 class="btn btn-sm btn-info text-white">Détails<i
                                                     class="bi bi-eye ml-2"></i></a>
-                                            @can('Modifier données')
+                                            @can('agents.update')
                                                 <a href="{{ route('admin.agents.edit', $agent->ulid) }}"
                                                     class="btn btn-sm btn-warning">Modifier<i class="bi bi-pencil ml-2"></i></a>
                                             @endcan

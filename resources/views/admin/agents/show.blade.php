@@ -263,7 +263,7 @@
     </div>
 
     <div class="d-flex gap-2 mt-3 mb-5">
-        @can('Activer/Désactiver')
+        @can('agents.activate')
             <button type="button" class="btn {{ $agent->actif ? 'btn-outline-warning' : 'btn-outline-success' }}"
                 onclick="confirmerToggleStatus({{ $agent->id }}, {{ $agent->actif ? 'true' : 'false' }})">
                 {{ $agent->actif ? 'Désactiver' : 'Activer' }} Agent
@@ -276,7 +276,7 @@
             </form>
         @endcan
         {{-- <a href="{{ route('admin.agents.index') }}" class="btn btn-secondary">Retour à la liste</a> --}}
-        @can('Modifier données')
+        @can('agents.update')
             <a href="{{ route('admin.agents.edit', $agent->ulid) }}" class="btn btn-primary">Modifier les info de l'agent</a>
         @endcan
     </div>

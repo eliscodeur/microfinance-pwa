@@ -72,7 +72,7 @@
                                 $annee > now()->year || ($annee == now()->year && $mois >= now()->month);
                         @endphp
 
-                        @can('Modifier données')
+                        @can('payroll.manage')
                             @if ($estMoisActuelOuFutur)
                                 <div class="w-100 alert alert-warning py-2 mb-0 small text-center">
                                     <i class="bi bi-exclamation-triangle me-1"></i> La validation de la paie n'est possible qu'à

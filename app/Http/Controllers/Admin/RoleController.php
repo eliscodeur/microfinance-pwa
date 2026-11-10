@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
+use App\Support\PermissionCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -17,14 +18,17 @@ class RoleController extends Controller
             $roleToEdit = Role::find($request->id);
         }
 
-        $permissionLabels = config('role_permissions.labels', []);
+        $permissionGroups = PermissionCatalog::groups();
+        $rolePermissionLabels = $roles->mapWithKeys(function (Role $role) {
+            return [$role->id => PermissionCatalog::labelsFor($role->permissions ?? [])];
+        });
 
-        return view('admin.roles.index', compact('roles', 'roleToEdit', 'permissionLabels'));
+        return view('admin.roles.index', compact('roles', 'roleToEdit', 'permissionGroups', 'rolePermissionLabels'));
     }
 
     public function store(Request $request)
     {
-        $allowed = config('role_permissions.labels', []);
+        $allowed = PermissionCatalog::allKeys();
 
         $request->validate([
             'nom'           => 'required|string|max:255|unique:roles,nom',
@@ -47,7 +51,7 @@ class RoleController extends Controller
 
     public function update(Request $request, Role $role)
     {
-        $allowed = config('role_permissions.labels', []);
+        $allowed = PermissionCatalog::allKeys();
 
         $request->validate([
             'nom'           => 'required|string|max:255|unique:roles,nom,' . $role->id,

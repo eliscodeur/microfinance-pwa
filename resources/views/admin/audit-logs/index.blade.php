@@ -20,7 +20,7 @@
                 </div>
                 <p class="text-muted mb-0">Traçabilité des opérations et changements effectués dans l’application.</p>
             </div>
-            @can('Exporter les audits')
+            @can('audits.export')
                 <a class="btn btn-outline-primary px-3"
                     href="{{ route('admin.audit-logs.export', request()->query()) }}">
                     <i class="bi bi-download me-2"></i>Exporter le résultat filtré

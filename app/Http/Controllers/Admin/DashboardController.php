@@ -3,116 +3,186 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agent;
+use App\Models\CashSession;
 use App\Models\Client;
-use App\Models\Collecte;
 use App\Models\Credit;
-use App\Models\SyncBatch; // Assure-toi que ce modèle existe
+use App\Models\MouvementCaisse;
+use App\Models\SyncBatch;
+use App\Services\CashClosingService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        $canViewTreasury = auth()->user()->can('treasury.view');
+        $canViewCreditPortfolio = auth()->user()->can('credits.view');
+        $canViewAgents = auth()->user()->can('agents.view');
+        $canViewClients = auth()->user()->can('clients.view');
+        $canViewSync = auth()->user()->can('sync.view');
+
         // --- STATISTIQUES DE BASE ---
-        $totalAgents        = Agent::count();
-        $totalClients       = Client::count();
-        $pendingSyncBatches = SyncBatch::where('status', 'pending_review')->count();
+        $totalAgents = $canViewAgents ? Agent::count() : 0;
+        $totalClients = $canViewClients ? Client::count() : 0;
+        $pendingSyncBatches = $canViewSync
+            ? SyncBatch::where('status', 'pending_review')->count()
+            : 0;
 
-        // --- LOGIQUE DE TRÉSORERIE ---
-        // 1. Collecte Brute : Total historique de l'argent encaissé
-        $totalCollecteBrute = Collecte::sum('montant');
+        $tresorerieJour = null;
+        $soldeEspecesCaissesOuvertes = null;
+        $dates = [];
+        $entreesData = [];
+        $sortiesData = [];
+        $monthsLabels = [];
+        $monthsEntrees = [];
+        $monthsSorties = [];
+        $thisMonthLabels = [];
+        $thisMonthEntrees = [];
+        $thisMonthSorties = [];
+        $tresorerieSeptJours = [];
 
-        $totalRetraits = 0; // À remplacer par votre calcul réel
+        if ($canViewTreasury) {
+            $dateDebutHistorique = now()->copy()->subMonths(11)->startOfMonth();
+            $mouvementsParJour = $this->mouvementsParJour($dateDebutHistorique, now()->endOfDay());
 
-        // 3. Trésorerie Nette : Ce qui reste physiquement dans le coffre
-        $tresorerieNette = $totalCollecteBrute - $totalRetraits;
+            $mouvementDuJour = $mouvementsParJour->get(now()->toDateString());
+            $entreesDuJour = (float) ($mouvementDuJour->entrees ?? 0);
+            $sortiesDuJour = (float) ($mouvementDuJour->sorties ?? 0);
+            $tresorerieJour = [
+                'entrees' => $entreesDuJour,
+                'sorties' => $sortiesDuJour,
+                'flux_net' => $entreesDuJour - $sortiesDuJour,
+            ];
 
-        // --- STATISTIQUES CRÉDITS & PÉNALITÉS ---
-        // Encours Total : Ce que les clients doivent encore rembourser
-        $totalEncours = Credit::where('statut', 'active')->get()->sum(function ($c) {
-            return ($c->montant_accorde + $c->interet_total) - $c->montant_rembourse;
-        });
+            $closingService = app(CashClosingService::class);
+            $soldeEspecesCaissesOuvertes = CashSession::query()
+                ->where('statut', 'ouverte')
+                ->get()
+                ->sum(function (CashSession $session) use ($closingService) {
+                    return (float) $closingService->calculateSummary($session)['solde_theorique'];
+                });
 
-        $countClientsEnRetard = Credit::where('penalty_amount', '>', 0)
-            ->where('statut', 'active')
-            ->count();
+            for ($i = 6; $i >= 0; $i--) {
+                $date = now()->copy()->subDays($i);
+                $jour = $mouvementsParJour->get($date->toDateString());
+                $entrees = (float) ($jour->entrees ?? 0);
+                $sorties = (float) ($jour->sorties ?? 0);
 
-        $totalPenalites = Credit::where('statut', 'active')->sum('penalty_amount');
+                $dates[] = $date->format('d M');
+                $entreesData[] = $entrees;
+                $sortiesData[] = $sorties;
+                $tresorerieSeptJours[] = [
+                    'date' => $date->format('d/m/Y'),
+                    'entrees' => $entrees,
+                    'sorties' => $sorties,
+                    'flux_net' => $entrees - $sorties,
+                ];
+            }
 
-        $topPenalites = Credit::with(['client', 'carnet', 'agent'])
-            ->where('penalty_amount', '>', 0)
-            ->where('statut', 'active')
-            ->orderByDesc('penalty_amount')
-            ->take(5)
-            ->get();
+            $dateDebutMois = now()->copy()->startOfMonth();
+            for ($date = $dateDebutMois->copy(); $date->lte(now()); $date->addDay()) {
+                $jour = $mouvementsParJour->get($date->toDateString());
+                $thisMonthLabels[] = $date->format('d/m');
+                $thisMonthEntrees[] = (float) ($jour->entrees ?? 0);
+                $thisMonthSorties[] = (float) ($jour->sorties ?? 0);
+            }
 
-        // --- DONNÉES DU GRAPHIQUE (7 DERNIERS JOURS) ---
-        $dates              = [];
-        $collectesData      = [];
-        $remboursementsData = [];
+            for ($i = 11; $i >= 0; $i--) {
+                $monthDate = now()->copy()->subMonths($i);
+                $monthPrefix = $monthDate->format('Y-m-');
+                $monthRows = $mouvementsParJour->filter(function ($movement, $day) use ($monthPrefix) {
+                    return str_starts_with($day, $monthPrefix);
+                });
 
-        for ($i = 6; $i >= 0; $i--) {
-            $date    = now()->subDays($i);
-            $dates[] = $date->format('d M');
-
-            $collectesData[]      = Collecte::whereDate('created_at', $date->format('Y-m-d'))->sum('montant');
-            $remboursementsData[] = Credit::whereDate('updated_at', $date->format('Y-m-d'))
-                ->where('statut', 'active')
-                ->sum('montant_rembourse');
+                $monthsLabels[] = $monthDate->translatedFormat('M Y');
+                $monthsEntrees[] = (float) $monthRows->sum('entrees');
+                $monthsSorties[] = (float) $monthRows->sum('sorties');
+            }
         }
 
-        // --- DONNÉES DU GRAPHIQUE (12 DERNIERS MOIS) ---
-        $monthsLabels        = [];
-        $monthsCollecte      = [];
-        $monthsRemboursement = [];
+        $totalEncours = 0;
+        $countClientsEnRetard = 0;
+        $totalPenalites = 0;
+        $topPenalites = collect();
 
-        for ($i = 11; $i >= 0; $i--) {
-            $monthDate      = now()->subMonths($i);
-            $monthsLabels[] = $monthDate->translatedFormat('M Y');
+        if ($canViewCreditPortfolio) {
+            $totalEncours = Credit::where('statut', 'active')->get()->sum(function ($c) {
+                return ($c->montant_accorde + $c->interet_total) - $c->montant_rembourse;
+            });
 
-            $monthsCollecte[] = Collecte::whereYear('created_at', $monthDate->year)
-                ->whereMonth('created_at', $monthDate->month)
-                ->sum('montant');
-
-            $monthsRemboursement[] = Credit::whereYear('updated_at', $monthDate->year)
-                ->whereMonth('updated_at', $monthDate->month)
+            $countClientsEnRetard = Credit::where('penalty_amount', '>', 0)
                 ->where('statut', 'active')
-                ->sum('montant_rembourse');
+                ->count();
+
+            $totalPenalites = Credit::where('statut', 'active')->sum('penalty_amount');
+
+            $topPenalites = Credit::with(['client', 'carnet', 'agent'])
+                ->where('penalty_amount', '>', 0)
+                ->where('statut', 'active')
+                ->orderByDesc('penalty_amount')
+                ->take(5)
+                ->get();
         }
 
         return view('admin.dashboard', compact(
-            'totalAgents', 'totalClients', 'totalCollecteBrute', 'totalRetraits',
-            'tresorerieNette', 'pendingSyncBatches', 'totalEncours',
+            'totalAgents', 'totalClients', 'pendingSyncBatches', 'totalEncours',
             'countClientsEnRetard', 'totalPenalites', 'topPenalites',
-            'dates', 'collectesData', 'remboursementsData',
-            'monthsLabels', 'monthsCollecte', 'monthsRemboursement'
+            'tresorerieJour', 'soldeEspecesCaissesOuvertes',
+            'dates', 'entreesData', 'sortiesData', 'tresorerieSeptJours',
+            'monthsLabels', 'monthsEntrees', 'monthsSorties',
+            'thisMonthLabels', 'thisMonthEntrees', 'thisMonthSorties'
         ));
     }
+
     public function getChartData(Request $request)
     {
-        $start = $request->input('start');
-        $end   = $request->input('end');
+        $validated = $request->validate([
+            'start' => ['required', 'date_format:Y-m-d'],
+            'end' => ['required', 'date_format:Y-m-d', 'after_or_equal:start'],
+        ]);
+        $start = Carbon::createFromFormat('!Y-m-d', $validated['start']);
+        $end = Carbon::createFromFormat('!Y-m-d', $validated['end']);
 
-        // On récupère toutes les dates de la période
-        $period        = \Carbon\CarbonPeriod::create($start, $end);
-        $labels        = [];
-        $collecte      = [];
-        $remboursement = [];
+        if ($start->diffInDays($end) > 366) {
+            throw ValidationException::withMessages([
+                'end' => 'La période personnalisée ne peut pas dépasser 12 mois.',
+            ]);
+        }
 
-        foreach ($period as $date) {
-            $formattedDate = $date->format('Y-m-d');
-            $labels[]      = $date->format('d M');
+        $mouvementsParJour = $this->mouvementsParJour($start, $end->copy()->endOfDay());
 
-            $collecte[]      = \App\Models\Collecte::whereDate('created_at', $formattedDate)->sum('montant');
-            $remboursement[] = \App\Models\Credit::whereDate('updated_at', $formattedDate)
-                ->where('statut', 'active')
-                ->sum('montant_rembourse');
+        $labels = [];
+        $entrees = [];
+        $sorties = [];
+        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+            $mouvement = $mouvementsParJour->get($date->toDateString());
+            $labels[] = $date->format('d M');
+            $entrees[] = (float) ($mouvement->entrees ?? 0);
+            $sorties[] = (float) ($mouvement->sorties ?? 0);
         }
 
         return response()->json([
-            'labels'        => $labels,
-            'collecte'      => $collecte,
-            'remboursement' => $remboursement,
+            'labels' => $labels,
+            'entrees' => $entrees,
+            'sorties' => $sorties,
         ]);
+    }
+
+    private function mouvementsParJour(Carbon $start, Carbon $end)
+    {
+        return MouvementCaisse::query()
+            ->whereBetween('date_mouvement', [$start, $end])
+            ->selectRaw(
+                'DATE(date_mouvement) as jour, ' .
+                'SUM(CASE WHEN sens = ? THEN montant ELSE 0 END) as entrees, ' .
+                'SUM(CASE WHEN sens = ? THEN montant ELSE 0 END) as sorties',
+                ['entree', 'sortie']
+            )
+            ->groupBy('jour')
+            ->orderBy('jour')
+            ->get()
+            ->keyBy('jour');
     }
 }

@@ -9,7 +9,7 @@
                 <p class="text-muted mb-0">Suivi des clients, de leurs affectations et de leurs carnets.</p>
             </div>
             <div class="d-flex gap-2">
-                @can('Gérer Clients')
+                @can('clients.create')
                     <a href="{{ route('admin.clients.create') }}" class="btn btn-primary">Ajouter client</a>
                 @endcan
             </div>
@@ -70,7 +70,7 @@
                                             Détails
                                         </a>
 
-                                        @can('Modifier données')
+                                        @can('clients.update')
                                             <a href="{{ route('admin.clients.edit', $client->ulid) }}"
                                                 class="btn btn-sm btn-outline-warning">
                                                 Modifier

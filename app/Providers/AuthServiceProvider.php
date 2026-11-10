@@ -1,8 +1,8 @@
 <?php
 
 namespace App\Providers;
-use App\Models\User;
 
+use App\Support\PermissionCatalog;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -27,14 +27,15 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        // On crée une Gate dynamique pour chaque permission
         Gate::before(function ($user, $ability) {
-            if ($user->email === 'admin@gmail.com') {
-                return true; 
+            $superAdminEmail = config('role_permissions.super_admin_email');
+            if ($superAdminEmail && strcasecmp((string) $user->email, $superAdminEmail) === 0) {
+                return true;
             }
-            // Si l'utilisateur a un rôle et que ce rôle contient la permission demandée
-            if ($user->role && is_array($user->role->permissions)) {
-                return in_array($ability, $user->role->permissions);
+
+            $permissions = $user->role ? $user->role->permissions : [];
+            if (is_array($permissions)) {
+                return in_array($ability, PermissionCatalog::expand($permissions), true);
             }
         });
     }
