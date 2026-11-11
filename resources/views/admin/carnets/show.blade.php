@@ -991,7 +991,7 @@
 
                     Swal.fire({
                         title: `<i class="bi bi-journal-check me-2"></i>Cycle #${cycleNum} — Collectes`,
-                        width: 620,
+                        width: 900,
                         html: `
                     <div style="max-height:420px;overflow-y:auto;">
                         <table class="table table-hover align-middle mb-0 text-start">

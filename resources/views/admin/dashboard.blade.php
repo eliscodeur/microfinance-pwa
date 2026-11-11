@@ -16,9 +16,10 @@
     </div>
 
     {{-- CARTES DE STATISTIQUES GÉNÉRALES --}}
-    <div class="row g-4 mb-4">
+    @if(auth()->user()->can('agents.view') || auth()->user()->can('clients.view') || auth()->user()->can('sync.view'))
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 mb-4">
         @can('agents.view')
-        <div class="col-md-4">
+        <div class="col">
             <div class="card border-0 shadow-sm h-100 p-3">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0 bg-primary text-white rounded-3 p-3">
@@ -34,7 +35,7 @@
         @endcan
 
         @can('clients.view')
-        <div class="col-md-4">
+        <div class="col">
             <div class="card border-0 shadow-sm h-100 p-3">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0 bg-secondary text-white rounded-3 p-3">
@@ -50,7 +51,7 @@
         @endcan
 
         @can('sync.view')
-        <div class="col-md-4">
+        <div class="col">
             <div class="card border-0 shadow-sm h-100 p-3 {{ $pendingSyncBatches > 0 ? 'border-start border-danger border-4' : '' }}">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
@@ -59,14 +60,15 @@
                             {{ $pendingSyncBatches }}
                         </h3>
                     </div>
-                    @endcan
                     <a href="{{ route('admin.sync-batches.index') }}" class="btn btn-sm btn-light border-0 rounded-circle p-2">
                         <i class="bi bi-arrow-right-short fs-4"></i>
                     </a>
                 </div>
             </div>
         </div>
+        @endcan
     </div>
+    @endif
 
     @can('treasury.view')
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -193,7 +195,7 @@
                                     <th class="text-end">Flux net</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="tresorerieTableBody">
                                 @foreach($tresorerieSeptJours as $jour)
                                     <tr>
                                         <td>{{ $jour['date'] }}</td>
@@ -333,20 +335,56 @@
     const dataSets = {
         days: {
             labels: {!! json_encode($dates) !!},
+            tableDates: {!! json_encode(array_column($tresorerieSeptJours, 'date')) !!},
             entrees: {!! json_encode($entreesData) !!},
             sorties: {!! json_encode($sortiesData) !!}
         },
         this_month: {
             labels: {!! json_encode($thisMonthLabels) !!},
+            tableDates: {!! json_encode($thisMonthLabels) !!},
             entrees: {!! json_encode($thisMonthEntrees) !!},
             sorties: {!! json_encode($thisMonthSorties) !!}
         },
         months: {
             labels: {!! json_encode($monthsLabels) !!},
+            tableDates: {!! json_encode($monthsLabels) !!},
             entrees: {!! json_encode($monthsEntrees) !!},
             sorties: {!! json_encode($monthsSorties) !!}
         }
     };
+
+    const tableBody = document.getElementById('tresorerieTableBody');
+    const currencyFormat = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
+
+    function updateDashboardData(data) {
+        currentChart.data.labels = data.labels;
+        currentChart.data.datasets[0].data = data.entrees;
+        currentChart.data.datasets[1].data = data.sorties;
+        currentChart.update();
+
+        const rows = document.createDocumentFragment();
+        const tableDates = data.tableDates || data.labels;
+        data.labels.forEach((label, index) => {
+            const entrees = Number(data.entrees[index] || 0);
+            const sorties = Number(data.sorties[index] || 0);
+            const fluxNet = entrees - sorties;
+            const row = document.createElement('tr');
+
+            [tableDates[index] || label, `${currencyFormat.format(entrees)} F`, `${currencyFormat.format(sorties)} F`, `${currencyFormat.format(fluxNet)} F`]
+                .forEach((value, cellIndex) => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value;
+                    if (cellIndex > 0) cell.classList.add('text-end');
+                    if (cellIndex === 1) cell.classList.add('text-success');
+                    if (cellIndex === 2 || (cellIndex === 3 && fluxNet < 0)) cell.classList.add('text-danger');
+                    if (cellIndex === 3) cell.classList.add('fw-semibold');
+                    row.appendChild(cell);
+                });
+
+            rows.appendChild(row);
+        });
+        tableBody.replaceChildren(rows);
+    }
 
     let currentChart = new Chart(ctx, {
         type: 'line',
@@ -399,10 +437,7 @@
             customRange.classList.add('d-none');
             const data = dataSets[this.value];
             if(data) {
-                currentChart.data.labels = data.labels;
-                currentChart.data.datasets[0].data = data.entrees;
-                currentChart.data.datasets[1].data = data.sorties;
-                currentChart.update();
+                updateDashboardData(data);
             }
         }
     });
@@ -428,10 +463,7 @@
                 return data;
             })
             .then(data => {
-                currentChart.data.labels = data.labels;
-                currentChart.data.datasets[0].data = data.entrees;
-                currentChart.data.datasets[1].data = data.sorties;
-                currentChart.update();
+                updateDashboardData(data);
             })
             .catch(error => {
                 Swal.fire('Erreur', error.message, 'error');

@@ -17,18 +17,23 @@ class CheckCashSession
     public function handle(Request $request, Closure $next)
     {
         if (auth()->check() && ! $this->sessionService->hasActiveSession(auth()->id())) {
+            $message = 'Opération bloquée : Votre caisse n\'est pas ouverte. Veuillez ouvrir une session de caisse.';
+
+            if ($request->headers->has('X-Inertia')) {
+                return redirect()->back()->with('error', $message);
+            }
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success'      => false,
                     'error_type'   => 'cash_closed',
-                    'message'      => 'Opération bloquée : Votre caisse n\'est pas ouverte. Veuillez ouvrir une session de caisse.',
+                    'message'      => $message,
                     'redirect_url' => route('admin.caisse.ouvrir'),
                 ], 403);
             }
 
             return redirect()->route('admin.caisse.ouvrir')
-                ->with('error', 'Vous devez ouvrir votre caisse avant d\'effectuer des opérations financières.');
+                ->with('error', $message);
         }
 
         return $next($request);

@@ -130,7 +130,7 @@ class PretInstructionController extends Controller
             $rules['date_debut']       = 'required|date';
             $rules['nombre_echeances'] = 'required|integer|min:1';
             $rules['periodicite']      = 'required|in:quinzaine,mensuelle,hebdomadaire';
-            $rules['mode']             = 'required|in:degressif,constant';
+            $rules['mode']             = 'required|in:fixe,degressif';
         }
         if ($request->input('action') === 'rejete') {
             $rules['motif'] = 'required|string';

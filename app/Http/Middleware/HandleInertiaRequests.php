@@ -36,6 +36,10 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $request->user() ? $request->user()->only('id', 'nom', 'prenom', 'email') : null,
+                'permissions' => [
+                    'credits.approve' => $request->user()?->can('credits.approve') ?? false,
+                    'credits.disburse' => $request->user()?->can('credits.disburse') ?? false,
+                ],
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

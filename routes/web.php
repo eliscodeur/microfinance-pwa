@@ -246,16 +246,16 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
             ->middleware('can:carnets.view');
 
         // Crédits & Règlements
-        Route::post('credits/{credit}/approve', [CreditController::class, 'approve'])
-            ->name('credits.approve')
-            ->middleware('can:credits.approve');
         Route::patch('credits/{credit}/payments/{payment}', [CreditController::class, 'updatePayment'])
             ->name('credits.payments.update')
             ->middleware('can:credits.payments');
-
-        // Prêts (Validation et Décaissement)
-        Route::post('prets/{id}/valider', [PretInstructionController::class, 'valider'])->name('prets.valider')->middleware('can:credits.approve');
     });
+    Route::post('credits/{credit}/approve', [CreditController::class, 'approve'])
+        ->name('credits.approve')
+        ->middleware(['can:credits.approve', 'cash.open']);
+    Route::post('prets/{id}/valider', [PretInstructionController::class, 'valider'])
+        ->name('prets.valider')
+        ->middleware(['can:credits.approve', 'cash.open']);
     Route::get('/collectes/{collecte}/recu', [CollecteController::class, 'receipt'])
         ->name('collectes.receipt')
         ->middleware('can:carnets.view');
@@ -270,7 +270,7 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
         ->middleware('can:credits.view');
     Route::post('prets/{id}/decaisser', [PretInstructionController::class, 'decaisser'])
         ->name('prets.decaisser')
-        ->middleware('can:credits.disburse');
+        ->middleware(['permission.feedback:credits.disburse', 'can:credits.disburse', 'cash.open']);
 
     // ==========================================
     // 4. SYNCHRONISATIONS & CYCLES
@@ -371,8 +371,8 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
     Route::get('clients/{client}/export-history', [ClientController::class, 'exportHistory'])->name('clients.exportHistory')->middleware('can:clients.export');
     Route::post('/client-carnets', [ClientController::class, 'storeNumCarnet'])->name('client-carnets.store')->middleware('can:carnets.create');
 
-    Route::resource('credits', CreditController::class)->only(['index', 'show'])->middleware('can:credits.view');
     Route::resource('credits', CreditController::class)->only(['create', 'store'])->middleware('can:credits.create');
+    Route::resource('credits', CreditController::class)->only(['index', 'show'])->middleware('can:credits.view');
     Route::get('/credit-settings', [CreditConfigurationController::class, 'index'])->name('credit-settings.index')->middleware('can:credits.configure');
     Route::post('/credit-settings/types', [CreditConfigurationController::class, 'storeType'])->name('credit-settings.types.store')->middleware('can:credits.configure');
     Route::put('/credit-settings/types/{creditType}', [CreditConfigurationController::class, 'updateType'])->name('credit-settings.types.update')->middleware('can:credits.configure');

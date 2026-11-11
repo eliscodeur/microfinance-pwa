@@ -280,11 +280,11 @@ class Carnet extends Model implements Auditable
     public function availableTontineSettlementFunds(): float
     {
         $linkedCarnets = $this->allLinkedCarnets();
-        $linkedCarnets->load([
+        $linkedCarnets = self::with([
             'cycles.collectes',
             'cycles.retraits',
             'cycles.creditSettlementSources',
-        ]);
+        ])->whereKey($linkedCarnets->pluck('id'))->get();
 
         return round($linkedCarnets
             ->where('type', 'tontine')

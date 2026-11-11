@@ -50,6 +50,10 @@ function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t =
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -128,9 +132,11 @@ var LABELS_MAPPING = {
   mensuelle: "Mensuelle"
 };
 function Show(_ref) {
-  var _credit$payments2, _credit$client, _credit$client2, _credit$client$code_c, _credit$client3, _credit$interet_total2, _credit$emergency_wit;
+  var _credit$payments2, _credit$settlement_av2, _credit$client, _credit$client2, _credit$client$code_c, _credit$client3, _credit$interet_total2;
   var credit = _ref.credit;
-  var flash = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.usePage)().props.flash;
+  var _usePage$props = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.usePage)().props,
+    flash = _usePage$props.flash,
+    errors = _usePage$props.errors;
 
   // État local pour bloquer les boutons pendant les requêtes (Anti-double click)
   var _useState = (0,react__WEBPACK_IMPORTED_MODULE_2__.useState)(false),
@@ -154,6 +160,17 @@ function Show(_ref) {
     });
     setPenalties(initialPenalties);
   }, [payments]);
+  (0,react__WEBPACK_IMPORTED_MODULE_2__.useEffect)(function () {
+    var refreshOnHistoryRestore = function refreshOnHistoryRestore(event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener("pageshow", refreshOnHistoryRestore);
+    return function () {
+      return window.removeEventListener("pageshow", refreshOnHistoryRestore);
+    };
+  }, []);
   var formatCurrency = function formatCurrency(value) {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
@@ -233,13 +250,86 @@ function Show(_ref) {
       }
     });
   };
+  var settleWithTontine = /*#__PURE__*/function () {
+    var _ref4 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
+      var _credit$settlement_av, _credit$carnet, _window$crypto$random, _window$crypto, _window$crypto$random2;
+      var available, sourceLabel, confirmation, idempotencyKey;
+      return _regenerator().w(function (_context) {
+        while (1) switch (_context.n) {
+          case 0:
+            available = Number((_credit$settlement_av = credit.settlement_available_balance) !== null && _credit$settlement_av !== void 0 ? _credit$settlement_av : 0);
+            if (!(isProcessing || available <= 0)) {
+              _context.n = 1;
+              break;
+            }
+            return _context.a(2);
+          case 1:
+            sourceLabel = ((_credit$carnet = credit.carnet) === null || _credit$carnet === void 0 ? void 0 : _credit$carnet.type) === "compte" ? "du carnet d'épargne" : "des cycles tontine terminés";
+            setIsProcessing(true);
+            _context.n = 2;
+            return MySwal.fire({
+              title: "Confirmer la compensation d'épargne ?",
+              html: "<p>Cette op\xE9ration transf\xE9rera jusqu'\xE0 <strong>".concat(formatCurrency(available), "</strong> ").concat(sourceLabel, "vers les \xE9ch\xE9ances du cr\xE9dit.</p>"),
+              input: "textarea",
+              inputLabel: "Note d'opération (facultative)",
+              inputPlaceholder: "Motif ou précision utile à l'audit",
+              inputAttributes: {
+                maxlength: 500
+              },
+              showCancelButton: true,
+              confirmButtonText: "Confirmer le transfert interne",
+              cancelButtonText: "Annuler",
+              confirmButtonColor: "#a83232",
+              inputValidator: function inputValidator(value) {
+                return value && value.length > 500 ? "La note ne peut pas dépasser 500 caractères." : undefined;
+              }
+            });
+          case 2:
+            confirmation = _context.v;
+            if (confirmation.isConfirmed) {
+              _context.n = 3;
+              break;
+            }
+            setIsProcessing(false);
+            return _context.a(2);
+          case 3:
+            idempotencyKey = (_window$crypto$random = (_window$crypto = window.crypto) === null || _window$crypto === void 0 || (_window$crypto$random2 = _window$crypto.randomUUID) === null || _window$crypto$random2 === void 0 ? void 0 : _window$crypto$random2.call(_window$crypto)) !== null && _window$crypto$random !== void 0 ? _window$crypto$random : "".concat(Date.now(), "-").concat(Math.random().toString(16).slice(2));
+            _inertiajs_inertia__WEBPACK_IMPORTED_MODULE_0__.Inertia.post("/admin/credits/".concat(credit.credit_uid, "/settle-with-savings"), {
+              idempotency_key: idempotencyKey,
+              note: confirmation.value || null
+            }, {
+              preserveScroll: true,
+              onStart: function onStart() {
+                return setIsProcessing(true);
+              },
+              onFinish: function onFinish() {
+                return setIsProcessing(false);
+              },
+              onError: function onError(errors) {
+                var _ref5, _errors$settlement;
+                sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire({
+                  title: "Compensation impossible",
+                  text: (_ref5 = (_errors$settlement = errors.settlement) !== null && _errors$settlement !== void 0 ? _errors$settlement : Object.values(errors)[0]) !== null && _ref5 !== void 0 ? _ref5 : "L'opération n'a pas pu être effectuée.",
+                  icon: "error"
+                });
+              }
+            });
+          case 4:
+            return _context.a(2);
+        }
+      }, _callee);
+    }));
+    return function settleWithTontine() {
+      return _ref4.apply(this, arguments);
+    };
+  }();
   var triggerPaymentModal = function triggerPaymentModal(payment, remaining) {
     var _payment$transactions, _penalties$payment$id2, _payment$montant_paye;
     var cleanRemaining = Math.max(0, Math.round(remaining));
     var transactions = (_payment$transactions = payment.transactions) !== null && _payment$transactions !== void 0 ? _payment$transactions : [];
     MySwal.fire({
       title: "Guichet d'Encaissement \u2014 \xC9ch\xE9ance #".concat(payment.echeance),
-      html: "\n            <div style=\"text-align: left; font-size: 0.85rem;\">\n                <!-- R\xE9sum\xE9 Financier Global (\xE9pur\xE9) -->\n                <div style=\"display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: 0.25rem; margin-bottom: 12px; text-align: center;\">\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">Nue</span>\n                        <strong>".concat(formatCurrency(payment.montant_total), "</strong>\n                    </div>\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">P\xE9nalit\xE9s</span>\n                        <strong>").concat(formatCurrency((_penalties$payment$id2 = penalties[payment.id]) !== null && _penalties$payment$id2 !== void 0 ? _penalties$payment$id2 : 0), "</strong>\n                    </div>\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">D\xE9j\xE0 per\xE7u</span>\n                        <strong>").concat(formatCurrency((_payment$montant_paye = payment.montant_paye) !== null && _payment$montant_paye !== void 0 ? _payment$montant_paye : 0), "</strong>\n                    </div>\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">Reste Exigible</span>\n                        <strong style=\"color: #d9534f; font-size: 0.95rem;\">").concat(formatCurrency(cleanRemaining), "</strong>\n                    </div>\n                </div>\n\n                <!-- Syst\xE8me d'Onglets sobre -->\n                <div style=\"display: flex; border-bottom: 1px solid #ced4da; margin-bottom: 12px;\">\n                    <button type=\"button\" id=\"tab-btn-pay\" class=\"swal-tab-btn active\" style=\"flex: 1; padding: 8px; background: none; border: none; font-weight: bold; cursor: pointer; border-bottom: 2px solid #333; color: #333;\">\uD83D\uDCB5 Nouvel Encaissement</button>\n                    <button type=\"button\" id=\"tab-btn-history\" class=\"swal-tab-btn\" style=\"flex: 1; padding: 8px; background: none; border: none; font-weight: bold; cursor: pointer; color: #6c757d;\">\uD83D\uDCCB Historique (").concat(transactions.length, ")</button>\n                </div>\n\n                <!-- ONGLET 1 : FORMULAIRE -->\n                <div id=\"tab-content-pay\">\n                    <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;\">\n                        <div>\n                            <label for=\"swal-input-amount\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">Montant per\xE7u (FCFA) *</label>\n                            <input \n                                id=\"swal-input-amount\" \n                                type=\"number\" \n                                class=\"form-control\" \n                                style=\"text-align: right; font-weight: bold; font-size: 1.1rem;\"\n                                value=\"").concat(cleanRemaining, "\"\n                                min=\"1\" \n                                step=\"1\"\n                            />\n                        </div>\n                        <div>\n                            <label for=\"swal-input-mode\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">Mode de r\xE8glement</label>\n                            <select id=\"swal-input-mode\" class=\"form-control\">\n                                <option value=\"especes\">Esp\xE8ces (Guichet)</option>\n                                <option value=\"mobile_money\">Mobile Money (T-Money / Flooz)</option>\n                                <option value=\"virement\">Virement Bancaire</option>\n                            </select>\n                        </div>\n                    </div>\n\n                    <!-- R\xE9f\xE9rence externe (Masqu\xE9e par d\xE9faut) -->\n                    <div class=\"mb-3\" id=\"swal-ref-container\" style=\"display: none;\">\n                        <label for=\"swal-input-ref\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">R\xE9f\xE9rence / ID Transaction</label>\n                        <input id=\"swal-input-ref\" type=\"text\" class=\"form-control\" placeholder=\"Ex: TXN-98475621\" />\n                    </div>\n\n                    <!-- Bloc Tiers Payeur r\xE9ajust\xE9 (Nom plus large) -->\n                    <div style=\"background-color: #f8f9fa; border: 1px solid #ced4da; padding: 10px; border-radius: 0.25rem; margin-bottom: 12px;\">\n                        <span style=\"font-weight: bold; color: #495057; display: block; margin-bottom: 6px; font-size: 0.8rem;\">Paiement par un tiers (Optionnel)</span>\n                        <div style=\"display: grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 6px;\">\n                            <input id=\"swal-payer-name\" type=\"text\" class=\"form-control form-control-sm\" placeholder=\"Nom du payeur\" />\n                            <input id=\"swal-payer-phone\" type=\"text\" class=\"form-control form-control-sm\" placeholder=\"T\xE9l\xE9phone\" />\n                            <select id=\"swal-payer-relation\" class=\"form-control form-control-sm\">\n                                <option value=\"\">-- Lien --</option>\n                                <option value=\"garant\">Garant</option>\n                                <option value=\"conjoint\">Conjoint(e)</option>\n                                <option value=\"parent\">Parent</option>\n                                <option value=\"agent\">Agent</option>\n                                <option value=\"autre\">Autre</option>\n                            </select>\n                        </div>\n                    </div>\n\n                    <!-- Notes / Commentaires -->\n                    <div>\n                        <label for=\"swal-input-notes\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">Commentaire guichet</label>\n                        <input id=\"swal-input-notes\" type=\"text\" class=\"form-control form-control-sm\" placeholder=\"Ex: Paiement arrang\xE9...\" />\n                    </div>\n                </div>\n\n                <!-- ONGLET 2 : HISTORIQUE -->\n                <div id=\"tab-content-history\" style=\"display: none; max-height: 220px; overflow-y: auto;\">\n                    ").concat(transactions.length === 0 ? "\n                        <div style=\"text-align: center; padding: 25px; color: #6c757d; font-style: italic;\">\n                            Aucune transaction enregistr\xE9e pour le moment sur cette \xE9ch\xE9ance.\n                        </div>\n                    " : "\n                        <table style=\"width: 100%; font-size: 0.8rem; border-collapse: collapse;\">\n                            <thead>\n                                <tr style=\"background-color: #f1f3f5; text-align: left;\">\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Date</th>\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Montant</th>\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Mode</th>\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Agent</th>\n                                </tr>\n                            </thead>\n                            <tbody>\n                                ".concat(transactions.map(function (tx) {
+      html: "\n            <div style=\"text-align: left; font-size: 0.85rem;\">\n                <!-- R\xE9sum\xE9 Financier Global (\xE9pur\xE9) -->\n                <div style=\"display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: 0.25rem; margin-bottom: 12px; text-align: center;\">\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">Nue</span>\n                        <strong>".concat(formatCurrency(payment.montant_total), "</strong>\n                    </div>\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">P\xE9nalit\xE9s</span>\n                        <strong>").concat(formatCurrency((_penalties$payment$id2 = penalties[payment.id]) !== null && _penalties$payment$id2 !== void 0 ? _penalties$payment$id2 : 0), "</strong>\n                    </div>\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">D\xE9j\xE0 per\xE7u</span>\n                        <strong>").concat(formatCurrency((_payment$montant_paye = payment.montant_paye) !== null && _payment$montant_paye !== void 0 ? _payment$montant_paye : 0), "</strong>\n                    </div>\n                    <div>\n                        <span style=\"font-size: 0.75rem; color: #6c757d; display: block;\">Reste Exigible</span>\n                        <strong style=\"color: #d9534f; font-size: 0.95rem;\">").concat(formatCurrency(cleanRemaining), "</strong>\n                    </div>\n                </div>\n\n                <!-- Syst\xE8me d'Onglets sobre -->\n                <div style=\"display: flex; border-bottom: 1px solid #ced4da; margin-bottom: 12px;\">\n                    <button type=\"button\" id=\"tab-btn-pay\" class=\"swal-tab-btn active\" style=\"flex: 1; padding: 8px; background: none; border: none; font-weight: bold; cursor: pointer; border-bottom: 2px solid #333; color: #333;\">\uD83D\uDCB5 Nouvel Encaissement</button>\n                    <button type=\"button\" id=\"tab-btn-history\" class=\"swal-tab-btn\" style=\"flex: 1; padding: 8px; background: none; border: none; font-weight: bold; cursor: pointer; color: #6c757d;\">\uD83D\uDCCB Historique (").concat(transactions.length, ")</button>\n                </div>\n\n                <!-- ONGLET 1 : FORMULAIRE -->\n                <div id=\"tab-content-pay\">\n                    <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;\">\n                        <div>\n                            <label for=\"swal-input-amount\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">Montant per\xE7u (FCFA) *</label>\n                            <input \n                                id=\"swal-input-amount\" \n                                type=\"number\" \n                                class=\"form-control\" \n                                style=\"text-align: right; font-weight: bold; font-size: 1.1rem;\"\n                                value=\"").concat(cleanRemaining, "\"\n                                min=\"1\" \n                                step=\"1\"\n                            />\n                        </div>\n                        <div>\n                            <label for=\"swal-input-mode\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">Mode de r\xE8glement</label>\n                            <select id=\"swal-input-mode\" class=\"form-control\">\n                                <option value=\"especes\">Esp\xE8ces (Guichet)</option>\n                                <option value=\"mobile_money\">Mobile Money (T-Money / Flooz)</option>\n                                <option value=\"virement\">Virement Bancaire</option>\n                            </select>\n                        </div>\n                    </div>\n\n                    <!-- R\xE9f\xE9rence externe (Masqu\xE9e par d\xE9faut) -->\n                    <div class=\"mb-3\" id=\"swal-ref-container\" style=\"display: none;\">\n                        <label for=\"swal-input-ref\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">R\xE9f\xE9rence / ID Transaction</label>\n                        <input id=\"swal-input-ref\" type=\"text\" class=\"form-control\" placeholder=\"Ex: TXN-98475621\" />\n                    </div>\n\n                    <!-- Bloc Tiers Payeur r\xE9ajust\xE9 (Nom plus large) -->\n                    <div style=\"background-color: #f8f9fa; border: 1px solid #ced4da; padding: 10px; border-radius: 0.25rem; margin-bottom: 12px;\">\n                        <span style=\"font-weight: bold; color: #495057; display: block; margin-bottom: 6px; font-size: 0.8rem;\">Paiement par un tiers (Optionnel)</span>\n                        <div style=\"display: grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 6px;\">\n                            <input id=\"swal-payer-name\" type=\"text\" class=\"form-control form-control-sm\" placeholder=\"Nom du payeur\" />\n                            <input id=\"swal-payer-phone\" type=\"text\" class=\"form-control form-control-sm\" placeholder=\"T\xE9l\xE9phone\" />\n                            <select id=\"swal-payer-relation\" class=\"form-control form-control-sm\">\n                                <option value=\"\">-- Lien --</option>\n                                <option value=\"garant\">Garant</option>\n                                <option value=\"conjoint\">Conjoint(e)</option>\n                                <option value=\"parent\">Parent</option>\n                                <option value=\"agent\">Agent</option>\n                                <option value=\"autre\">Autre</option>\n                            </select>\n                        </div>\n                    </div>\n\n                    <!-- Notes / Commentaires -->\n                    <div>\n                        <label for=\"swal-input-notes\" style=\"font-weight: bold; display: block; margin-bottom: 4px;\">Commentaire guichet</label>\n                        <input id=\"swal-input-notes\" type=\"text\" class=\"form-control form-control-sm\" placeholder=\"Ex: Paiement arrang\xE9...\" />\n                    </div>\n                </div>\n\n                <!-- ONGLET 2 : HISTORIQUE -->\n                <div id=\"tab-content-history\" style=\"display: none; max-height: 220px; overflow-y: auto;\">\n                    ").concat(transactions.length === 0 ? "\n                        <div style=\"text-align: center; padding: 25px; color: #6c757d; font-style: italic;\">\n                            Aucune transaction enregistr\xE9e pour le moment sur cette \xE9ch\xE9ance.\n                        </div>" : "<table style=\"width: 100%; font-size: 0.8rem; border-collapse: collapse;\">\n                            <thead>\n                                <tr style=\"background-color: #f1f3f5; text-align: left;\">\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Date</th>\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Montant</th>\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Mode</th>\n                                    <th style=\"padding: 6px; border-bottom: 1px solid #ced4da;\">Agent</th>\n                                </tr>\n                            </thead>\n                            <tbody>\n                                ".concat(transactions.map(function (tx) {
         var _tx$created_at, _tx$agent$name, _tx$agent;
         return "\n                                    <tr>\n                                        <td style=\"padding: 6px; border-bottom: 1px solid #f8f9fa;\">".concat((_tx$created_at = tx.created_at) !== null && _tx$created_at !== void 0 ? _tx$created_at : "N/A", "</td>\n                                        <td style=\"padding: 6px; border-bottom: 1px solid #f8f9fa; font-weight: bold; color: #28a745;\">+ ").concat(formatCurrency(tx.montant), "</td>\n                                        <td style=\"padding: 6px; border-bottom: 1px solid #f8f9fa; text-transform: uppercase;\">").concat(tx.mode_paiement, "</td>\n                                        <td style=\"padding: 6px; border-bottom: 1px solid #f8f9fa;\">").concat((_tx$agent$name = (_tx$agent = tx.agent) === null || _tx$agent === void 0 ? void 0 : _tx$agent.name) !== null && _tx$agent$name !== void 0 ? _tx$agent$name : "Guichet", "</td>\n                                    </tr>\n                                ");
       }).join(""), "\n                            </tbody>\n                        </table>\n                    "), "\n                </div>\n            </div>\n        "),
@@ -248,7 +338,6 @@ function Show(_ref) {
       confirmButtonText: "Valider l'encaissement",
       cancelButtonText: "Fermer",
       confirmButtonColor: "#4f5d73",
-      // Design sobre et neutre
       cancelButtonColor: "#6c757d",
       focusConfirm: true,
       didOpen: function didOpen() {
@@ -362,13 +451,27 @@ function Show(_ref) {
             className: "fs-5 text-dark fw-bold mb-0",
             children: "Dossier de Pr\xEAt"
           })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.Link, {
             href: "/admin/credits",
             className: "btn btn-sm btn-outline-secondary px-3",
             children: "Retour"
-          })
+          }), ["active", "in_arrears"].includes(credit.statut) && Number((_credit$settlement_av2 = credit.settlement_available_balance) !== null && _credit$settlement_av2 !== void 0 ? _credit$settlement_av2 : 0) > 0 && financialSummary.resteARecouvrer > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
+            type: "button",
+            className: "btn btn-sm btn-outline-danger ms-2",
+            disabled: isProcessing,
+            onClick: settleWithTontine,
+            children: isProcessing ? "Traitement..." : "Compenser l'\xE9pargne (".concat(formatCurrency(credit.settlement_available_balance), ")")
+          })]
         })]
+      }), credit.settlement_available_balance > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+        className: "alert alert-warning small shadow-sm",
+        children: ["\xC9pargne disponible pour compensation interne :", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
+          children: formatCurrency(credit.settlement_available_balance)
+        }), ". Le transfert requiert une confirmation et sera affect\xE9 aux \xE9ch\xE9ances dans l'ordre chronologique, sans frais suppl\xE9mentaires."]
+      }), (errors === null || errors === void 0 ? void 0 : errors.settlement) && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+        className: "alert alert-danger small shadow-sm",
+        children: errors.settlement
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
         className: "row g-3 mb-4",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
@@ -570,34 +673,6 @@ function Show(_ref) {
             })]
           })
         })]
-      }), ((_credit$emergency_wit = credit.emergency_withdrawal_summary) === null || _credit$emergency_wit === void 0 ? void 0 : _credit$emergency_wit.length) > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-        className: "card shadow-sm mb-4 border border-secondary",
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-          className: "card-header bg-light py-2 border-bottom",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
-            className: "text-dark mb-0 fw-bold fs-8",
-            children: "\u26A0\uFE0F Recouvrement par Compensation (\xC9pargne de Garantie)"
-          })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-          className: "card-body py-2",
-          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-            className: "row g-2",
-            children: credit.emergency_withdrawal_summary.map(function (item, index) {
-              return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-                className: "col-md-4",
-                children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-                  className: "p-2 rounded bg-light border fs-8 text-dark",
-                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("strong", {
-                    children: ["\xC9ch\xE9ance #", item.echeance, " :"]
-                  }), " ", "Retrait de", " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
-                    className: "fw-bold",
-                    children: formatCurrency(item.amount_withdrawn)
-                  }), "."]
-                })
-              }, index);
-            })
-          })
-        })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
         className: "card shadow-sm border",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
@@ -659,7 +734,7 @@ function Show(_ref) {
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("tbody", {
                 className: "fs-7",
                 children: [payments.map(function (payment) {
-                  var _payment$penalite, _payment$montant_paye2, _penalties$payment$id3, _ref4, _payment$computed_pen2;
+                  var _payment$penalite, _payment$montant_paye2, _penalties$payment$id3, _ref6, _payment$computed_pen2;
                   var totalDue = Number(payment.montant_total) + Number((_payment$penalite = payment.penalite) !== null && _payment$penalite !== void 0 ? _payment$penalite : 0);
                   var paidAmount = Number((_payment$montant_paye2 = payment.montant_paye) !== null && _payment$montant_paye2 !== void 0 ? _payment$montant_paye2 : 0);
                   var remaining = Math.max(0, totalDue - paidAmount);
@@ -721,7 +796,7 @@ function Show(_ref) {
                         })]
                       }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("span", {
                         className: "text-muted text-monospace fs-7",
-                        children: formatCurrency((_ref4 = (_payment$computed_pen2 = payment.computed_penalty) !== null && _payment$computed_pen2 !== void 0 ? _payment$computed_pen2 : payment.penalite) !== null && _ref4 !== void 0 ? _ref4 : 0)
+                        children: formatCurrency((_ref6 = (_payment$computed_pen2 = payment.computed_penalty) !== null && _payment$computed_pen2 !== void 0 ? _payment$computed_pen2 : payment.penalite) !== null && _ref6 !== void 0 ? _ref6 : 0)
                       })
                     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("td", {
                       className: "text-end text-secondary text-monospace",

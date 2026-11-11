@@ -58,13 +58,21 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 
 var MySwal = sweetalert2_react_content__WEBPACK_IMPORTED_MODULE_4___default()((sweetalert2__WEBPACK_IMPORTED_MODULE_3___default()));
 function Show() {
-  var _ref2, _ref3, _credit$montant_accor, _ref4, _credit$montant_deman, _credit$taux, _credit$taux_manuel, _credit$nombre_echean, _credit$mode, _credit$periodicite, _credit$credit_produc, _credit$credit_object, _diagnostic$nombreCar, _diagnostic$regularit, _creditProducts$find, _approveForm$data$dif;
+  var _props$auth, _props$auth2, _props$flash2, _ref2, _ref3, _credit$montant_accor, _ref4, _credit$montant_deman, _credit$taux, _credit$taux_manuel, _credit$nombre_echean, _credit$mode, _credit$periodicite, _credit$credit_produc, _credit$credit_object, _diagnostic$nombreCar, _diagnostic$regularit, _creditProducts$find, _approveForm$data$dif;
   var _usePage = (0,_inertiajs_inertia_react__WEBPACK_IMPORTED_MODULE_1__.usePage)(),
     props = _usePage.props;
   var credit = props.credit,
     client = props.client,
     diagnostic = props.diagnostic,
     creditProducts = props.creditProducts;
+  var canApproveCredit = Boolean((_props$auth = props.auth) === null || _props$auth === void 0 || (_props$auth = _props$auth.permissions) === null || _props$auth === void 0 ? void 0 : _props$auth['credits.approve']);
+  var canDisburseCredit = Boolean((_props$auth2 = props.auth) === null || _props$auth2 === void 0 || (_props$auth2 = _props$auth2.permissions) === null || _props$auth2 === void 0 ? void 0 : _props$auth2['credits.disburse']);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(function () {
+    var _props$flash;
+    if ((_props$flash = props.flash) !== null && _props$flash !== void 0 && _props$flash.error) {
+      sweetalert2__WEBPACK_IMPORTED_MODULE_3___default().fire('Opération bloquée', props.flash.error, 'warning');
+    }
+  }, [(_props$flash2 = props.flash) === null || _props$flash2 === void 0 ? void 0 : _props$flash2.error]);
   var showCarnetDetails = /*#__PURE__*/function () {
     var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
       var response, data, carnetNumero, _data$cycles, _data$cycles2, _error$response, errorMsg, _t;
@@ -753,14 +761,14 @@ function Show() {
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
                     className: "fw-bold text-dark mb-0",
                     children: "Param\xE8tres d'Octroi R\xE9vis\xE9s"
-                  }), isPending && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("button", {
+                  }), isPending && canApproveCredit && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("button", {
                     className: "btn btn-sm btn-link text-muted p-0 text-decoration-none",
                     onClick: markEnEtude,
                     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("i", {
                       className: "bi bi-hourglass-split me-1"
                     }), " Mettre en instruction"]
                   })]
-                }), isPending ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("form", {
+                }), isPending && canApproveCredit ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("form", {
                   onSubmit: submitApprove,
                   id: "approve-form",
                   children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
@@ -990,13 +998,16 @@ function Show() {
                       })]
                     })]
                   })
+                }) : isPending ? /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                  className: "text-muted py-4 text-center small bg-light rounded border",
+                  children: "Vous n'avez pas la permission d'instruire ou d'approuver ce cr\xE9dit."
                 }) : /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
                   className: "text-muted py-4 text-center small bg-light rounded border",
                   children: "Dossier trait\xE9. Les modifications ne sont plus autoris\xE9es."
                 })]
               }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
                 className: "mt-3 pt-3 border-top border-light d-flex justify-content-between align-items-center",
-                children: [isPending && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("button", {
+                children: [isPending && canApproveCredit && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("button", {
                   className: "btn btn-sm btn-dark px-4",
                   type: "submit",
                   form: "approve-form",
@@ -1004,10 +1015,13 @@ function Show() {
                   children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("i", {
                     className: "bi bi-check-circle me-2"
                   }), "Valider & Approuver"]
-                }), isApproved && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
+                }), isApproved && canDisburseCredit && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("button", {
                   className: "btn btn-sm btn-primary w-100 fw-bold",
                   onClick: doDecaissement,
                   children: "Confirmer le d\xE9caissement"
+                }), isApproved && !canDisburseCredit && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                  className: "alert alert-warning small mb-0",
+                  children: "Votre r\xF4le ne dispose pas de la permission \xAB D\xE9caisser \xBB. Demandez \xE0 un administrateur de vous attribuer cette permission."
                 })]
               })]
             })
@@ -1183,7 +1197,7 @@ function Show() {
             })]
           })
         })
-      }), isPending && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+      }), isPending && canApproveCredit && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
         className: "card shadow-sm border-light bg-light-subtle p-3 rounded-3 mt-3",
         children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("h6", {
           className: "fw-bold text-muted mb-2",

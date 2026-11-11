@@ -108,7 +108,7 @@
                 <h6 class="m-0 font-weight-bold text-primary">Filtres et Options d'Affichage</h6>
             </div>
             <div class="card-body">
-                <form method="GET" action="{{ route('admin.caisse.journal') }}" class="row g-3 align-items-end">
+                <form method="GET" action="{{ route('admin.caisse.journal') }}" class="row g-3">
                     <!-- Filtre Période -->
                     <div class="col-md-3">
                         <label for="periode" class="form-label small font-weight-bold">Période</label>
@@ -129,7 +129,8 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2">
+                    <!-- Filtre Sens -->
+                    <div class="col-md-3">
                         <label for="sens" class="form-label small font-weight-bold">Sens</label>
                         <select name="sens" id="sens" class="form-control">
                             <option value="">Entrées et sorties</option>
@@ -138,7 +139,8 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2">
+                    <!-- Filtre Mode de paiement -->
+                    <div class="col-md-3">
                         <label for="mode_paiement" class="form-label small font-weight-bold">Mode de paiement</label>
                         <select name="mode_paiement" id="mode_paiement" class="form-control">
                             <option value="">Tous les modes</option>
@@ -150,14 +152,15 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary px-4 py-2 shadow-sm flex-grow-1">
-                            <i class="bi bi-filter me-1"></i> Filtrer
-                        </button>
-                        <a href="{{ route('admin.caisse.journal') }}" class="btn btn-outline-secondary py-2 px-3"
+                    <!-- Boutons d'action alignés en bas à droite -->
+                    <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                        <a href="{{ route('admin.caisse.journal') }}" class="btn btn-sm btn-outline-secondary py-2 px-3"
                             title="Réinitialiser">
                             <i class="bi bi-arrow-counterclockwise me-1"></i>Réinitialiser
                         </a>
+                        <button type="submit" class="btn btn-sm btn-primary px-4 py-2 shadow-sm">
+                            <i class="bi bi-filter me-1"></i> Filtrer
+                        </button>
                     </div>
                 </form>
             </div>

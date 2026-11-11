@@ -66,5 +66,6 @@ class Kernel extends HttpKernel
         'verified'         => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role'             => \App\Http\Middleware\EnsureUserRole::class,
         'cash.open'        => \App\Http\Middleware\CheckCashSession::class,
+        'permission.feedback' => \App\Http\Middleware\EnsurePermissionWithFeedback::class,
     ];
 }

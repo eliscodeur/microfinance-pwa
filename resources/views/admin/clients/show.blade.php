@@ -10,7 +10,7 @@
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.clients.index') }}" class="btn btn-outline-secondary">Retour</a>
-                <a href="{{ route('admin.clients.edit', $client->id) }}" class="btn btn-warning text-white">Modifier la
+                <a href="{{ route('admin.clients.edit', $client->ulid) }}" class="btn btn-warning text-white">Modifier la
                     fiche</a>
                 {{-- Bouton déclenchant la modale d'ajout de numéro de carnet --}}
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCarnetModal">

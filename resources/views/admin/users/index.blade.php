@@ -55,7 +55,7 @@
                                                 <button class="btn btn-sm btn-primary edit-btn"
                                                     data-id="{{ $user->id }}" data-name="{{ $user->name }}"
                                                     data-email="{{ $user->email }}" data-role="{{ $user->role_id }}"
-                                                    data-url="{{ route('admin.users.update', $user->id) }}">
+                                                    data-url="{{ route('admin.users.update', $user) }}">
                                                     <!-- L'URL exacte ici -->
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
@@ -206,8 +206,7 @@
                     const name = this.dataset.name;
                     const email = this.dataset.email;
                     const role = this.dataset.role;
-                    // Si data-url n'existe pas, on construit l'URL de secours
-                    const updateUrl = this.dataset.url || `/admin/users/${id}`;
+                    const updateUrl = this.dataset.url;
 
                     // 2. Remplissage des champs du formulaire
                     // Assurez-vous que userIdInput est bien défini dans votre DOM (ex: const userIdInput = document.getElementById('user_id');)

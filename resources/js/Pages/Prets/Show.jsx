@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Link, usePage, useForm } from '@inertiajs/inertia-react';
 import { Inertia } from '@inertiajs/inertia';
 import Swal from 'sweetalert2';import withReactContent from 'sweetalert2-react-content';
@@ -10,6 +10,15 @@ const MySwal = withReactContent(Swal);
 export default function Show() {
   const { props } = usePage();
   const { credit, client, diagnostic, creditProducts } = props;
+  const canApproveCredit = Boolean(props.auth?.permissions?.['credits.approve']);
+  const canDisburseCredit = Boolean(props.auth?.permissions?.['credits.disburse']);
+
+  useEffect(() => {
+    if (props.flash?.error) {
+      Swal.fire('Opération bloquée', props.flash.error, 'warning');
+    }
+  }, [props.flash?.error]);
+
 const showCarnetDetails = async () => {
     if (!diagnostic?.carnet_id) {
         MySwal.fire('Erreur', 'Aucun identifiant de carnet disponible.', 'error');
@@ -477,14 +486,14 @@ const showCarnetDetails = async () => {
                 <div>
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <h6 className="fw-bold text-dark mb-0">Paramètres d'Octroi Révisés</h6>
-                    {isPending && (
+                    {isPending && canApproveCredit && (
                       <button className="btn btn-sm btn-link text-muted p-0 text-decoration-none" onClick={markEnEtude}>
                         <i className="bi bi-hourglass-split me-1"></i> Mettre en instruction
                       </button>
                     )}
                   </div>
 
-                  {isPending ? (
+                  {isPending && canApproveCredit ? (
                     <form onSubmit={submitApprove} id="approve-form">
                       <div className="row g-3">
                         {/* --- BLOC 1 : IDENTIFICATION PRODUIT --- */}
@@ -570,6 +579,10 @@ const showCarnetDetails = async () => {
                         </div>
                       </div>
                     </form>
+                  ) : isPending ? (
+                    <div className="text-muted py-4 text-center small bg-light rounded border">
+                      Vous n'avez pas la permission d'instruire ou d'approuver ce crédit.
+                    </div>
                   ) : (
                     <div className="text-muted py-4 text-center small bg-light rounded border">
                       Dossier traité. Les modifications ne sont plus autorisées.
@@ -578,13 +591,19 @@ const showCarnetDetails = async () => {
                 </div>
 
                 <div className="mt-3 pt-3 border-top border-light d-flex justify-content-between align-items-center">
-                  {isPending && (
+                  {isPending && canApproveCredit && (
                     <button className="btn btn-sm btn-dark px-4" type="submit" form="approve-form" disabled={approveForm.processing}>
                       <i className="bi bi-check-circle me-2"></i>Valider &amp; Approuver
                     </button>
                   )}
-                  {isApproved && (
+                  {isApproved && canDisburseCredit && (
                     <button className="btn btn-sm btn-primary w-100 fw-bold" onClick={doDecaissement}>Confirmer le décaissement</button>
+                  )}
+                  {isApproved && !canDisburseCredit && (
+                    <div className="alert alert-warning small mb-0">
+                      Votre rôle ne dispose pas de la permission « Décaisser ».
+                      Demandez à un administrateur de vous attribuer cette permission.
+                    </div>
                   )}
                 </div>
               </div>
@@ -678,7 +697,7 @@ const showCarnetDetails = async () => {
         </div>
 
         {/* Zone de Refus en bas */}
-        {isPending && (
+        {isPending && canApproveCredit && (
           <div className="card shadow-sm border-light bg-light-subtle p-3 rounded-3 mt-3">
             <h6 className="fw-bold text-muted mb-2" style={{ fontSize: '12px' }}>Rejeter la demande</h6>
             <form onSubmit={submitReject} className="row g-2">
