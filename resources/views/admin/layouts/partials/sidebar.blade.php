@@ -377,6 +377,12 @@
                     Clôture de Caisse
                 </a>
             @endcan
+            @can('treasury.audit')
+                <a href="{{ route('admin.caisse.audit') }}"
+                   class="{{ request()->routeIs('admin.caisse.audit') ? 'active' : '' }}">
+                    Audit de Caisse
+                </a>
+            @endcan
         </div>
         @endif
 
@@ -405,7 +411,7 @@
             <div class="sidebar-header nav-section-title">Ressources humaines</div>
         @endif
 
-        @if(auth()->user()->can('employees.view') || auth()->user()->can('employees.create') || auth()->user()->can('employees.update') || auth()->user()->can('payroll.view'))
+        @if(auth()->user()->can('employees.view') || auth()->user()->can('employees.create') || auth()->user()->can('employees.update') || auth()->user()->can('payroll_grille.view'))
         <a href="#personnelSub" data-bs-toggle="collapse" aria-expanded="{{ $personnelMenuOpen ? 'true' : 'false' }}"
             class="menu-toggle {{ $personnelMenuOpen ? 'active' : '' }}" title="Personnel & Fonctions">
             <i class="bi bi-people-fill"></i> <span>Personnel & Fonctions</span>
@@ -419,7 +425,7 @@
                 <a href="{{ route('admin.fonctions.index') }}"
                     class="{{ request()->routeIs('admin.fonctions.*') ? 'active' : '' }}">Postes & Fonctions</a>
             @endcan
-            @can('payroll.view')
+            @can('payroll_grille.view')
                 <a href="{{ route('admin.salary-grids.index') }}"
                     class="{{ request()->routeIs('admin.salary-grids.*') ? 'active' : '' }}">Grille de Salaire</a>
             @endcan

@@ -6,7 +6,7 @@
     <title>Administration - NANA ECO CONSULTING</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    
+
     <style>
         :root {
             --nana-green: #4CAF50;
@@ -16,18 +16,18 @@
         }
 
         /* 1. Blocage du scroll et centrage parfait */
-        body { 
-            background: var(--nana-light-bg); 
-            height: 100vh; 
+        body {
+            background: var(--nana-light-bg);
+            height: 100vh;
             width: 100vw;
-            display: flex; 
-            align-items: center; 
+            display: flex;
+            align-items: center;
             justify-content: center;
             overflow: hidden; /* Empêche le scroll */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
         }
-        
+
         .login-card {
             border: none;
             border-radius: 25px;
@@ -55,32 +55,32 @@
             margin: 0 auto 25px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
-        
+
         .logo-container img {
             width: 100%;
             height: 100%;
             object-fit: contain;
         }
 
-        .btn-nana { 
-            border-radius: 12px; 
-            padding: 14px; 
-            font-weight: 600; 
-            background: var(--nana-green); 
-            border: none; 
+        .btn-nana {
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 600;
+            background: var(--nana-green);
+            border: none;
             color: white;
             transition: all 0.3s;
         }
-        
-        .btn-nana:hover { 
-            background: #3d8b40; 
+
+        .btn-nana:hover {
+            background: #3d8b40;
             transform: translateY(-2px);
         }
-        
-        .form-control { 
-            border-radius: 12px; 
-            padding: 12px 15px; 
-            border: 2px solid #eef1f0; 
+
+        .form-control {
+            border-radius: 12px;
+            padding: 12px 15px;
+            border: 2px solid #eef1f0;
         }
 
         .slogan {
@@ -92,7 +92,7 @@
 
         /* Ajustement pour petites tablettes */
         @media (max-width: 768px) {
-            body { 
+            body {
                 overflow-y: auto; /* On autorise le scroll uniquement si l'écran est trop petit pour la carte */
                 padding: 20px;
             }
@@ -105,7 +105,7 @@
 <div class="container-fluid d-flex justify-content-center px-3">
     <div class="card login-card">
         <div class="row g-0">
-            
+
             <!-- BANNER SIDE -->
             <div class="col-md-5 login-side-banner d-none d-md-flex">
                 <div class="logo-container">
@@ -113,7 +113,7 @@
                 </div>
                 <h2 class="fw-bold text-center mb-0">NANA ECO</h2>
                 <h4 class="text-center opacity-75 fw-light">CONSULTING</h4>
-                
+
                 <div class="slogan">
                     Conseil et Orientation Économique.<br>
                     Gestion des Transactions Monétaires.
@@ -124,7 +124,7 @@
                     <small class="opacity-50">+228 93 47 27 68</small>
                 </div>
             </div>
-            
+
             <!-- FORM SIDE -->
             <div class="col-md-7 bg-white p-4 p-md-5">
                 <div class="mb-5">
@@ -134,7 +134,7 @@
 
                 <form action="{{ route('admin.login') }}" method="POST">
                     @csrf
-                    
+
                     <div class="mb-4">
                         <label class="form-label fw-bold text-secondary">Email Professionnel</label>
                         <div class="input-group">
@@ -146,7 +146,7 @@
                     <div class="mb-4">
                         <div class="d-flex justify-content-between">
                             <label class="form-label fw-bold text-secondary">Mot de passe</label>
-                            <a href="#" class="text-decoration-none small" style="color: var(--nana-red);">Oublié ?</a>
+                            <!-- <a href="#" class="text-decoration-none small" style="color: var(--nana-red);">Oublié ?</a> -->
                         </div>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-0"><i class="bi bi-shield-lock text-nana-blue"></i></span>
@@ -154,12 +154,12 @@
                         </div>
                     </div>
 
-                    <div class="mb-4">
+                    <!-- <div class="mb-4">
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" id="remember">
                             <label class="form-check-label small text-muted" for="remember">Maintenir la session active</label>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div class="d-grid">
                         <button type="submit" class="btn btn-nana shadow-sm">

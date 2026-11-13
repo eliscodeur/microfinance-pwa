@@ -61,6 +61,7 @@
                         </div>
                     </div>
                     <div class="row mt-3">
+                        @can('agents.reset-pin')
                         <div class="col-12 mb-2">
                             <button type="button" class="btn btn-outline-secondary btn-sm"
                                 onclick="resetPin({{ $agent->id }})">
@@ -69,7 +70,7 @@
                             <span class="small text-muted ms-2">L'agent devra définir un nouveau code à sa prochaine
                                 connexion.</span>
                         </div>
-
+                        @endcan
                         <div class="mb-3">
                             @php
                                 // On vérifie s'il existe une avance avec le statut 'en_attente'

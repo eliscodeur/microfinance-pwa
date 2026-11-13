@@ -226,6 +226,9 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
             ->name('caisse.cloture.store')
             ->middleware('can:treasury.close');
     });
+    Route::get('/caisse/audit', [JournalCaisseController::class, 'audit'])
+        ->name('caisse.audit')
+        ->middleware('can:treasury.audit');
 
     // ==========================================
     // 3. OPÉRATIONS FINANCIÈRES PROTÉGÉES PAR CAISSE OUVERTE
@@ -325,7 +328,7 @@ Route::middleware(['auth', 'role:Admin', 'no-cache'])->prefix('admin')->name('ad
         return response()->json(Agent::pluck('can_sync', 'id'));
     })->name('agents.sync-status')->middleware('can:agents.view');
     Route::get('/agents-list/{historyUlid}', [AgentController::class, 'getAgentsExceptCurrent'])->name('agents.list.except')->middleware('can:agents.view');
-    Route::post('agents/{agent}/reset-pin', [AgentController::class, 'resetPin'])->name('agents.reset-pin')->middleware('can:agents.update');
+    Route::post('agents/{agent}/reset-pin', [AgentController::class, 'resetPin'])->name('agents.reset-pin')->middleware('can:agents.reset-pin');
     // Paies et avances : consultation, préparation, décision et paiement sont séparés.
     Route::post('/agents/{agent}/avances', [SalaryAdvanceController::class, 'storeAgent'])->name('agents.avances.store')->middleware('can:advances.create');
     Route::post('/employes/{employe}/avances', [SalaryAdvanceController::class, 'storeEmploye'])->name('employes.avances.store')->middleware('can:advances.create');

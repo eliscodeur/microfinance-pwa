@@ -8,6 +8,7 @@
             'deleted' => 'Suppression',
             'restored' => 'Restauration',
             'cash_expense_rejected' => 'Dépense refusée',
+            'agent_pin_reset' => 'Réinitialisation du PIN',
         ];
     @endphp
 

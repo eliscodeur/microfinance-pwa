@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use OwenIt\Auditing\Models\Audit;
 
 class AgentController extends Controller
 {
@@ -268,7 +269,6 @@ class AgentController extends Controller
             ]);
         }
 
-        // SI C'EST UN FORMULAIRE CLASSIQUE
         return redirect()->back()->with('success', "Agent $status avec succès.");
     }
 
@@ -308,100 +308,40 @@ class AgentController extends Controller
         ]);
     }
 
-    public function resetPin(Agent $agent)
+    public function resetPin(Request $request, $id)
     {
-        try {
-            // On met le pin_hash à null
-            $agent->update(['pin_hash' => null]);
+        $agent = Agent::findOrFail($id);
+        $actor = $request->user();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Le code PIN de l\'agent a été réinitialisé.',
+        DB::transaction(function () use ($agent, $actor, $request) {
+            $hadPin = filled($agent->pin_hash);
+
+            Agent::withoutAuditing(function () use ($agent) {
+                $agent->update(['pin_hash' => null]);
+            });
+
+            Audit::create([
+                'user_type' => $actor->getMorphClass(),
+                'user_id' => $actor->getAuthIdentifier(),
+                'event' => 'agent_pin_reset',
+                'auditable_type' => Agent::class,
+                'auditable_id' => $agent->getKey(),
+                'old_values' => ['pin_configured' => $hadPin],
+                'new_values' => ['pin_configured' => false],
+                'url' => $request->fullUrl(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent()
+                    ? mb_substr($request->userAgent(), 0, 1023)
+                    : null,
+                'tags' => 'agent,pin_reset',
             ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la réinitialisation.',
-            ], 500);
-        }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Le code PIN de l\'agent a été réinitialisé.',
+        ]);
     }
-    // public function export(Request $request, $format)
-    // {
-    //     // 1. Récupérer le terme de recherche envoyé par l'URL
-    //     $search = $request->query('search');
-
-    //     // 2. Appliquer le même filtre que dans la méthode index()
-    //     $agents = Agent::query()
-    //         ->when($search, function ($query, $search) {
-    //             $query->where(function ($q) use ($search) {
-    //                 $q->where('nom', 'like', "%{$search}%")
-    //                     ->orWhere('code_agent', 'like', "%{$search}%")
-    //                     ->orWhere('telephone', 'like', "%{$search}%");
-    //             });
-    //         })
-    //         ->get(); // On utilise get() ici au lieu de all()
-
-    //     // Si aucun agent trouvé après filtrage
-    //     if ($agents->isEmpty()) {
-    //         return redirect()->back()->with('error', 'Aucun agent trouvé avec ces critères de recherche.');
-    //     }
-
-    //     // 3. Export CSV
-    //     if ($format == 'csv') {
-    //         $filename = 'agents_export_' . date('Y-m-d_His') . '.csv';
-    //         $headers  = [
-    //             'Content-Type'        => 'text/csv',
-    //             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-    //         ];
-
-    //         $callback = function () use ($agents) {
-    //             $handle = fopen('php://output', 'w');
-    //             fputcsv($handle, ['Nom', 'Code', 'Téléphone', 'Email', 'Actif']);
-    //             foreach ($agents as $agent) {
-    //                 fputcsv($handle, [
-    //                     $agent->nom,
-    //                     $agent->code_agent,
-    //                     $agent->telephone,
-    //                     $agent->email,
-    //                     $agent->actif ? 'Oui' : 'Non',
-    //                 ]);
-    //             }
-    //             fclose($handle);
-    //         };
-
-    //         return response()->stream($callback, 200, $headers);
-    //     }
-
-    //     // 4. Export Excel
-    //     elseif ($format == 'excel') {
-    //         return Excel::download(new class($agents) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings
-    //         {
-    //             private $agents;
-    //             public function __construct($agents)
-    //             {$this->agents = $agents;}
-
-    //             public function collection()
-    //             {
-    //                 return $this->agents->map(function ($agent) {
-    //                     return [
-    //                         'Nom'       => $agent->nom,
-    //                         'Code'      => $agent->code_agent,
-    //                         'Téléphone' => $agent->telephone,
-    //                         'Email'     => $agent->email,
-    //                         'Actif'     => $agent->actif ? 'Oui' : 'Non',
-    //                     ];
-    //                 });
-    //             }
-
-    //             public function headings(): array
-    //             {
-    //                 return ['Nom', 'Code', 'Téléphone', 'Email', 'Actif'];
-    //             }
-    //         }, 'agents_export_' . date('Y-m-d') . '.xlsx');
-    //     }
-
-    //     return redirect()->back();
-    // }
 
     public function toggleSync($id)
     {

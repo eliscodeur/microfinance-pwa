@@ -291,7 +291,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             flatpickr("#periode", {
                 mode: "range",
-                dateFormat: "d/m/Y", // Format de la valeur envoyée au serveur (garde un format standard, ou mets "d F Y" si ton contrôleur gère les deux)
+                dateFormat: "d/m/Y",
                 altInput: true, // Active un input alternatif pour l'affichage visuel
                 altFormat: "d F Y", // Affiche les mois en lettres dans le champ (ex: 01 octobre 2026)
                 locale: "fr", // Traduction française (nécessaire pour avoir les mois en français)
