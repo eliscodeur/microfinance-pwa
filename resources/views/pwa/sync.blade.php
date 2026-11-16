@@ -307,6 +307,49 @@
             document.querySelectorAll('.shimmer-loading').forEach(el => el.classList.remove('shimmer-loading'));
         };
 
+        // window.demarrerAction = async () => {
+        //     if (window.syncRequestInFlight) return;
+
+        //     if (!navigator.onLine) {
+        //         Swal.fire('Hors connexion', 'Une connexion internet est requise.', 'warning');
+        //         return;
+        //     }
+
+        //     const database = getAgentDB();
+        //     const cycles = await database.cycles.where('synced').equals(0).toArray();
+        //     const collectes = await database.collectes.where('synced').equals(0).toArray();
+        //     const agents = await database.agents.where('synced').equals(0).toArray();
+
+        //     // if (cycles.length === 0 && collectes.length === 0) {
+        //     //     Swal.fire('Déjà à jour', 'Toutes les collectes sont déjà synchronisées.', 'info');
+        //     //     return;
+        //     // }
+        //     // console.log("Données à synchroniser:", `{{ route('pwa.check-sync-permission') }}?matricule=${getMatricule()}&t=${Date.now()}`);
+        //     // return
+        //     try {
+        //         const authRes = await fetch(
+        //             `{{ route('pwa.check-sync-permission') }}?matricule=${getMatricule()}&t=${Date.now()}`, {
+        //                 method: 'GET',
+        //                 credentials: 'same-origin',
+        //                 cache: 'no-store',
+        //                 headers: {
+        //                     'Pragma': 'no-cache',
+        //                     'Cache-Control': 'no-cache'
+        //                 }
+        //             });
+
+        //         const auth = await authRes.json();
+
+        //         if (!auth.can_sync) {
+        //             Swal.fire('Non autorisé', 'Veuillez contacter votre administrateur.', 'warning');
+        //             return;
+        //         }
+        //         lancerProcessus(cycles, collectes, agents);
+
+        //     } catch (e) {
+        //         Swal.fire('Erreur', 'Impossible de vérifier votre statut.', 'error');
+        //     }
+        // };
         window.demarrerAction = async () => {
             if (window.syncRequestInFlight) return;
 
@@ -320,12 +363,6 @@
             const collectes = await database.collectes.where('synced').equals(0).toArray();
             const agents = await database.agents.where('synced').equals(0).toArray();
 
-            // if (cycles.length === 0 && collectes.length === 0) {
-            //     Swal.fire('Déjà à jour', 'Toutes les collectes sont déjà synchronisées.', 'info');
-            //     return;
-            // }
-            // console.log("Données à synchroniser:", `{{ route('pwa.check-sync-permission') }}?matricule=${getMatricule()}&t=${Date.now()}`);
-            // return
             try {
                 const authRes = await fetch(
                     `{{ route('pwa.check-sync-permission') }}?matricule=${getMatricule()}&t=${Date.now()}`, {
@@ -338,18 +375,87 @@
                         }
                     });
 
+                if (!authRes.ok) {
+                    throw new Error("Erreur de communication avec le serveur.");
+                }
+
                 const auth = await authRes.json();
 
+                // Si le serveur refuse car can_sync est à false
                 if (!auth.can_sync) {
-                    Swal.fire('Non autorisé', 'Veuillez contacter votre administrateur.', 'warning');
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Synchronisation suspendue',
+                        html: 'Votre compte est temporairement verrouillé suite à un contrôle ou un rejet précédent.<br><br><small class="text-muted">Si le problème persiste, actualisez vos données locales.</small>',
+                        confirmButtonText: 'Compris'
+                    });
                     return;
                 }
+
                 lancerProcessus(cycles, collectes, agents);
 
             } catch (e) {
-                Swal.fire('Erreur', 'Impossible de vérifier votre statut.', 'error');
+                console.error("Erreur check-sync-permission:", e);
+                Swal.fire('Erreur', e.message || 'Impossible de vérifier votre statut.', 'error');
             }
         };
+
+        // async function lancerProcessus(cycles, collectes, agents) {
+        //     window.syncRequestInFlight = true;
+
+        //     swalLoader = Swal.fire({
+        //         title: 'Synchronisation',
+        //         html: '<b id="swal-status">Préparation...</b>',
+        //         allowOutsideClick: false,
+        //         showConfirmButton: false,
+        //         didOpen: () => {
+        //             Swal.showLoading();
+        //         }
+        //     });
+
+        //     try {
+        //         const agentsPayload = agents.map(a => ({
+        //             id: a.id,
+        //             pin_hash: a.pin_hash
+        //         }));
+
+        //         // 1. On récupère le matricule de l'agent (ex: "NEC-00002")
+        //         const agentMatricule = getMatricule();
+
+        //         const syncJob = {
+        //             matricule: agentMatricule,
+        //             sync_uuid: `sync-${agentMatricule}-${Date.now()}`,
+        //             cycles: cycles,
+        //             collectes: collectes,
+        //             agents: agentsPayload
+        //         };
+
+        //         updateStatusUI("Envoi au serveur...");
+
+        //         const response = await fetch("{{ route('pwa.sync-data-post') }}", {
+        //             method: 'POST',
+        //             credentials: 'same-origin',
+        //             headers: {
+        //                 'Content-Type': 'application/json',
+        //                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        //             },
+        //             body: JSON.stringify(syncJob) // Contient maintenant le matricule
+        //         });
+
+        //         const result = await response.json();
+        //         if (!response.ok) throw new Error(result.message || "Erreur envoi");
+
+        //         savePendingSyncJob(result.batch);
+
+        //         updateStatusUI("Attente validation Admin...");
+        //         await surveillerLeBatch(result.batch.sync_uuid);
+
+        //     } catch (error) {
+        //         Swal.fire('Échec', error.message, 'error');
+        //     } finally {
+        //         window.syncRequestInFlight = false;
+        //     }
+        // }
 
         async function lancerProcessus(cycles, collectes, agents) {
             window.syncRequestInFlight = true;
@@ -370,7 +476,6 @@
                     pin_hash: a.pin_hash
                 }));
 
-                // 1. On récupère le matricule de l'agent (ex: "NEC-00002")
                 const agentMatricule = getMatricule();
 
                 const syncJob = {
@@ -390,11 +495,16 @@
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify(syncJob) // Contient maintenant le matricule
+                    body: JSON.stringify(syncJob)
                 });
 
                 const result = await response.json();
-                if (!response.ok) throw new Error(result.message || "Erreur envoi");
+
+                // SI LE SERVEUR RENVOIE UNE ERREUR (ex: 422 Conflit / Dépassement)
+                if (!response.ok) {
+                    // On extrait le message clair renvoyé par le serveur
+                    throw new Error(result.message || "Erreur lors de la synchronisation.");
+                }
 
                 savePendingSyncJob(result.batch);
 
@@ -402,7 +512,13 @@
                 await surveillerLeBatch(result.batch.sync_uuid);
 
             } catch (error) {
-                Swal.fire('Échec', error.message, 'error');
+                // Affichage propre du motif de refus automatique dans SweetAlert2
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Synchronisation bloquée',
+                    text: error.message,
+                    confirmButtonText: 'Compris'
+                });
             } finally {
                 window.syncRequestInFlight = false;
             }
@@ -485,7 +601,7 @@
             updateStatusUI("Mise à jour locale...");
 
             try {
-                // await fetch("{{ route('pwa.lock-sync') }}", { 
+                // await fetch("{{ route('pwa.lock-sync') }}", {
                 //     method: 'POST',
                 //     credentials: 'same-origin',
                 //     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }

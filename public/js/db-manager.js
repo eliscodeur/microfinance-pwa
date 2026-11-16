@@ -18,7 +18,7 @@ export function getAgentDB() {
 
     // C'EST ICI QUE ÇA SE JOUE :
     if (dbInstance !== null && currentInstanceMatricule !== matricule) {
-        console.log("⚠️ BASCULE DE BASE DETECTÉE !");
+        // console.log("BASCULE DE BASE DETECTÉE !");
         dbInstance.close(); // On ferme la connexion physique à la base A
         dbInstance = null; // On efface l'objet de la mémoire
         currentInstanceMatricule = null;
@@ -39,6 +39,9 @@ export function getAgentDB() {
         agent_stats: "id",
         sync_batches:
             "id, sync_uuid, status, nb_collectes, total_montant, nb_cycles, created_at",
+    });
+    db.version(5).stores({
+        activity_events: "&uuid, matricule, occurred_at, synced, event",
     });
 
     dbInstance = db;
@@ -68,6 +71,9 @@ export const db = {
     get sync_batches() {
         return getAgentDB()?.sync_batches;
     },
+    // get activity_events() {
+    //     return getAgentDB()?.activity_events;
+    // },
     open: () => getAgentDB()?.open(),
     isOpen: () => getAgentDB()?.isOpen() ?? false,
     table: (name) => getAgentDB()?.table(name),
@@ -147,10 +153,10 @@ export async function populateDatabase(data, options = {}) {
                             ...cycle,
                             id: isNaN(cycle.id) ? cycle.id : Number(cycle.id),
                             synced: 1,
-                            // ON INJECTE LES DONNÉES ICI :
+                           
                             liste_retraits: retraitsAssocies,
                             total_retraits_cumule: sommeRetraits,
-                            // Le solde net est déjà fourni par ton objet (6006 dans ton exemple)
+                         
                             solde_net_final: Number(
                                 cycle.solde_restant_net || 0,
                             ),

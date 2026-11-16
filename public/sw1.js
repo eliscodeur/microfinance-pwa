@@ -1,4 +1,4 @@
-const CACHE_NAME = "tontine-cache-v18";
+const CACHE_NAME = "tontine-cache-v19";
 self.skipWaiting();
 
 // 1. Uniquement le strict minimum public au démarrage
@@ -6,6 +6,7 @@ const PUBLIC_ASSETS = [
     "/agent/login",
     "/js/dexie.js",
     "/js/db-manager.js",
+    "/js/agent-activity.js",
     "/js/bootstrap.bundle.min.js",
     "/js/sweetalert2.all.min.js",
     "/js/crypto-js.min.js",

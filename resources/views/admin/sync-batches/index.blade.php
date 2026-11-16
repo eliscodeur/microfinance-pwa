@@ -32,6 +32,7 @@
                     <th>Collectes</th>
                     <th>Montant</th>
                     <th>Statut</th>
+                    <th>Validé par</th>
                     <th>Date</th>
                     <th></th>
                 </tr>
@@ -52,7 +53,7 @@
 <script>
     // On initialise avec l'heure actuelle côté serveur
     let lastRefreshTime = "{{ now()->toDateTimeString() }}";
-    
+
     function refreshTable() {
         fetch(`/api/sync-batches/partial?since=${encodeURIComponent(lastRefreshTime)}`)
             .then(response => response.json()) // On attend du JSON maintenant
@@ -68,7 +69,7 @@
                         emptyRow.style.display = 'none';
                     }
                     // On met à jour avec l'heure exacte du serveur !
-                    lastRefreshTime = data.serverTime; 
+                    lastRefreshTime = data.serverTime;
                 }
             })
             .catch(err => console.error("Erreur :", err));
@@ -77,4 +78,3 @@
     setInterval(refreshTable, 3000);
 </script>
 @endsection
-

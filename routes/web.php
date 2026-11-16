@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\SalaryGridController;
 use App\Http\Controllers\Admin\StockCarnetController;
 use App\Http\Controllers\Admin\SyncBatchController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Api\AgentActivityController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PretInstructionController;
@@ -498,6 +499,7 @@ Route::middleware(['auth', 'role:Agent'])->prefix('pwa')->name('pwa.')->group(fu
 Route::middleware('throttle:sync')->prefix('pwa')->name('pwa.')->group(function () {
     Route::post('/lock-sync', [PwaController::class, 'lockSync'])->name('lock-sync');
     Route::post('/sync-data-post', [SyncController::class, 'store'])->name('sync-data-post');
+    Route::post('/activity-events', [AgentActivityController::class, 'store'])->name('activity-events');
     Route::get('/sync-batches/{syncUuid}/status', [SyncController::class, 'batchStatus'])->name('sync-batches.status');
     Route::post('/sync-batches/{syncUuid}/cancel', [SyncController::class, 'cancelBatch'])->name('sync-batches.cancel');
 });

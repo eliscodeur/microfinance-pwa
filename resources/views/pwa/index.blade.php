@@ -141,11 +141,8 @@
 
                 // 2. Récupérer les données
                 const toutesCollectes = await db.collectes.toArray();
-                console.log(toutesCollectes)
-                // 3. DEBUG: Afficher les dates des collectes
-                // console.log('[DEBUG] Toutes les collectes:', toutesCollectes.map(c => ({ id: c.id, date: c.date, sync: c.synced, montant: c.montant })));
 
-                // 4. Filtrer seulement les collectes du jour qui ne sont PAS encore synchronisées
+                //  Filtrer seulement les collectes du jour qui ne sont PAS encore synchronisées
                 const duJour = toutesCollectes.filter(c => {
                     // Vérifier que la date existe et correspond
                     // const dateValide = c.date && c.date === aujourdhui;

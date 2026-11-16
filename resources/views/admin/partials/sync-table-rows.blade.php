@@ -23,11 +23,18 @@
                                 {{ $title }}
                             </span>
                         </td>
+                        <td>
+                            @if($batch->reviewer)
+                                <span class="text-dark fw-medium">{{ $batch->reviewer->name }}</span>
+                            @else
+                                <span class="text-muted fst-italic">En attente / Système</span>
+                            @endif
+                        </td>
                         <td class="small">{{ $batch->created_at?->format('d/m/Y H:i') }}</td>
                         <td>
                             <a href="{{ route('admin.sync-batches.show', $batch) }}" class="btn btn-sm btn-primary">Verifier</a>
                         </td>
                     </tr>
                 @empty
-                    
+
                 @endforelse

@@ -57,6 +57,79 @@ class SyncController extends Controller
     /**
      * Reçoit et stocke les données offline de l'agent.
      */
+    // public function store(Request $request): JsonResponse
+    // {
+    //     $request->validate([
+    //         'matricule' => 'required|string',
+    //         'sync_uuid' => 'required|string',
+    //         'cycles'    => 'nullable|array',
+    //         'collectes' => 'nullable|array',
+    //     ]);
+
+    //     $agent = Agent::where('code_agent', $request->matricule)->first();
+
+    //     if (! $agent || ! $agent->can_sync) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Synchronisation interdite ou agent introuvable.',
+    //         ], 403);
+    //     }
+
+    //     Auth::login($agent->user);
+    //     // Idempotence — on retourne le batch existant si déjà reçu
+    //     $existingBatch = SyncBatch::where('sync_uuid', $request->sync_uuid)->first();
+    //     if ($existingBatch) {
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => $this->batchMessage($existingBatch),
+    //             'batch'   => $this->serializeBatch($existingBatch),
+    //             'data'    => $existingBatch->status === 'approved'
+    //                 ? $this->buildSyncPayload($agent)
+    //                 : null,
+    //         ]);
+    //     }
+
+    //     DB::beginTransaction();
+    //     try {
+    //         $collectes = $request->input('collectes', []);
+    //         $cycles    = $request->input('cycles', []);
+
+    //         $batch = SyncBatch::create([
+    //             'agent_id'      => $agent->id,
+    //             'sync_uuid'     => $request->sync_uuid,
+    //             'agents'        => $request->input('agents'),
+    //             'status'        => 'pending_review',
+    //             'nb_collectes'  => count($collectes),
+    //             'nb_cycles'     => count($cycles),
+    //             'total_montant' => collect($collectes)->sum('montant'),
+    //         ]);
+
+    //         // On bloque l'agent dès réception pour éviter les doubles envois
+    //         $agent->update(['can_sync' => false]);
+
+    //         $cycleMap = $this->storeBatchCycles($batch, $cycles, $agent->id);
+    //         $this->storeBatchCollectes($batch, $collectes, $agent->id, $cycleMap);
+
+    //         DB::commit();
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'batch'   => $this->serializeBatch($batch),
+    //         ], 202);
+
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         Log::error('SyncController@store — Erreur: ' . $e->getMessage(), [
+    //             'agent'     => $request->matricule,
+    //             'sync_uuid' => $request->sync_uuid,
+    //         ]);
+    //         return response()->json(['success' => false, 'message' => 'Erreur serveur'], 500);
+    //     }
+    // }
+
+    /**
+     * Reçoit et stocke les données offline de l'agent. Applique le principe du "tout ou rien" avec détection automatique des conflits Bureau vs Terrain.
+     */
     public function store(Request $request): JsonResponse
     {
         $request->validate([
@@ -76,6 +149,7 @@ class SyncController extends Controller
         }
 
         Auth::login($agent->user);
+
         // Idempotence — on retourne le batch existant si déjà reçu
         $existingBatch = SyncBatch::where('sync_uuid', $request->sync_uuid)->first();
         if ($existingBatch) {
@@ -94,6 +168,92 @@ class SyncController extends Controller
             $collectes = $request->input('collectes', []);
             $cycles    = $request->input('cycles', []);
 
+            // =========================================================================
+            // 1. VÉRIFICATION DES CONFLITS SUR LES NOUVEAUX CYCLES (Création concurrente)
+            // =========================================================================
+            foreach ($cycles as $cycleData) {
+                $cycleUid = $cycleData['cycle_uid'] ?? null;
+                $carnetId = $cycleData['carnet_id'] ?? null;
+                $statut   = $cycleData['statut'] ?? 'en_cours';
+
+                if ($carnetId && $statut === 'en_cours') {
+                    $cycleActifServeur = Cycle::where('carnet_id', $carnetId)
+                        ->where('statut', 'en_cours')
+                        ->where('cycle_uid', '!=', $cycleUid)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($cycleActifServeur) {
+                        DB::rollBack();
+                        $carnetNumero = $cycleActifServeur->carnet->numero ?? "#{$carnetId}";
+
+                        return response()->json([
+                            'success' => false,
+                            'motif'   => 'conflit_cycle_existant',
+                            'message' => "Synchronisation refusée : Un cycle est déjà en cours sur le serveur pour le carnet {$carnetNumero} (ouvert au bureau). Veuillez actualiser vos données.",
+                        ], 422);
+                    }
+                }
+            }
+
+            // =========================================================================
+            // 2. VÉRIFICATION DES CONFLITS & CLÔTURE AUTOMATIQUE SUR LES COLLECTES
+            // =========================================================================
+            $pointagesParCycle = [];
+            foreach ($collectes as $col) {
+                $cycleUid = $col['cycle_uid'] ?? null;
+                if ($cycleUid) {
+                    $pointagesParCycle[$cycleUid] = ($pointagesParCycle[$cycleUid] ?? 0) + (int) ($col['pointage'] ?? 1);
+                }
+            }
+
+            foreach ($pointagesParCycle as $cycleUid => $pointsLocaux) {
+                $serverCycle = Cycle::with('carnet')
+                    ->where('cycle_uid', $cycleUid)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($serverCycle) {
+                    $carnetNumero = $serverCycle->carnet->numero ?? "#{$serverCycle->carnet_id}";
+
+                    // Cas A : Le cycle a déjà été clôturé entre-temps (ex: paiement au bureau)
+                    if ($serverCycle->statut === 'termine') {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'motif'   => 'cycle_deja_cloture',
+                            'message' => "Synchronisation refusée : Le cycle du carnet {$carnetNumero} est déjà clôturé sur le serveur (paiement enregistré au bureau). Actualisez vos données pour régulariser.",
+                        ], 422);
+                    }
+
+                    // Calculs des objectifs
+                    $totalServeur = (int) $serverCycle->collectes()->sum('pointage');
+                    $objectifMax  = (int) ($serverCycle->nombre_jours_objectif ?? 31);
+                    $nouveauTotal = $totalServeur + $pointsLocaux;
+                    $restants     = max(0, $objectifMax - $totalServeur);
+
+                    // Cas B : Dépassement d'objectif -> Refus net
+                    if ($nouveauTotal > $objectifMax) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'motif'   => 'depassement_objectif',
+                            'message' => "Synchronisation refusée : Dépassement d'objectif sur le carnet {$carnetNumero}. Vous tentez d'envoyer {$pointsLocaux} pointage(s) alors qu'il n'en reste que {$restants} disponible(s) sur le serveur (encaissement effectué au bureau). Régularisation requise.",
+                        ], 422);
+                    }
+
+                    // Cas C : Atteinte exacte de l'objectif -> Validation et clôture automatique
+                    if ($nouveauTotal === $objectifMax) {
+                        $serverCycle->statut              = 'termine';
+                        $serverCycle->date_cloture_reelle = now()->toDateString();
+                        $serverCycle->save();
+                    }
+                }
+            }
+
+            // =========================================================================
+            // 3. ENREGISTREMENT DU BATCH (Si tout est conforme)
+            // =========================================================================
             $batch = SyncBatch::create([
                 'agent_id'      => $agent->id,
                 'sync_uuid'     => $request->sync_uuid,
@@ -105,7 +265,7 @@ class SyncController extends Controller
             ]);
 
             // On bloque l'agent dès réception pour éviter les doubles envois
-            $agent->update(['can_sync' => false]);
+            // $agent->update(['can_sync' => false]);
 
             $cycleMap = $this->storeBatchCycles($batch, $cycles, $agent->id);
             $this->storeBatchCollectes($batch, $collectes, $agent->id, $cycleMap);
@@ -123,7 +283,10 @@ class SyncController extends Controller
                 'agent'     => $request->matricule,
                 'sync_uuid' => $request->sync_uuid,
             ]);
-            return response()->json(['success' => false, 'message' => 'Erreur serveur'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur serveur lors de la synchronisation.',
+            ], 500);
         }
     }
 
@@ -158,10 +321,6 @@ class SyncController extends Controller
 
         return response()->json($response);
     }
-
-    // ─────────────────────────────────────────────
-    // Méthodes privées
-    // ─────────────────────────────────────────────
 
     /**
      * Enregistre les cycles temporaires et retourne le map [cycle_uid => batch_cycle_id].
@@ -219,134 +378,6 @@ class SyncController extends Controller
         }
     }
 
-    // private function buildSyncPayload(Agent $agent): array
-    // {
-    //     $clients = Client::where('agent_id', $agent->id)
-    //         ->whereHas('carnets', fn($q) => $q->where('statut', 'actif')->where('type', 'tontine'))
-    //         ->get();
-
-    //     $clientIds = $clients->pluck('id');
-
-    //     $carnets = Carnet::whereIn('client_id', $clientIds)
-    //         ->where('statut', 'actif')
-    //         ->where('type', 'tontine')
-    //         ->with('categoryTontine')
-    //         ->withCount(['cycles as total_cycles_termines' => fn($q) => $q->where('statut', 'termine')])
-    //         ->get()
-    //         ->map(function ($carnet) {
-    //             $data = $carnet->toArray();
-    //             if ($carnet->categoryTontine) {
-    //                 $data['nombre_cycles'] = $carnet->categoryTontine->nombre_cycles;
-    //                 $data['nom_categorie'] = $carnet->categoryTontine->libelle;
-    //             }
-
-    //             return $data;
-    //         });
-    //     $cycles = Cycle::whereIn('carnet_id', $carnets->pluck('id'))
-    //         ->where(fn($q) => $q
-    //                 ->where('statut', 'en_cours')
-    //                 ->orWhere(fn($q2) => $q2->where('statut', 'termine')->whereNull('retire_at'))
-    //         )
-    //         ->with(['collectes', 'retraits'])
-    //         ->get()
-    //         ->map(function ($cycle) {
-    //             $totalCollectes  = (float) $cycle->collectes->sum('montant');
-    //             $totalDejaRetire = (float) $cycle->retraits->sum('montant_net');
-    //             $commission      = (float) ($cycle->montant_journalier ?? 0);
-
-    //             $cycle->solde_restant_net = max(0, $totalCollectes - $commission - $totalDejaRetire);
-
-    //             $cycle->retraits->each(function ($retrait) use ($cycle) {
-    //                 $retrait->cycle_uid = $cycle->cycle_uid;
-    //                 $retrait->synced    = 1;
-    //             });
-
-    //             return $cycle;
-    //         });
-
-    //     $collectes = $cycles->pluck('collectes')->filter()->flatten()->map(function ($col) {
-    //         $col->synced = 1;
-    //         return $col;
-    //     });
-
-    //     $retraits = $cycles->pluck('retraits')->filter()->flatten();
-
-    //     $bonusEnAttente = Bonus::where('agent_id', $agent->id)
-    //         ->where('statut', 'en_attente')
-    //         ->orderBy('date_attribution', 'desc')
-    //         ->get();
-
-    //     $historiquePaiements = Paiement::where('agent_id', $agent->id)
-    //         ->with(['bonuses'])
-    //         ->orderBy('created_at', 'desc')
-    //         ->limit(10)
-    //         ->get();
-
-    //     // ======================================================================
-    //     // 📊 DONNÉES DE PERFORMANCE & EVOLUTION (SANS OBJECTIFS)
-    //     // ======================================================================
-
-    //     // 1. Historique du volume collecté par mois sur les 6 derniers mois (Pour alimenter la courbe)
-    //     $historiqueVolumeMensuel = DB::table('collectes')
-    //         ->join('cycles', 'collectes.cycle_id', '=', 'cycles.id')
-    //         ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
-    //         ->join('clients', 'carnets.client_id', '=', 'clients.id')
-    //         ->where('clients.agent_id', $agent->id)
-    //         ->where('collectes.created_at', '>=', now()->subMonths(6)->startOfMonth())
-    //         ->select(
-    //             DB::raw("DATE_FORMAT(collectes.created_at, '%Y-%m') as mois"),
-    //             DB::raw("SUM(collectes.montant) as total_volume")
-    //         )
-    //         ->groupBy('mois')
-    //         ->orderBy('mois', 'asc')
-    //         ->get();
-
-    //     // 2. Volume total historique amassé par cet agent depuis son inscription (Toutes collectes confondues)
-    //     $volumeHistoriqueGlobal = DB::table('collectes')
-    //         ->join('cycles', 'collectes.cycle_id', '=', 'cycles.id')
-    //         ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
-    //         ->join('clients', 'carnets.client_id', '=', 'clients.id')
-    //         ->where('clients.agent_id', $agent->id)
-    //         ->sum('collectes.montant');
-
-    //     // 3. Compteur global des cycles menés à terme (historique complet de sa carrière)
-    //     $totalHistoriqueCyclesTermines = DB::table('cycles')
-    //         ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
-    //         ->join('clients', 'carnets.client_id', '=', 'clients.id')
-    //         ->where('clients.agent_id', $agent->id)
-    //         ->where('cycles.statut', 'termine')
-    //         ->count();
-
-    //     $syncBatches = SyncBatch::where('agent_id', $agent->id)
-    //         ->latest()
-    //         ->take(10)
-    //         ->get(['id', 'sync_uuid', 'status', 'nb_collectes', 'total_montant', 'nb_cycles', 'created_at']);
-
-    //     return [
-    //         'success'              => true,
-    //         'agent'                => [
-    //             'id'       => $agent->id,
-    //             'nom'      => $agent->nom,
-    //             'pin_hash' => $agent->pin_hash,
-    //         ],
-    //         'clients'              => $clients,
-    //         'carnets'              => $carnets,
-    //         'cycles'               => $cycles->makeHidden(['collectes', 'retraits']),
-    //         'collectes'            => $collectes,
-    //         'retraits'             => $retraits,
-    //         'bonus_en_attente'     => $bonusEnAttente,
-    //         'historique_paiements' => $historiquePaiements,
-    //         'sync_batches'         => $syncBatches,
-    //         // Bloc statistique épuré
-    //         'stats_performance'    => [
-    //             'historique_courbe'                => $historiqueVolumeMensuel,
-    //             'volume_historique_global'         => (float) $volumeHistoriqueGlobal,
-    //             'total_historique_cycles_termines' => $totalHistoriqueCyclesTermines,
-    //         ],
-
-    //         'server_date'          => now()->toDateString(),
-    //     ];
-    // }
     private function buildSyncPayload(Agent $agent): array
     {
         // 1. Correction de la récupération des clients via les carnets de l'agent
@@ -417,10 +448,6 @@ class SyncController extends Controller
             ->limit(10)
             ->get();
 
-        // ======================================================================
-        // DONNÉES DE PERFORMANCE & EVOLUTION (Correction des jointures)
-        // ======================================================================
-
         // 1. Historique du volume collecté par mois sur les 6 derniers mois
         $historiqueVolumeMensuel = DB::table('collectes')
             ->join('cycles', 'collectes.cycle_id', '=', 'cycles.id')
@@ -439,13 +466,13 @@ class SyncController extends Controller
         $volumeHistoriqueGlobal = DB::table('collectes')
             ->join('cycles', 'collectes.cycle_id', '=', 'cycles.id')
             ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
-            ->where('carnets.agent_id', $agent->id) // CORRIGÉ
+            ->where('carnets.agent_id', $agent->id)
             ->sum('collectes.montant');
 
         // 3. Compteur global des cycles menés à terme
         $totalHistoriqueCyclesTermines = DB::table('cycles')
             ->join('carnets', 'cycles.carnet_id', '=', 'carnets.id')
-            ->where('carnets.agent_id', $agent->id) // CORRIGÉ
+            ->where('carnets.agent_id', $agent->id)
             ->where('cycles.statut', 'termine')
             ->count();
 

@@ -359,11 +359,11 @@
                     text: "Pour votre sécurité, veuillez vous reconnecter.",
                     icon: 'warning',
                     confirmButtonText: 'Se reconnecter',
-                    allowOutsideClick: false, // Force l'utilisateur à cliquer sur le bouton
+                    allowOutsideClick: false,
                     allowEscapeKey: false,
-                    width: '90%', // Optimisé pour les écrans de téléphone
+                    width: '90%',
                     customClass: {
-                        confirmButton: 'btn btn-primary' // Adaptez selon votre CSS (Bootstrap, etc.)
+                        confirmButton: 'btn btn-primary'
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -385,7 +385,8 @@
         });
 
         // Vérifier au chargement de la page
-        checkSession();
+        // checkSession();
+
     </script>
 </body>
 
