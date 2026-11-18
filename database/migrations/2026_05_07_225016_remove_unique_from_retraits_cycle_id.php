@@ -14,10 +14,11 @@ return new class extends Migration
     public function up()
     {
         Schema::table('retraits', function (Blueprint $table) {
-            // On supprime l'index unique
-            $table->dropUnique(['cycle_id']); 
-            // Note: Si le nom automatique ne marche pas, essaie :
-            // $table->dropUnique('retraits_cycle_id_unique');
+            // 1. On supprime d'abord la clé étrangère qui bloque l'index
+            $table->dropForeign(['cycle_id']);
+
+            // 2. Ensuite on peut supprimer l'index unique sans erreur
+            $table->dropUnique(['cycle_id']);
         });
     }
 
@@ -25,6 +26,7 @@ return new class extends Migration
     {
         Schema::table('retraits', function (Blueprint $table) {
             $table->unique('cycle_id');
+            $table->foreign('cycle_id')->references('id')->on('cycles');
         });
     }
 };
