@@ -15,7 +15,7 @@ return new class extends Migration
             $table->ulid('ulid')->unique();
             $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
             $table->string('type'); // 'tontine', 'epargne', etc.
-            $table->foreignId('category_tontine_id')->nullable()->constrained('category_tontines')->nullOnDelete();
+            $table->foreignId('category_tontine_id')->nullable()->constrained('categories_tontine')->nullOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('carnets')->nullOnDelete();
             $table->string('numero')->unique();
             $table->string('statut')->default('actif'); // 'actif', 'termine', 'suspendu'

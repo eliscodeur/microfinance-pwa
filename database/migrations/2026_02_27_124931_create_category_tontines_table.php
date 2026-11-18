@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('category_tontines', function (Blueprint $table) {
+        Schema::create('categories_tontine', function (Blueprint $table) {
             $table->id();
             $table->string('libelle')->unique();
             $table->decimal('prix', 15, 2)->default(0);

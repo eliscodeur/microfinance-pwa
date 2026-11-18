@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,15 +8,13 @@ class CategoryTontine extends Model
 {
     use HasFactory;
 
-    // On indique le nom exact de la table dans ta base de données
-    protected $table = 'categories_tontine'; 
+    protected $table = 'categories_tontine';
 
-    // On autorise le remplissage des champs
     protected $fillable = [
         'libelle',
         'prix',
         'nombre_cycles',
-        'description'
+        'description',
     ];
 
     public function carnets()
@@ -27,7 +24,7 @@ class CategoryTontine extends Model
 
     public function minimumPointagesRequired(): int
     {
-        if (!$this->nombre_cycles) {
+        if (! $this->nombre_cycles) {
             return 15;
         }
 
