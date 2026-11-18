@@ -14,9 +14,12 @@ return new class extends Migration
     public function up()
     {
         Schema::table('salary_advances', function (Blueprint $table) {
-            $table->unsignedBigInteger('agent_id')->nullable()->change(); // Rendre agent_id optionnel
-            $table->unsignedBigInteger('employe_administratif_id')->nullable()->after('agent_id');
+            $table->unsignedBigInteger('agent_id')->nullable()->change();
 
+            // 1. Ajouter ->index() ici pour que MySQL accepte la clé étrangère
+            $table->unsignedBigInteger('employe_administratif_id')->nullable()->after('agent_id')->index();
+
+            // 2. Définir la clé étrangère
             $table->foreign('employe_administratif_id')
                 ->references('id')
                 ->on('employe_administratifs')
