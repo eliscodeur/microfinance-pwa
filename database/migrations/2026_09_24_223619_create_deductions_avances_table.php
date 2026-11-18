@@ -26,7 +26,7 @@ return new class extends Migration
             // Clés étrangères optionnelles (à adapter selon les noms de tes tables si besoin)
             $table->foreign('employe_administratif_id')
                 ->references('id')
-                ->on('employes_administratifs')
+                ->on('employe_administratifs')
                 ->onDelete('cascade');
 
             // Détails de la déduction
