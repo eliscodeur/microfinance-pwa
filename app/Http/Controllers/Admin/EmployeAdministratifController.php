@@ -23,10 +23,13 @@ class EmployeAdministratifController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'telephone' => str_replace([' ', '+228'], '', $request->telephone),
+        ]);
         $request->validate([
             'nom'            => 'required|string|max:255',
             'prenoms'        => 'required|string|max:255',
-            'telephone'      => 'required|string|max:50',
+            'telephone'      => 'required|digits:8',
             'fonction_id'    => 'required|exists:fonctions,id',
             'salaire_base'   => 'nullable|numeric|min:0', // Laisser vide pour prendre le salaire par défaut de la fonction
             'statut_contrat' => 'required|in:essai,confirme,cdd,cdi',

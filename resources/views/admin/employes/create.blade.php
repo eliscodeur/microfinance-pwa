@@ -32,13 +32,12 @@
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Nom <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="nom" value="{{ old('nom') }}" required
-                                placeholder="Ex: ADJOHO">
+                            <input type="text" class="form-control" name="nom" value="{{ old('nom') }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Prénoms <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="prenoms" value="{{ old('prenoms') }}" required
-                                placeholder="Ex: Essi Amouzou">
+                               >
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Sexe</label>
@@ -56,28 +55,30 @@
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Lieu de naissance</label>
                             <input type="text" class="form-control" name="lieu_naissance"
-                                value="{{ old('lieu_naissance') }}" placeholder="Ex: Lomé">
+                                value="{{ old('lieu_naissance') }}" >
                         </div>
                     </div>
-
                     <hr class="text-muted opacity-25 my-4">
 
                     <h5 class="text-primary fw-bold mb-3"><i class="bi bi-geo-alt me-2"></i>2. Coordonnées</h5>
                     <div class="row g-3 mb-4">
-                        <div class="col-md-4">
+                        <!-- <div class="col-md-4">
                             <label class="form-label fw-semibold">Téléphone <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="telephone" value="{{ old('telephone') }}"
-                                required placeholder="Ex: +228 90 00 00 00">
+                            <input type="text" class="form-control" name="telephone" value="{{ old('telephone') }}" id="telephone" required>
+                        </div> -->
+                        <div class="col-md-4">
+                            <label for="telephone" class="form-label fw-semibold">Numéro de téléphone</label>
+                            <input type="text" name="telephone" id="telephone" class="form-control py-2"
+                                value="{{ isset($agent) ? '+228 ' . implode(' ', str_split($agent->telephone, 2)) : old('telephone') }}"
+                                required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Adresse E-mail</label>
-                            <input type="email" class="form-control" name="email" value="{{ old('email') }}"
-                                placeholder="Ex: agent@example.com">
+                            <input type="email" class="form-control" name="email" value="{{ old('email') }}">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Adresse / Quartier</label>
-                            <input type="text" class="form-control" name="adresse" value="{{ old('adresse') }}"
-                                placeholder="Ex: Vakpossito – Lomé">
+                            <input type="text" class="form-control" name="adresse" value="{{ old('adresse') }}">
                         </div>
                     </div>
 
@@ -156,4 +157,23 @@
             </div>
         </div>
     </div>
+        <script src="{{ asset('js/imask.js') }}"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const phoneInput = document.getElementById('telephone');
+                if (phoneInput) {
+                    const maskOptions = {
+                        mask: '+228 00 00 00 00',
+                        lazy: false,
+                        placeholderChar: '_'
+                    };
+                    const mask = IMask(phoneInput, maskOptions);
+
+                    // Si une valeur existe déjà au chargement en mode edit
+                    if (phoneInput.value) {
+                        mask.unmaskedValue = phoneInput.value.replace(/\D/g, '').replace(/^228/, '');
+                    }
+                }
+            });
+        </script>
 @endsection
