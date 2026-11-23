@@ -8,7 +8,7 @@
                 <p class="text-muted small mb-0">Gestion des dossiers, des contrats et des rémunérations administratives.</p>
             </div>
             <a href="{{ route('admin.employes.create') }}" class="btn btn-primary shadow-sm">
-                <i class="bi bi-person-plus me-1"></i> Enregistrer un Agent
+                <i class="bi bi-person-plus me-1"></i> Enregistrer un employé
             </a>
         </div>
 

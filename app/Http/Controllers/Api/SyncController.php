@@ -265,7 +265,7 @@ class SyncController extends Controller
             ]);
 
             // On bloque l'agent dès réception pour éviter les doubles envois
-            // $agent->update(['can_sync' => false]);
+            $agent->update(['can_sync' => false]);
 
             $cycleMap = $this->storeBatchCycles($batch, $cycles, $agent->id);
             $this->storeBatchCollectes($batch, $collectes, $agent->id, $cycleMap);

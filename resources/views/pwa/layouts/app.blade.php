@@ -312,29 +312,44 @@
     </script>
 
     <script>
+        // if ('serviceWorker' in navigator) {
+        //     window.addEventListener('load', () => {
+
+        //         if (navigator.serviceWorker.controller) {
+        //             console.log("Service Worker déjà actif, pas besoin de réenregistrer intensivement.");
+        //             return;
+        //         }
+
+        //         navigator.serviceWorker.register('/sw.js')
+        //             .then(reg => {
+        //                 console.log("SW enregistré avec succès");
+
+
+        //                 if (reg.active) {
+        //                     reg.active.postMessage({
+        //                         action: 'cachePrivatePages'
+        //                     });
+        //                 }
+        //             })
+        //             .catch(err => console.error("Erreur SW:", err));
+        //     });
+        // }
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
+            window.addEventListener('load', async () => {
+                try {
+                    if (!navigator.serviceWorker.controller) {
+                        await navigator.serviceWorker.register('/sw.js');
+                    }
 
-                if (navigator.serviceWorker.controller) {
-                    console.log("Service Worker déjà actif, pas besoin de réenregistrer intensivement.");
-                    return;
+                    const reg = await navigator.serviceWorker.ready;
+                    if (navigator.onLine && reg.active) {
+                        reg.active.postMessage({ action: 'cachePrivatePages' });
+                    }
+                } catch (err) {
+                    console.error("Erreur SW:", err);
                 }
-
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => {
-                        console.log("SW enregistré avec succès");
-
-
-                        if (reg.active) {
-                            reg.active.postMessage({
-                                action: 'cachePrivatePages'
-                            });
-                        }
-                    })
-                    .catch(err => console.error("Erreur SW:", err));
             });
         }
-
         function toggleSidebar() {
             const sidebar = document.getElementById('pwa-sidebar');
             const overlay = document.getElementById('sidebar-overlay');

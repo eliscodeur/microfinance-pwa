@@ -142,14 +142,9 @@
                 // 2. Récupérer les données
                 const toutesCollectes = await db.collectes.toArray();
 
-                //  Filtrer seulement les collectes du jour qui ne sont PAS encore synchronisées
                 const duJour = toutesCollectes.filter(c => {
-                    // Vérifier que la date existe et correspond
-                    // const dateValide = c.date && c.date === aujourdhui;
-                    // Vérifier que ce n'est pas synchronisé (sync = 0)
-                    const pasSynced = c.synced === 0
 
-                    // console.log(`[DEBUG] Collecte ${c.id}: date=${c.date}, aujourdhui=${aujourdhui}, valide=${dateValide}, synced=${c.synced}, pasSynced=${pasSynced}`);
+                    const pasSynced = c.synced === 0
 
                     return pasSynced;
                 });
@@ -178,9 +173,6 @@
                 if (elMontant) elMontant.innerText = total.toLocaleString('fr-FR') + " F";
                 if (elClientsVus) elClientsVus.innerText = clientsVus;
                 if (elClientsActifs) elClientsActifs.innerText = totalClientsActifs;
-
-                // Petit log pour débugger dans ta console (F12)
-                // console.log(`[Stats] Date: ${aujourdhui} | Collectes du jour non sync: ${duJour.length} | Clients Vus: ${clientsVus} | Clients Actifs: ${totalClientsActifs} | Total: ${total} FCFA`);
 
             } catch (e) {
                 console.error("Erreur rafraîchissement stats:", e);
