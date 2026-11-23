@@ -67,12 +67,26 @@
 
                     <h5 class="text-primary fw-bold mb-3"><i class="bi bi-geo-alt me-2"></i>2. Coordonnées</h5>
                     <div class="row g-3 mb-4">
-                        <div class="col-md-4">
+                        <!-- <div class="col-md-4">
                             <label class="form-label fw-semibold">Téléphone <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="telephone"
                                 value="{{ old('telephone', $employe->telephone) }}" required>
-                        </div>
+                        </div> -->
+                        @php
+                            $telBrut = preg_replace('/\D/', '', $employe->telephone ?? '');
+                            // Si le numéro commence déjà par 228 (ex: 22890123456), on retire le 228 pour éviter +228 22 89...
+                            if (str_starts_with($telBrut, '228') && strlen($telBrut) > 8) {
+                                $telBrut = substr($telBrut, 3);
+                            }
+                            $telFormate = $telBrut !== '' ? '+228 ' . implode(' ', str_split($telBrut, 2)) : '';
+                        @endphp
+
                         <div class="col-md-4">
+                            <label for="telephone" class="form-label fw-semibold">Téléphone <span class="text-danger">*</span></label>
+                            <input type="text" id="telephone" class="form-control" name="telephone"
+                                value="{{ old('telephone', $telFormate) }}" required>
+                        </div>
+                                                <div class="col-md-4">
                             <label class="form-label fw-semibold">Adresse E-mail</label>
                             <input type="email" class="form-control" name="email"
                                 value="{{ old('email', $employe->email) }}">
