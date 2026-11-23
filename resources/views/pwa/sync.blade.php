@@ -277,7 +277,24 @@
                 const btnSync = document.getElementById('btn-sync');
                 if (btnSync) {
                     btnSync.disabled = false;
-                    btnSync.addEventListener('click', window.demarrerAction);
+                    btnSync.addEventListener('click', function (e) {
+                        e.preventDefault();
+
+                        Swal.fire({
+                            title: 'Confirmer la synchronisation ?',
+                            text: 'Voulez-vous vraiment lancer la synchronisation maintenant ?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Oui, synchroniser',
+                            cancelButtonText: 'Annuler',
+                            confirmButtonColor: '#198754', // Vert Bootstrap (modifiable selon ton thème)
+                            cancelButtonColor: '#6c757d'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.demarrerAction(e);
+                            }
+                        });
+                    });
                 }
 
                 verifierRepriseAuto();
