@@ -1,4 +1,4 @@
-const CACHE_NAME = "tontine-cache-v18";
+const CACHE_NAME = "tontine-cache-v19";
 self.skipWaiting();
 
 // 1. Uniquement le strict minimum public au démarrage
@@ -136,15 +136,18 @@ self.addEventListener("fetch", (event) => {
     };
 
     // 2. GESTION DE LA NAVIGATION : Stratégie Réseau d'abord (Network First)
+
     if (event.request.mode === "navigate") {
         event.respondWith(
             (async () => {
                 const cache = await caches.open(CACHE_NAME);
-
                 try {
-                    // On essaie TOUJOURS d'aller chercher la vraie page fraîche sur le serveur
                     const networkResponse = await fetch(event.request);
-                    if (networkResponse && networkResponse.ok) {
+                    if (
+                        networkResponse &&
+                        networkResponse.ok &&
+                        !networkResponse.url.includes("/agent/login")
+                    ) {
                         await safeCachePut(
                             cache,
                             event.request,
@@ -152,14 +155,14 @@ self.addEventListener("fetch", (event) => {
                         );
                         return networkResponse;
                     }
+                    if (networkResponse) {
+                        return networkResponse;
+                    }
                 } catch (err) {
-                    // En cas de panne réseau (hors-ligne), on bascule sur le cache exact
                     const exactCache = await caches.match(event.request);
                     if (exactCache) {
                         return exactCache;
                     }
-
-                    // Sinon on cherche l'App Shell générique
                     const basePath = PRIVATE_PAGES.includes(url.pathname)
                         ? url.pathname
                         : null;
@@ -170,7 +173,6 @@ self.addEventListener("fetch", (event) => {
                         }
                     }
                 }
-
                 return respondWithFallbackHTML();
             })(),
         );

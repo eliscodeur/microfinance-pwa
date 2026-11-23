@@ -1,4 +1,4 @@
-const CACHE_NAME = "tontine-cache-v19";
+const CACHE_NAME = "tontine-cache-v18";
 self.skipWaiting();
 
 // 1. Uniquement le strict minimum public au démarrage
@@ -6,7 +6,6 @@ const PUBLIC_ASSETS = [
     "/agent/login",
     "/js/dexie.js",
     "/js/db-manager.js",
-    "/js/agent-activity.js",
     "/js/bootstrap.bundle.min.js",
     "/js/sweetalert2.all.min.js",
     "/js/crypto-js.min.js",
@@ -35,7 +34,6 @@ const PRIVATE_PAGES = [
 
 const FALLBACK_PAGES = ["/pwa/dashboard", "/agent/login"];
 
-// Fonction ultra-sécurisée pour écrire dans le cache sans faire planter le SW
 async function safeCachePut(cache, request, response) {
     try {
         await cache.put(request, response);
@@ -107,14 +105,16 @@ self.addEventListener("message", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-    // 1. Ignorer les requêtes non-GET et les appels API/Data
+    // 1. Ignorer les requêtes non-GET, l'espace Admin et les API de données
     if (event.request.method !== "GET") return;
     const url = new URL(event.request.url);
+
     if (
+        url.pathname.startsWith("/admin") ||
         url.pathname.includes("/pwa/get-initial-data") ||
         url.pathname.includes("/api/")
     ) {
-        return;
+        return; // Laisse passer le trafic directement vers Alwaysdata sans interférence
     }
 
     // Fonction pour renvoyer une page de secours HTML
@@ -134,51 +134,42 @@ self.addEventListener("fetch", (event) => {
         );
     };
 
-    // 2. GESTION DE LA NAVIGATION (Pages HTML, Vues Blade)
+    // 2. GESTION DE LA NAVIGATION : Stratégie Réseau d'abord (Network First)
     if (event.request.mode === "navigate") {
         event.respondWith(
             (async () => {
                 const cache = await caches.open(CACHE_NAME);
-                const exactCache = await caches.match(event.request);
 
-                const networkPromise = fetch(event.request)
-                    .then(async (networkResponse) => {
-                        if (networkResponse && networkResponse.ok) {
-                            await safeCachePut(
-                                cache,
-                                event.request,
-                                networkResponse.clone(),
-                            );
-                        }
+                try {
+                    // On essaie TOUJOURS d'aller chercher la vraie page fraîche sur le serveur
+                    const networkResponse = await fetch(event.request);
+                    if (networkResponse && networkResponse.ok) {
+                        await safeCachePut(
+                            cache,
+                            event.request,
+                            networkResponse.clone(),
+                        );
                         return networkResponse;
-                    })
-                    .catch(() => null);
+                    }
+                } catch (err) {
+                    // En cas de panne réseau (hors-ligne), on bascule sur le cache exact
+                    const exactCache = await caches.match(event.request);
+                    if (exactCache) {
+                        return exactCache;
+                    }
 
-                // Si on a l'URL exacte en cache, on la sert tout de suite (ultra rapide)
-                if (exactCache) {
-                    networkPromise.catch(() => {}); // Laisse le réseau mettre à jour en fond
-                    return exactCache;
-                }
-
-                // Sinon on attend le réseau
-                const networkResponse = await networkPromise;
-                if (networkResponse) {
-                    return networkResponse;
-                }
-
-                // Si hors-ligne et pas de match exact (ex: url avec paramètres ?id=12)
-                // On cherche l'App Shell générique dans le cache
-                const basePath = PRIVATE_PAGES.includes(url.pathname)
-                    ? url.pathname
-                    : null;
-                if (basePath) {
-                    const baseCache = await caches.match(basePath);
-                    if (baseCache) {
-                        return baseCache;
+                    // Sinon on cherche l'App Shell générique
+                    const basePath = PRIVATE_PAGES.includes(url.pathname)
+                        ? url.pathname
+                        : null;
+                    if (basePath) {
+                        const baseCache = await caches.match(basePath);
+                        if (baseCache) {
+                            return baseCache;
+                        }
                     }
                 }
 
-                // Ultime secours HTML si rien ne marche
                 return respondWithFallbackHTML();
             })(),
         );
@@ -186,19 +177,15 @@ self.addEventListener("fetch", (event) => {
     }
 
     // 3. GESTION DES ASSETS STATIQUES (JS, CSS, Polices, Images)
-    // Stratégie : Cache First (Le cache d'abord, réseau ensuite, SANS TIMEOUT)
     event.respondWith(
         (async () => {
-            // On cherche d'abord dans le cache
             const cachedResponse = await caches.match(event.request);
             if (cachedResponse) {
                 return cachedResponse;
             }
 
             try {
-                // Si l'asset n'est pas en cache, on va sur le réseau (sans timeout brutal)
                 const networkResponse = await fetch(event.request);
-
                 if (networkResponse && networkResponse.status === 200) {
                     const cache = await caches.open(CACHE_NAME);
                     await safeCachePut(
@@ -209,12 +196,6 @@ self.addEventListener("fetch", (event) => {
                 }
                 return networkResponse;
             } catch (err) {
-                // CRUCIAL : Ne JAMAIS renvoyer une page HTML de fallback pour un fichier CSS ou WOFF2 !
-                console.warn(
-                    `Réseau indisponible pour l'asset : ${event.request.url}`,
-                );
-
-                // On renvoie une réponse vide propre pour ne pas corrompre le navigateur
                 return new Response("", {
                     status: 404,
                     statusText: "Offline Asset Not Found",
