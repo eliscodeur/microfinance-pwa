@@ -181,4 +181,23 @@
             </div>
         </div>
     </div>
+    <script src="{{ asset('js/imask.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const phoneInput = document.getElementById('telephone');
+            if (phoneInput) {
+                const maskOptions = {
+                    mask: '+228 00 00 00 00',
+                    lazy: false,
+                    placeholderChar: '_'
+                };
+                const mask = IMask(phoneInput, maskOptions);
+
+                // Si une valeur existe déjà au chargement en mode edit
+                if (phoneInput.value) {
+                    mask.unmaskedValue = phoneInput.value.replace(/\D/g, '').replace(/^228/, '');
+                }
+            }
+        });
+    </script>
 @endsection
