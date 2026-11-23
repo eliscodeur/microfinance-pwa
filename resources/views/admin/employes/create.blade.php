@@ -68,7 +68,7 @@
                         </div> -->
                         <div class="col-md-4">
                             <label for="telephone" class="form-label fw-semibold">Numéro de téléphone</label>
-                            <input type="text" name="telephone" id="telephone" class="form-control py-2"
+                            <input type="text" name="telephone" id="telephone" class="form-control"
                                 value="{{ isset($agent) ? '+228 ' . implode(' ', str_split($agent->telephone, 2)) : old('telephone') }}"
                                 required>
                         </div>
